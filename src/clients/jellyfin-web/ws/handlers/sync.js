@@ -38,6 +38,7 @@
       if (panel) panel.classList.remove('hide');
       state.inviteJoinActive = false;
     }
+    if (JWP.guestLockdown?.enforceSoon) JWP.guestLockdown.enforceSoon(100);
   };
 
   const rememberRemoteState = (msg) => {

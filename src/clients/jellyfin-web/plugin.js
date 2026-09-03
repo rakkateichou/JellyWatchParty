@@ -80,6 +80,7 @@
     ]);
     await loadScript('ws/connection.js');
     await loadScript('app/pause-splash.js');
+    await loadScript('app/guest-lockdown.js');
     await loadScript('app/lifecycle.js');
     await loadScript('app/cleanup.js');
   };

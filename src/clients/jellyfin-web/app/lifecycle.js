@@ -57,7 +57,7 @@
   const onVideoPlayerExit = () => {
     console.log('[JellyWatchParty] Video player closed, cleaning up...');
     const panel = document.getElementById(JWP.constants.PANEL_ID);
-    if (panel) panel.classList.add('hide');
+    if (panel && !JWP.guestLockdown?.isRestricted?.()) panel.classList.add('hide');
     if (ui.updateDockedPlayerLayout) ui.updateDockedPlayerLayout();
     // Leaving the video route is not the same as leaving the room. Keep the
     // membership and chat alive across episode transitions and navigation;
@@ -67,6 +67,7 @@
       JWP.playback.cleanupVideoListeners();
     }
     state.bound = false;
+    if (JWP.guestLockdown?.isRestricted?.()) JWP.guestLockdown.enforceSoon(100);
   };
 
   const createPanel = () => {
@@ -121,6 +122,7 @@
       // Jellyfin is an SPA; header DOM is frequently replaced during navigation.
       // Keep a global launcher button present even when no video OSD exists.
       ui.injectGlobalButton();
+      if (JWP.guestLockdown?.enforce) JWP.guestLockdown.enforce();
       if (ui.updateDockedPlayerLayout) ui.updateDockedPlayerLayout();
     }, UI_CHECK_MS);
     state.intervals.home = setInterval(() => {
@@ -153,6 +155,7 @@
     } else {
       console.error('[JellyWatchParty] JWP.actions.connect not available!');
     }
+    if (JWP.guestLockdown?.init) JWP.guestLockdown.init();
     beginInviteJoin();
     startIntervals();
   };

@@ -125,6 +125,31 @@
     }
     #${PANEL_ID}.hide { display: none; }
     #${PANEL_ID} * { box-sizing: border-box; }
+    /* ShareLinks already confines temporary users on the server. These rules
+       make its guest web UI watch-only; JellyWatchParty's class additionally
+       disables navigation inside the otherwise permitted series tree. */
+    body.sharelinks-guest .btnUserData,
+    body.sharelinks-guest .btnUserData-favorite,
+    body.sharelinks-guest [title="Add to favorites"],
+    body.sharelinks-guest [title="Remove from favorites"],
+    body.sharelinks-guest [aria-label="Add to favorites"],
+    body.sharelinks-guest [aria-label="Remove from favorites"],
+    html.jwp-party-guest .btnUserData,
+    html.jwp-party-guest .btnUserData-favorite,
+    html.jwp-party-guest [title="Add to favorites"],
+    html.jwp-party-guest [title="Remove from favorites"],
+    html.jwp-party-guest [aria-label="Add to favorites"],
+    html.jwp-party-guest [aria-label="Remove from favorites"] { display: none !important; }
+    html.jwp-party-guest .headerBackButton,
+    html.jwp-party-guest .headerHomeButton,
+    html.jwp-party-guest .headerSearchButton,
+    html.jwp-party-guest .headerCastButton,
+    html.jwp-party-guest .headerUserButton,
+    html.jwp-party-guest .mainDrawerButton,
+    html.jwp-party-guest .mainDetailButtons button:not(.btnPlay):not([data-action="play"]):not([data-action="resume"]) { display: none !important; }
+    html.jwp-party-guest .detailPage .card,
+    html.jwp-party-guest .detailPage [data-itemid],
+    html.jwp-party-guest .detailPage [data-item-id] { pointer-events: none !important; cursor: default !important; }
     /* Globally suppress Jellyfin Enhanced's pause splash, including its
        accountless-guest fallback before per-user settings have loaded. */
     #pause-screen-overlay {

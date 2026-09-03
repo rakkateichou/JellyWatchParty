@@ -129,6 +129,8 @@
     joiningItemId: '',
     pendingJoinRoomId: '',  // Room to join after navigating to video player
     inviteJoinActive: false, // True while handling an accountless ShareLinks invitation
+    guestMode: false,        // Verified ShareLinks temporary guest session
+    guestShareItemId: '',    // Root item granted by ShareLinks (room media remains stricter)
     roomName: '',
     roomMediaId: '',
     mediaChangeToken: 0,
