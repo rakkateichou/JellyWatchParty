@@ -135,13 +135,25 @@
     state.invitePromise = null;
   };
 
+  const isCompactInviteUrl = value => {
+    if (!value) return false;
+    try {
+      const fallbackOrigin = window.location?.origin || 'http://localhost';
+      const path = new URL(value, fallbackOrigin).pathname;
+      return /\/j\/[^/]+\/?$/.test(path);
+    } catch (err) {
+      return false;
+    }
+  };
+
   const prepareInviteLink = () => {
     const itemId = state.roomMediaId || utils.getCurrentItemId();
     const roomId = state.roomId;
     if (!itemId || !roomId) {
       return Promise.reject(new Error('Could not identify this room or title.'));
     }
-    if (state.inviteRoomId === roomId && state.inviteBaseUrl) {
+    if (state.inviteRoomId === roomId && state.inviteBaseUrl
+        && (!state.isHost || isCompactInviteUrl(state.inviteBaseUrl))) {
       return Promise.resolve(state.inviteBaseUrl);
     }
     if (state.inviteRoomId === roomId && state.invitePromise) {
@@ -186,7 +198,13 @@
           'Content-Type': 'application/json',
           'X-Emby-Token': accessToken
         },
-        body: JSON.stringify({ itemId: shareItemId, expiryHours: 6, oneUse: false })
+        body: JSON.stringify({
+          itemId: shareItemId,
+          expiryHours: 6,
+          oneUse: false,
+          partyId: roomId,
+          mediaId: itemId
+        })
       });
       if (!response.ok) {
         const body = await response.text();
@@ -220,9 +238,9 @@
   };
 
   const createInviteLink = async (button) => {
-    // Creation starts as soon as the room_state arrives. A click normally only
-    // decorates the prepared ShareLinks URL with the current episode and copies
-    // it; if the request is still in flight, the same promise is reused.
+    // Creation starts as soon as the room_state arrives. The ShareLinks server
+    // stores the room and media routing behind its short code, so a click only
+    // copies the already-prepared URL.
     const itemId = state.roomMediaId || utils.getCurrentItemId();
     const roomId = state.roomId;
     if (!itemId || !roomId) {
@@ -235,13 +253,11 @@
     button.textContent = state.invitePromise ? 'Finishing link…' : 'Copying…';
     try {
       const rawUrl = await prepareInviteLink();
-      const invite = new URL(rawUrl, window.location.origin);
-      invite.searchParams.set('party', roomId);
-      invite.searchParams.set('media', itemId);
-      const copied = await copyText(invite.toString());
+      const invite = new URL(rawUrl, window.location.origin).toString();
+      const copied = await copyText(invite);
       ui.showToast(copied
         ? 'Link copied'
-        : `Invite ready: ${invite.toString()}`);
+        : `Invite ready: ${invite}`);
     } catch (err) {
       console.error('[JellyWatchParty] Could not create guest invite:', err);
       ui.showToast(state.isHost
