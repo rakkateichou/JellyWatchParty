@@ -18,12 +18,14 @@
     if (mediaId) state.roomMediaId = mediaId;
     const position = video.currentTime;
     const sampleServerTs = utils.getServerNow();
-    actions.send('state_update', {
+    const payload = {
       position,
       play_state: video.paused ? 'paused' : 'playing',
       media_id: mediaId,
       sample_server_ts: sampleServerTs
-    });
+    };
+    playback.addTrackSnapshot?.(payload);
+    actions.send('state_update', payload);
   };
 
   const onHostEvent = (action, video) => {
@@ -52,20 +54,24 @@
     utils.log('HOST', { action, pos: position, paused: video.paused });
     const mediaId = utils.getCurrentItemId();
     if (mediaId) state.roomMediaId = mediaId;
-    actions.send('player_event', {
+    const payload = {
       action,
       position,
       play_state: video.paused ? 'paused' : 'playing',
       media_id: mediaId,
       sample_server_ts: sampleServerTs
-    });
+    };
+    playback.addTrackSnapshot?.(payload);
+    actions.send('player_event', payload);
     if (action === 'play' || action === 'pause' || action === 'seek') {
-      actions.send('state_update', {
+      const statePayload = {
         position,
         play_state: video.paused ? 'paused' : 'playing',
         media_id: mediaId,
         sample_server_ts: sampleServerTs
-      });
+      };
+      playback.addTrackSnapshot?.(statePayload);
+      actions.send('state_update', statePayload);
       state.lastStateSentAt = utils.nowMs();
     }
   };

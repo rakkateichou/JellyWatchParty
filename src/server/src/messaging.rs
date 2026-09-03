@@ -163,6 +163,8 @@ mod tests {
     #[test]
     fn room_state_payload_includes_chat_history() {
         let mut room = test_helpers::create_room("r1", "host1");
+        room.state.audio_stream_index = Some(2);
+        room.state.subtitle_stream_index = Some(-1);
         room.chat_history.push_back(crate::types::ChatHistoryEntry {
             client_id: "host1".to_string(),
             username: "Host".to_string(),
@@ -180,6 +182,8 @@ mod tests {
         let history = payload.get("chat_history").unwrap().as_array().unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].get("text").unwrap(), "hi");
+        assert_eq!(payload["state"]["audio_stream_index"], 2);
+        assert_eq!(payload["state"]["subtitle_stream_index"], -1);
     }
 
     #[test]
@@ -214,7 +218,6 @@ mod tests {
                 name: "Room 1".to_string(),
                 host_id: "host1".to_string(),
                 owner_user_id: "user1".to_string(),
-                owner_name: "Host 1".to_string(),
                 media_id: None,
                 clients: vec!["a".to_string(), "b".to_string()],
                 ready_clients: HashSet::new(),
@@ -222,6 +225,8 @@ mod tests {
                 state: PlaybackState {
                     position: 0.0,
                     play_state: "paused".to_string(),
+                    audio_stream_index: None,
+                    subtitle_stream_index: None,
                 },
                 last_state_ts: 0,
                 last_command_ts: 0,
@@ -238,7 +243,6 @@ mod tests {
                 name: "Room 2".to_string(),
                 host_id: "host2".to_string(),
                 owner_user_id: "user2".to_string(),
-                owner_name: "Host 2".to_string(),
                 media_id: Some("abc".to_string()),
                 clients: vec!["c".to_string()],
                 ready_clients: HashSet::new(),
@@ -246,6 +250,8 @@ mod tests {
                 state: PlaybackState {
                     position: 10.0,
                     play_state: "playing".to_string(),
+                    audio_stream_index: None,
+                    subtitle_stream_index: None,
                 },
                 last_state_ts: 0,
                 last_command_ts: 0,

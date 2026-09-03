@@ -49,11 +49,13 @@
       media_id: mediaId,
       user_name: userName
     };
+    JWP.playback?.addTrackSnapshot?.(payload);
     if (password) payload.password = password;
     send('create_room', payload);
   };
 
   const joinRoom = (id, password = '') => {
+    JWP.playback?.resetInitialTrackSync?.();
     state.roomId = id;
     const userName = state.chatNickname
       || state.userName
@@ -82,6 +84,7 @@
     state.syncStatus = 'synced';
     state.pendingPlayUntil = 0;
     state.currentDrift = 0;
+    JWP.playback?.resetInitialTrackSync?.();
     if (state.pendingActionTimer) {
       clearTimeout(state.pendingActionTimer);
       state.pendingActionTimer = null;

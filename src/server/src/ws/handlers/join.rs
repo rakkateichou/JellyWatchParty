@@ -327,7 +327,6 @@ mod tests {
         {
             let mut room = test_helpers::create_room("room-1", "old-owner-client");
             room.owner_user_id = "owner-user".to_string();
-            room.owner_name = "Original Owner".to_string();
             room.host_id = "guest-client".to_string();
             room.clients = vec!["guest-client".to_string()];
             rooms.write().await.insert("room-1".to_string(), room);
@@ -367,7 +366,6 @@ mod tests {
         {
             let mut room = test_helpers::create_room("room-1", "old-owner-client");
             room.owner_user_id = "owner-user".to_string();
-            room.owner_name = "Original Owner".to_string();
             room.clients.clear();
             room.ready_clients.clear();
             room.dormant_since = Some(now_ms());

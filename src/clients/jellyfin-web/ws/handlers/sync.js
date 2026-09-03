@@ -74,6 +74,11 @@
     state.lastSyncPlayState = playbackState.play_state || 'paused';
   };
 
+  const applyInitialTracks = (payload, mediaId) => {
+    if (!JWP.playback?.applyInitialTracks) return Promise.resolve(false);
+    return Promise.resolve(JWP.playback.applyInitialTracks(payload, mediaId));
+  };
+
   const switchToMedia = (msg) => {
     if (state.isHost || !msg.payload?.media_id) return false;
     const mediaId = msg.payload.media_id;
@@ -92,6 +97,8 @@
     if (JWP.playback?.ensurePlayback) JWP.playback.ensurePlayback(mediaId);
 
     let attempts = 0;
+    let tracksSettled = false;
+    let tracksPending = false;
     const settle = () => {
       if (changeToken !== state.mediaChangeToken || !state.inRoom) return;
       attempts += 1;
@@ -99,6 +106,17 @@
       if (utils.getCurrentItemId() !== mediaId || !video || video.readyState < 2) {
         if (attempts < 100) setTimeout(settle, 150);
         else ui.showToast('Open the next episode to continue the watch party.');
+        return;
+      }
+
+      if (!tracksSettled) {
+        if (tracksPending) return;
+        tracksPending = true;
+        applyInitialTracks(msg.payload, mediaId).finally(() => {
+          tracksPending = false;
+          tracksSettled = true;
+          setTimeout(settle, 50);
+        });
         return;
       }
 
@@ -163,6 +181,12 @@
     }
     if (!state.isHost && msg.payload?.media_id) {
       if (switchToMedia(msg)) return;
+      if (JWP.playback?.applyInitialTracks) {
+        applyInitialTracks(msg.payload, msg.payload.media_id).finally(() => {
+          syncToRoom(msg, utils.getVideo() || video);
+        });
+        return;
+      }
     }
     syncToRoom(msg, video);
   };
@@ -170,6 +194,9 @@
   h.handleStateUpdate = (msg, video) => {
     if (state.isHost) return;
     if (msg.payload?.media_id && switchToMedia(msg)) return;
+    if (msg.payload?.media_id) {
+      applyInitialTracks(msg.payload, msg.payload.media_id);
+    }
     if (!video) return;
     if (msg.payload) {
       state.lastSyncPlayState = msg.payload.play_state || state.lastSyncPlayState;

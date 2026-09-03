@@ -40,7 +40,6 @@ pub fn create_room(room_id: &str, host_id: &str) -> Room {
         name: format!("{}'s room", host_id),
         host_id: host_id.to_string(),
         owner_user_id: host_id.to_string(),
-        owner_name: host_id.to_string(),
         media_id: None,
         clients: vec![host_id.to_string()],
         ready_clients: HashSet::from([host_id.to_string()]),
@@ -48,6 +47,8 @@ pub fn create_room(room_id: &str, host_id: &str) -> Room {
         state: PlaybackState {
             position: 0.0,
             play_state: "paused".to_string(),
+            audio_stream_index: None,
+            subtitle_stream_index: None,
         },
         last_state_ts: 0,
         last_command_ts: 0,

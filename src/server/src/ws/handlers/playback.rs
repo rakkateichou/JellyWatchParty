@@ -7,6 +7,36 @@ use crate::types::{ClientMessageType, Clients, IncomingMessage, PendingPlay, Roo
 use crate::utils::now_ms;
 use tokio::sync::mpsc;
 
+fn valid_audio_stream_index(payload: &serde_json::Value) -> Option<i64> {
+    payload
+        .get("audio_stream_index")
+        .and_then(|value| value.as_i64())
+        .filter(|index| (0..=10_000).contains(index))
+}
+
+fn valid_subtitle_stream_index(payload: &serde_json::Value) -> Option<i64> {
+    payload
+        .get("subtitle_stream_index")
+        .and_then(|value| value.as_i64())
+        .filter(|index| (-1..=10_000).contains(index))
+}
+
+fn track_selection_changed(room: &Room, payload: &serde_json::Value) -> bool {
+    valid_audio_stream_index(payload)
+        .is_some_and(|index| room.state.audio_stream_index != Some(index))
+        || valid_subtitle_stream_index(payload)
+            .is_some_and(|index| room.state.subtitle_stream_index != Some(index))
+}
+
+fn apply_track_selection(room: &mut Room, payload: &serde_json::Value) {
+    if let Some(index) = valid_audio_stream_index(payload) {
+        room.state.audio_stream_index = Some(index);
+    }
+    if let Some(index) = valid_subtitle_stream_index(payload) {
+        room.state.subtitle_stream_index = Some(index);
+    }
+}
+
 fn handle_play_not_ready(room: &mut Room, position: f64, current_ts: u64) -> Option<(String, u64)> {
     room.state.position = position;
     if let Some(pending) = room.pending_play.as_mut() {
@@ -37,6 +67,10 @@ fn absorb_during_pending(
         return false;
     }
 
+    if let Some(payload) = parsed.payload.as_ref() {
+        apply_track_selection(room, payload);
+    }
+
     let position = parsed
         .payload
         .as_ref()
@@ -60,6 +94,9 @@ fn should_process_state_update(room: &Room, payload: &serde_json::Value, current
         .map(|id| room.media_id.as_deref() != Some(id))
         .unwrap_or(false);
     if media_changed {
+        return true;
+    }
+    if track_selection_changed(room, payload) {
         return true;
     }
 
@@ -93,6 +130,7 @@ fn apply_state_changes(
     current_ts: u64,
 ) {
     if let Some(payload) = &parsed.payload {
+        apply_track_selection(room, payload);
         if let Some(media_id) = payload
             .get("media_id")
             .and_then(|v| v.as_str())
@@ -205,6 +243,8 @@ pub(in crate::ws) async fn handle_playback(
             // media id, leaving guests in an indefinitely loading player.
             room.media_id = incoming_media_id.clone();
             room.state.play_state = "paused".to_string();
+            room.state.audio_stream_index = None;
+            room.state.subtitle_stream_index = None;
             room.pending_play = None;
             room.ready_clients.clear();
             room.ready_clients.insert(client_id.to_string());
@@ -215,6 +255,9 @@ pub(in crate::ws) async fn handle_playback(
         }
 
         if is_player_event && action.as_deref() == Some("play") && !all_ready(room) {
+            if let Some(payload) = parsed.payload.as_ref() {
+                apply_track_selection(room, payload);
+            }
             let position = parsed
                 .payload
                 .as_ref()
@@ -235,6 +278,8 @@ pub(in crate::ws) async fn handle_playback(
                         "position": position,
                         "play_state": "paused",
                         "media_id": incoming_media_id,
+                        "audio_stream_index": room.state.audio_stream_index,
+                        "subtitle_stream_index": room.state.subtitle_stream_index,
                     })),
                     ts: parsed.ts,
                     server_ts: Some(current_ts),
@@ -359,6 +404,23 @@ mod tests {
     }
 
     #[test]
+    fn should_process_track_snapshot_change_even_during_cooldown() {
+        let mut room = test_helpers::create_room("r1", "host");
+        room.state.audio_stream_index = Some(0);
+        room.state.subtitle_stream_index = Some(-1);
+        let now = now_ms();
+        room.last_command_ts = now;
+        room.last_state_ts = now;
+        let payload = serde_json::json!({
+            "position": 0.0,
+            "play_state": "paused",
+            "audio_stream_index": 2,
+            "subtitle_stream_index": 4
+        });
+        assert!(should_process_state_update(&room, &payload, now + 100));
+    }
+
+    #[test]
     fn absorb_during_pending_state_update() {
         let mut room = test_helpers::create_room("r1", "host");
         room.pending_play = Some(PendingPlay {
@@ -445,7 +507,9 @@ mod tests {
             payload: Some(serde_json::json!({
                 "position": 42.0,
                 "play_state": "playing",
-                "media_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                "media_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "audio_stream_index": 2,
+                "subtitle_stream_index": -1
             })),
             ts: 0,
             server_ts: None,
@@ -459,6 +523,8 @@ mod tests {
             Some("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
         );
         assert_eq!(room.last_state_ts, now);
+        assert_eq!(room.state.audio_stream_index, Some(2));
+        assert_eq!(room.state.subtitle_stream_index, Some(-1));
     }
 
     #[test]

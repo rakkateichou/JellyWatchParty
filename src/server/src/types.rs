@@ -28,8 +28,6 @@ pub struct Room {
     /// survives browser reconnects and temporary host promotion.
     #[serde(skip)]
     pub owner_user_id: String,
-    #[serde(skip)]
-    pub owner_name: String,
     pub media_id: Option<String>,
     pub clients: Vec<String>,
     pub ready_clients: HashSet<String>,
@@ -69,6 +67,8 @@ pub struct ChatHistoryEntry {
 pub struct PlaybackState {
     pub position: f64,
     pub play_state: String,
+    pub audio_stream_index: Option<i64>,
+    pub subtitle_stream_index: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -220,9 +220,12 @@ mod tests {
         let state = PlaybackState {
             position: 123.45,
             play_state: "playing".to_string(),
+            audio_stream_index: Some(1),
+            subtitle_stream_index: Some(-1),
         };
         let json = serde_json::to_string(&state).unwrap();
         assert!(json.contains("123.45"));
         assert!(json.contains("playing"));
+        assert!(json.contains("audio_stream_index"));
     }
 }

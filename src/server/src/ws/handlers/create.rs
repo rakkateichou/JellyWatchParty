@@ -53,6 +53,14 @@ fn build_room(
         .filter(|pw| !pw.is_empty())
         .map(hash_password);
     let room_name = format!("{}'s room", host_name);
+    let audio_stream_index = payload
+        .and_then(|p| p.get("audio_stream_index"))
+        .and_then(|v| v.as_i64())
+        .filter(|index| (0..=10_000).contains(index));
+    let subtitle_stream_index = payload
+        .and_then(|p| p.get("subtitle_stream_index"))
+        .and_then(|v| v.as_i64())
+        .filter(|index| (-1..=10_000).contains(index));
 
     info!(
         "Creating room '{}' ({}) for {}",
@@ -64,7 +72,6 @@ fn build_room(
         name: room_name,
         host_id: client_id.to_string(),
         owner_user_id: owner_user_id.to_string(),
-        owner_name: host_name.to_string(),
         media_id,
         clients: vec![client_id.to_string()],
         ready_clients: HashSet::from([client_id.to_string()]),
@@ -72,6 +79,8 @@ fn build_room(
         state: PlaybackState {
             position: start_pos,
             play_state: "paused".to_string(),
+            audio_stream_index,
+            subtitle_stream_index,
         },
         last_state_ts: now_ms(),
         last_command_ts: 0,
@@ -193,6 +202,7 @@ mod tests {
         );
         assert!((room.state.position - 42.5).abs() < f64::EPSILON);
         assert_eq!(room.state.play_state, "paused");
+        assert_eq!(room.state.audio_stream_index, None);
         assert!(room.clients.contains(&"host-1".to_string()));
     }
 
@@ -266,6 +276,21 @@ mod tests {
     fn build_room_starts_with_empty_history() {
         let room = build_room("host-1", "user-1", "Bob", Some(&serde_json::json!({})));
         assert!(room.chat_history.is_empty());
+    }
+
+    #[test]
+    fn build_room_captures_initial_track_selection() {
+        let room = build_room(
+            "host-1",
+            "user-1",
+            "Bob",
+            Some(&serde_json::json!({
+                "audio_stream_index": 2,
+                "subtitle_stream_index": -1
+            })),
+        );
+        assert_eq!(room.state.audio_stream_index, Some(2));
+        assert_eq!(room.state.subtitle_stream_index, Some(-1));
     }
 
     #[test]
