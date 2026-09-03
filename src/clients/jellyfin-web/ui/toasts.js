@@ -35,7 +35,7 @@
     const container = getToastContainer();
     const toast = document.createElement('div');
     toast.className = 'jwp-toast';
-    toast.innerHTML = `<span class="jwp-toast-username">${utils.escapeHtml(username)}</span><span class="jwp-toast-text">${utils.escapeHtml(text)}</span>`;
+    toast.innerHTML = `<span class="jwp-toast-username" style="--jwp-user-color:${utils.userColor(username)}">${utils.escapeHtml(username)}</span><span class="jwp-toast-text">${utils.escapeHtml(text)}</span>`;
     toast.onclick = () => {
       toast.classList.add('jwp-toast-out');
       setTimeout(() => toast.remove(), 300);

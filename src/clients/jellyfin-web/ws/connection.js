@@ -88,6 +88,7 @@
       case 'state_update': h.handleStateUpdate(msg, video); break;
       case 'pong': h.handlePong(msg); break;
       case 'chat_message': if (JWP.chat && msg.payload) JWP.chat.receive(msg); break;
+      case 'cursor_update': if (JWP.cursor && msg.payload) JWP.cursor.receive(msg); break;
       case 'error': h.handleError(msg); break;
     }
   };

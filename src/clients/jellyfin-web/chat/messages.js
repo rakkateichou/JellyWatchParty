@@ -10,8 +10,8 @@
     const message = document.createElement('div');
     message.className = 'jwp-chat-system';
     message.textContent = JWP.state.isHost
-      ? 'Room ready — copy the link to invite someone.'
-      : 'You’re in — playback will follow the host.';
+      ? 'Room ready — copy the link to invite someone. Hold X over the video to point.'
+      : 'You’re in — playback will follow the host. Hold X over the video to point.';
     container.appendChild(message);
   };
 
@@ -27,9 +27,10 @@
     if (emptyMessage) emptyMessage.remove();
     const msgEl = document.createElement('div');
     msgEl.className = 'jwp-chat-message' + (message.isOwn ? ' jwp-chat-own' : '');
+    const identityColor = utils.userColor(message.username);
     msgEl.innerHTML = `
       <div class="jwp-chat-meta">
-        <span class="jwp-chat-username">${utils.escapeHtml(message.username)}</span>
+        <span class="jwp-chat-username" style="--jwp-user-color:${identityColor}">${utils.escapeHtml(message.username)}</span>
         <span class="jwp-chat-time">${formatTime(message.timestamp)}</span>
       </div>
       <div class="jwp-chat-text">${utils.escapeHtml(message.text)}</div>

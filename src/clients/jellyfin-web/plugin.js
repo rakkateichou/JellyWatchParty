@@ -69,6 +69,7 @@
       loadScript('chat/input.js'),
     ]);
     await loadScript('ws/send.js');
+    await loadScript('presence/cursor.js');
     await loadScript('ws/auth.js');
     await Promise.all([
       loadScript('ws/handlers/room.js'),

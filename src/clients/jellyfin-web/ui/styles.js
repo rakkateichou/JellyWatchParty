@@ -405,9 +405,9 @@
       text-align: center;
     }
     .jwp-chat-message { margin-bottom: .55rem; padding: .25rem 0; }
-    .jwp-chat-message.jwp-chat-own .jwp-chat-username { color: var(--jwp-success); }
+    .jwp-chat-message.jwp-chat-own .jwp-chat-username { font-weight: 800; }
     .jwp-chat-meta { margin-bottom: .12rem; display: flex; align-items: baseline; gap: .5rem; }
-    .jwp-chat-username { color: var(--jwp-accent); font-size: .7rem; font-weight: 700; }
+    .jwp-chat-username { color: var(--jwp-user-color, var(--jwp-accent)); font-size: .7rem; font-weight: 700; }
     .jwp-chat-time { color: var(--jwp-faint); font-size: .64rem; }
     .jwp-chat-text { color: var(--jwp-text); line-height: 1.4; word-wrap: break-word; }
     #jwp-chat-input-container { padding-top: .65rem; border-top: 1px solid var(--jwp-border); display: flex; gap: .5rem; }
@@ -443,7 +443,7 @@
     .jwp-toast.jwp-toast-out {
       animation: jwp-toast-out 0.3s ease-in forwards;
     }
-    .jwp-toast-username { margin-right: .4rem; color: #a9d2ed; font-weight: 700; }
+    .jwp-toast-username { margin-right: .4rem; color: var(--jwp-user-color, #a9d2ed); font-weight: 700; }
     .jwp-toast-text { color: #e6ebf2; word-wrap: break-word; }
     .jwp-toast-system {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -456,6 +456,53 @@
     }
     .jwp-toast-system.jwp-toast-out {
       animation: jwp-toast-system-out 0.3s ease-in forwards;
+    }
+    .jwp-shared-cursor {
+      --jwp-user-color: #ffffff;
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-2px, -2px);
+      transition: left .045s linear, top .045s linear, opacity .1s ease;
+      z-index: 25000;
+    }
+    .jwp-shared-cursor.visible { opacity: 1; }
+    .jwp-shared-cursor-arrow {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 20px;
+      height: 28px;
+      overflow: visible;
+      filter:
+        drop-shadow(0 0 2px #000)
+        drop-shadow(0 0 4px var(--jwp-user-color))
+        drop-shadow(0 0 9px var(--jwp-user-color));
+    }
+    .jwp-shared-cursor-arrow path {
+      fill: #fff;
+      stroke: #050505;
+      stroke-linejoin: round;
+      stroke-width: 1.5;
+    }
+    .jwp-shared-cursor-name {
+      position: absolute;
+      left: 17px;
+      top: 19px;
+      max-width: 10rem;
+      padding: .16rem .42rem;
+      border: 1px solid var(--jwp-user-color);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .78);
+      box-shadow: 0 0 10px var(--jwp-user-color);
+      color: var(--jwp-user-color);
+      font: 700 .65rem/1.25 system-ui, sans-serif;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 2px #000;
+      white-space: nowrap;
     }
     @keyframes jwp-toast-in {
       from { opacity: 0; transform: translateX(20px); }

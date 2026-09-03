@@ -78,6 +78,7 @@ pub enum ClientMessageType {
     Ping,
     ClientLog,
     ChatMessage,
+    CursorUpdate,
     #[serde(other)]
     Unknown,
 }
@@ -99,6 +100,7 @@ pub enum ServerMessageType {
     ClientLeft,
     RoomClosed,
     ChatMessage,
+    CursorUpdate,
     HostChanged,
 }
 

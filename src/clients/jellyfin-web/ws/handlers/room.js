@@ -45,6 +45,7 @@
     state.inRoom = false;
     state.roomId = '';
     state.chatSettingsOpen = false;
+    if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
     const reason = msg.payload?.reason || 'The room was closed';
     ui.showToast(reason);
     ui.render();

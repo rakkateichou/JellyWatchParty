@@ -21,6 +21,23 @@
     return str.replace(/[&<>"']/g, c => HTML_ENTITIES[c]);
   };
 
+  // Stable, high-contrast identity color shared by chat names and cursors.
+  // Hue uses hundredths of a degree while saturation/lightness use separate
+  // hash bits, making accidental collisions between different names rare.
+  const userColor = (name) => {
+    const normalized = String(name || 'Anonymous').trim() || 'Anonymous';
+    let hash = 2166136261;
+    for (let index = 0; index < normalized.length; index++) {
+      hash ^= normalized.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    hash >>>= 0;
+    const hue = ((hash % 36000) / 100).toFixed(2);
+    const saturation = 72 + ((hash >>> 16) % 17);
+    const lightness = 64 + ((hash >>> 24) % 9);
+    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+  };
+
   const getItemImageUrl = (itemId, imageTag) => {
     if (!itemId || !window.ApiClient) return '';
     const serverUrl = window.ApiClient._serverAddress || window.ApiClient.serverAddress?.() || '';
@@ -36,5 +53,5 @@
     return hash.includes('home');
   };
 
-  Object.assign(utils, { shouldSend, suppress, escapeHtml, getItemImageUrl, isHomeView });
+  Object.assign(utils, { shouldSend, suppress, escapeHtml, userColor, getItemImageUrl, isHomeView });
 })();

@@ -62,6 +62,7 @@
     if (state.inRoom && JWP.actions && JWP.actions.leaveRoom) {
       JWP.actions.leaveRoom();
     }
+    if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
     if (JWP.playback && JWP.playback.cleanupVideoListeners) {
       JWP.playback.cleanupVideoListeners();
     }
@@ -143,6 +144,7 @@
     clearAllIntervals();
     ui.injectStyles();
     createPanel();
+    if (JWP.cursor && JWP.cursor.bind) JWP.cursor.bind();
     if (JWP.actions && JWP.actions.connect) {
       console.log('[JellyWatchParty] Initiating WebSocket connection...');
       JWP.actions.connect();

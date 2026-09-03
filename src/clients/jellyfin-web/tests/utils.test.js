@@ -38,3 +38,16 @@ describe('suppress / shouldSend', () => {
     assert.equal(shouldSend(), true);
   });
 });
+
+describe('userColor', () => {
+  const { userColor } = JWP.utils;
+
+  it('keeps the same nickname color across renders', () => {
+    assert.equal(userColor('Movie Fan'), userColor('Movie Fan'));
+    assert.match(userColor('Movie Fan'), /^hsl\([\d.]+, \d+%, \d+%\)$/);
+  });
+
+  it('gives different nicknames different identity colors', () => {
+    assert.notEqual(userColor('Movie Fan'), userColor('Guest'));
+  });
+});

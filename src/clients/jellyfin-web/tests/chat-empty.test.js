@@ -63,5 +63,6 @@ describe('empty chat system message', () => {
 
     assert.equal(container.children.length, 1);
     assert.match(container.children[0].className, /jwp-chat-message/);
+    assert.match(container.children[0].innerHTML, /--jwp-user-color:hsl\(/);
   });
 });

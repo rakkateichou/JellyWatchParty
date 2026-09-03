@@ -44,6 +44,7 @@
   };
 
   const leaveRoom = () => {
+    if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
     send('leave_room');
     state.inRoom = false;
     state.roomId = '';
