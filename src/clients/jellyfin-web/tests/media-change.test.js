@@ -22,6 +22,8 @@ describe('room episode transitions', () => {
     JWP.state.inRoom = true;
     JWP.state.isHost = false;
     JWP.state.roomMediaId = oldMediaId;
+    JWP.state.roomJoinPending = false;
+    JWP.state.roomJoinActive = false;
     JWP.state.readyRoomId = 'room-1';
     JWP.state.mediaChangeToken = 0;
     JWP.utils.getCurrentItemId = () => oldMediaId;
@@ -30,6 +32,8 @@ describe('room episode transitions', () => {
     JWP.utils.startSyncing = () => {};
     JWP.utils.log = () => {};
     JWP.playback.isVideoPage = () => true;
+    JWP.app = {};
+    globalThis.document.getElementById = () => null;
     JWP.ui.prepareInviteLink = undefined;
     JWP.ui.resetPreparedInvite = undefined;
   });
@@ -60,6 +64,72 @@ describe('room episode transitions', () => {
     assert.equal(JWP.state.readyRoomId, '');
     assert.equal(JWP.state.lastSyncPosition, 12.5);
     assert.equal(JWP.state.lastSyncPlayState, 'playing');
+  });
+
+  it('moves a signed-in follower join into the host playback flow', () => {
+    let launchScreen = false;
+    let panelShown = false;
+    let openedMediaId = '';
+    JWP.state.clientId = 'guest-client';
+    JWP.state.roomJoinPending = true;
+    JWP.state.inRoom = false;
+    JWP.utils.getCurrentItemId = () => '';
+    JWP.playback.isVideoPage = () => false;
+    JWP.playback.ensurePlayback = (mediaId) => { openedMediaId = mediaId; };
+    JWP.app = { setJoinLaunchScreen: (visible) => { launchScreen = visible; } };
+    globalThis.document.getElementById = () => ({
+      classList: { remove: () => { panelShown = true; } }
+    });
+
+    JWP._wsHandlers.handleRoomState({
+      room: 'room-1',
+      client: 'guest-client',
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        name: "Host's room",
+        host_id: 'host-client',
+        media_id: newMediaId,
+        participant_count: 2,
+        state: { position: 15, play_state: 'paused' },
+        chat_history: []
+      }
+    }, null);
+
+    assert.equal(JWP.state.isHost, false);
+    assert.equal(JWP.state.roomJoinPending, false);
+    assert.equal(JWP.state.roomJoinActive, true);
+    assert.equal(launchScreen, true);
+    assert.equal(panelShown, true);
+    assert.equal(openedMediaId, newMediaId);
+  });
+
+  it('keeps a room host in the normal view when joining their room', () => {
+    let launchScreen = null;
+    let opened = false;
+    JWP.state.clientId = 'host-client';
+    JWP.state.roomJoinPending = true;
+    JWP.state.inRoom = false;
+    JWP.playback.ensurePlayback = () => { opened = true; };
+    JWP.app = { setJoinLaunchScreen: (visible) => { launchScreen = visible; } };
+
+    JWP._wsHandlers.handleRoomState({
+      room: 'room-1',
+      client: 'host-client',
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        name: "Host's room",
+        host_id: 'host-client',
+        media_id: oldMediaId,
+        participant_count: 1,
+        state: { position: 15, play_state: 'paused' },
+        chat_history: []
+      }
+    }, null);
+
+    assert.equal(JWP.state.isHost, true);
+    assert.equal(JWP.state.roomJoinActive, false);
+    assert.equal(launchScreen, false);
+    assert.equal(opened, false);
   });
 
   it('starts the room episode when that item is only open on its details page', () => {

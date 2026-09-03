@@ -40,6 +40,9 @@
       state.pendingActionTimer = null;
     }
     if (lc) lc.hadVideoElement = false;
+    state.roomJoinPending = false;
+    state.roomJoinActive = false;
+    JWP.app?.setJoinLaunchScreen?.(false);
     if (state.ws) {
       state.ws.close();
       state.ws = null;

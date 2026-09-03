@@ -37,6 +37,15 @@
       state.clientId = msg.client;
     }
     state.isHost = (msg.payload.host_id === state.clientId);
+    const joiningAsFollower = state.roomJoinPending && !state.isHost && !!msg.payload.media_id;
+    state.roomJoinPending = false;
+    if (joiningAsFollower) {
+      state.roomJoinActive = true;
+      JWP.app?.setJoinLaunchScreen?.(true);
+    } else if (state.isHost) {
+      state.roomJoinActive = false;
+      JWP.app?.setJoinLaunchScreen?.(false);
+    }
     if (JWP.chat && Array.isArray(msg.payload.chat_history)) {
       JWP.chat.hydrate(msg.payload.chat_history);
     }
@@ -55,9 +64,9 @@
       JWP.p2p.syncPeers(msg.payload.peer_ids || []);
     }
 
-    // Invitations open directly into the room and reveal the right-side chat;
-    // ordinary joins retain the user's existing panel preference.
-    if (state.inviteJoinActive || state.guestMode) {
+    // Accountless invitations and signed-in follower joins both reveal the
+    // right-side chat. A room creator/host retains their existing panel view.
+    if (state.inviteJoinActive || state.guestMode || state.roomJoinActive) {
       const panel = document.getElementById(JWP.constants.PANEL_ID);
       if (panel) panel.classList.remove('hide');
       if (state.inviteJoinActive) state.inviteJoinActive = false;

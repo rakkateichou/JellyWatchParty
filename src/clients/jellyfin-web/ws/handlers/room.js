@@ -64,6 +64,9 @@
     state.isHost = false;
     state.isRoomOwner = false;
     state.roomMediaId = '';
+    state.roomJoinPending = false;
+    state.roomJoinActive = false;
+    JWP.app?.setJoinLaunchScreen?.(false);
     state.chatSettingsOpen = false;
     state.participantCount = 0;
     state.lastParticipantCount = 0;
@@ -109,6 +112,9 @@
   h.handleError = (msg) => {
     const message = msg.payload?.message || 'Unknown error';
     console.error('[JellyWatchParty] Server error:', message);
+    state.roomJoinPending = false;
+    state.roomJoinActive = false;
+    JWP.app?.setJoinLaunchScreen?.(false);
     ui.showToast(message);
     if (msg.payload?.reason === 'wrong_password' && msg.room) {
       ui.promptJoinWithPassword(msg.room);

@@ -8,6 +8,7 @@
 
   let panelStopPropagation = null;
   let hadVideoElement = false;
+  let joinLaunchTimer = null;
 
   const getInviteRoomId = () => {
     const match = (window.location.hash || '').match(/[?&]jwpRoom=([0-9a-f-]{36})(?:&|$)/i);
@@ -17,8 +18,20 @@
       : '';
   };
 
-  const setInviteLaunchScreen = (visible) => {
+  const setJoinLaunchScreen = (visible) => {
+    if (joinLaunchTimer) {
+      clearTimeout(joinLaunchTimer);
+      joinLaunchTimer = null;
+    }
     document.documentElement?.classList?.toggle('jwp-invite-launching', !!visible);
+    if (visible) {
+      joinLaunchTimer = setTimeout(() => {
+        joinLaunchTimer = null;
+        state.roomJoinActive = false;
+        document.documentElement?.classList?.toggle('jwp-invite-launching', false);
+        ui.showToast?.('Tap Play to continue the watch party.');
+      }, 25000);
+    }
   };
 
   const hasActiveVideo = (video = utils.getVideo()) => {
@@ -32,11 +45,7 @@
     if (!roomId) return;
     state.pendingJoinRoomId = roomId;
     state.inviteJoinActive = true;
-    setInviteLaunchScreen(true);
-
-    // Never strand a guest behind the launch screen if Jellyfin cannot start
-    // playback automatically (for example, because a browser blocks autoplay).
-    setTimeout(() => setInviteLaunchScreen(false), 25000);
+    setJoinLaunchScreen(true);
 
     // Wait briefly for the room list, then start the exact media item the host
     // is playing. The public URL lands on a dedicated player route; on Jellyfin
@@ -48,6 +57,7 @@
       const room = state.rooms.find(candidate => candidate.id === roomId);
       if (room?.media_id && playback?.ensurePlayback) {
         clearInterval(timer);
+        state.roomMediaId = room.media_id;
         playback.ensurePlayback(room.media_id);
         return;
       }
@@ -57,7 +67,7 @@
         playButton.click();
       } else if (attempts >= 80) {
         clearInterval(timer);
-        setInviteLaunchScreen(false);
+        setJoinLaunchScreen(false);
         ui.showToast('Tap Play to join the watch party.');
       }
     }, 125);
@@ -74,7 +84,7 @@
   const onVideoPlayerExit = () => {
     console.log('[JellyWatchParty] Video player closed, cleaning up...');
     const panel = document.getElementById(JWP.constants.PANEL_ID);
-    if (panel && !JWP.guestLockdown?.isRestricted?.()) panel.classList.add('hide');
+    if (panel && !state.roomJoinActive && !JWP.guestLockdown?.isRestricted?.()) panel.classList.add('hide');
     if (ui.updateDockedPlayerLayout) ui.updateDockedPlayerLayout();
     // Leaving the video route is not the same as leaving the room. Keep the
     // membership and chat alive across episode transitions and navigation;
@@ -114,7 +124,13 @@
       }
       if (activeVideo) {
         hadVideoElement = true;
-        setInviteLaunchScreen(false);
+        const expectedMediaId = utils.normalizeItemId?.(state.roomMediaId) || '';
+        const activeMediaId = utils.normalizeItemId?.(utils.getCurrentItemId?.()) || '';
+        const joinedMediaReady = !state.roomJoinActive || !expectedMediaId || activeMediaId === expectedMediaId;
+        if (joinedMediaReady) {
+          state.roomJoinActive = false;
+          setJoinLaunchScreen(false);
+        }
         ui.injectOsdButton();
         playback.bindVideo();
         if (playback.patchTrackSwitching) playback.patchTrackSwitching();
@@ -187,9 +203,10 @@
     set hadVideoElement(v) { hadVideoElement = v; },
     clearAllIntervals,
     onVideoPlayerExit,
-    hasActiveVideo
+    hasActiveVideo,
+    setJoinLaunchScreen
   };
 
   JWP.app = JWP.app || {};
-  Object.assign(JWP.app, { init });
+  Object.assign(JWP.app, { init, setJoinLaunchScreen });
 })();

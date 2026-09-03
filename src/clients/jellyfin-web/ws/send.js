@@ -17,7 +17,7 @@
   };
 
   const send = (type, payload = {}, roomOverride = null) => {
-    if (!state.ws || state.ws.readyState !== 1) return;
+    if (!state.ws || state.ws.readyState !== 1) return false;
     const directPayload = p2pEligible(type, payload)
       ? { ...payload, _jwp_message_id: payload._jwp_message_id || messageId() }
       : payload;
@@ -35,6 +35,7 @@
       JWP.p2p.broadcast(message);
     }
     state.ws.send(JSON.stringify(message));
+    return true;
   };
 
   const createRoom = (password = '') => {
@@ -57,13 +58,17 @@
   const joinRoom = (id, password = '') => {
     JWP.playback?.resetInitialTrackSync?.();
     state.roomId = id;
+    // Invite links already launch playback before joining. A normal lobby/card
+    // join waits for room_state so we can distinguish the host from a follower
+    // and only move followers into the dedicated player layout.
+    state.roomJoinPending = !state.inviteJoinActive && !state.pendingJoinRoomId;
     const userName = state.chatNickname
       || state.userName
       || window.ApiClient?._currentUser?.Name
       || 'Anonymous';
     const payload = { user_name: userName };
     if (password) payload.password = password;
-    send('join_room', payload, id);
+    if (!send('join_room', payload, id)) state.roomJoinPending = false;
   };
 
   const leaveRoom = () => {
@@ -75,6 +80,9 @@
     state.roomHostId = '';
     state.isRoomOwner = false;
     state.roomMediaId = '';
+    state.roomJoinPending = false;
+    state.roomJoinActive = false;
+    JWP.app?.setJoinLaunchScreen?.(false);
     state.chatSettingsOpen = false;
     state.mediaChangeToken += 1;
     state.readyRoomId = '';
