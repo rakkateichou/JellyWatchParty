@@ -81,7 +81,12 @@ public class JellyWatchPartyController : ControllerBase
         }
 
         // Set cache headers
-        Response.Headers["Cache-Control"] = "public, max-age=3600";
+        // These modules are tiny and are updated independently of Jellyfin's
+        // own web bundle. Revalidate every load so a service worker or browser
+        // cannot keep an older watch-party UI after a plugin deployment.
+        Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        Response.Headers["Pragma"] = "no-cache";
+        Response.Headers["Expires"] = "0";
         Response.Headers["ETag"] = etag;
 
         return Content(content, "text/javascript");
@@ -118,7 +123,9 @@ public class JellyWatchPartyController : ControllerBase
                 return StatusCode(304);
             }
 
-            Response.Headers["Cache-Control"] = "public, max-age=3600";
+            Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
             Response.Headers["ETag"] = etag;
 
             return Content(content, "text/javascript");

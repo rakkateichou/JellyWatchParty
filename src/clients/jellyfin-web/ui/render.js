@@ -3,8 +3,119 @@
   const ui = JWP.ui = JWP.ui || {};
   const state = JWP.state;
   const utils = JWP.utils;
-  const { PANEL_ID, BTN_ID, DEFAULT_WS_URL, SYNC_HIDE_STYLE_ID } = JWP.constants;
+  const { PANEL_ID, BTN_ID, SYNC_HIDE_STYLE_ID } = JWP.constants;
   const GLOBAL_BTN_ID = 'jwp-global-btn';
+  const PLAYER_DOCK_CLASS = 'jwp-player-docked';
+
+  const updateDockedPlayerLayout = () => {
+    const root = document.documentElement;
+    if (!root?.classList) return;
+    const panel = document.getElementById(PANEL_ID);
+    const isDesktop = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(min-width: 800px)').matches
+      : (window.innerWidth || 1024) >= 800;
+    const isVideoPage = /^#\/video(?:[/?]|$)/i.test(window.location.hash || '');
+    const shouldDock = !!(
+      isDesktop
+      && state.inRoom
+      && isVideoPage
+      && utils.getVideo()
+      && panel
+      && !panel.classList.contains('hide')
+    );
+    root.classList.toggle(PLAYER_DOCK_CLASS, shouldDock);
+  };
+
+  const copyText = async (value) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch (err) {
+        // Fall through to the DOM copy path for non-secure/private contexts.
+      }
+    }
+    const input = document.createElement('textarea');
+    input.value = value;
+    input.readOnly = true;
+    input.style.position = 'fixed';
+    input.style.left = '-10000px';
+    document.body.appendChild(input);
+    input.select();
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch (err) {}
+    input.remove();
+    return copied;
+  };
+
+  const createInviteLink = async (button) => {
+    // The room's media id is the authoritative currently playing title. The
+    // generic page detector can still point at the series page while the video
+    // player is open, which made TV invitations land one level too high.
+    const itemId = state.roomMediaId || utils.getCurrentItemId();
+    const roomId = state.roomId;
+    const apiClient = window.ApiClient;
+    if (!itemId || !roomId || !apiClient) {
+      ui.showToast('Could not identify this room or title.');
+      return;
+    }
+
+    const oldHtml = button.innerHTML;
+    button.disabled = true;
+    button.textContent = 'Creating link…';
+    try {
+      const serverAddress = typeof apiClient.serverAddress === 'function'
+        ? apiClient.serverAddress()
+        : (apiClient._serverAddress || '');
+      const accessToken = typeof apiClient.accessToken === 'function'
+        ? apiClient.accessToken()
+        : '';
+      const userId = typeof apiClient.getCurrentUserId === 'function'
+        ? apiClient.getCurrentUserId()
+        : apiClient._currentUserId;
+      let shareItemId = itemId;
+      if (userId && typeof apiClient.getItem === 'function') {
+        const item = await apiClient.getItem(userId, itemId);
+        if (item?.Type === 'Series') {
+          shareItemId = item.Id;
+        } else if (item?.SeriesId) {
+          // Keep the whole series as the guest's permission scope so episode
+          // changes continue to work inside one room. The separate `media`
+          // parameter below controls only the initial landing page.
+          shareItemId = item.SeriesId;
+        }
+      }
+
+      const response = await fetch(`${serverAddress}/ShareLinks/Admin/Create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Emby-Token': accessToken
+        },
+        body: JSON.stringify({ itemId: shareItemId, expiryHours: 6, oneUse: false })
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(body || `HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      const rawUrl = data.ShareUrl || data.shareUrl;
+      if (!rawUrl) throw new Error('The server did not return an invite URL.');
+      const invite = new URL(rawUrl, window.location.origin);
+      invite.searchParams.set('party', roomId);
+      invite.searchParams.set('media', itemId);
+      const copied = await copyText(invite.toString());
+      ui.showToast(copied
+        ? 'Link copied'
+        : `Invite ready: ${invite.toString()}`);
+    } catch (err) {
+      console.error('[JellyWatchParty] Could not create guest invite:', err);
+      ui.showToast('Could not create the invite link. Check that ShareLinks is enabled.');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = oldHtml;
+    }
+  };
 
   // Jellyfin's built-in SyncPlay button is `.headerSyncButton` (also carries
   // `.syncButton`) — rendered in the app header and, during playback, in the
@@ -35,30 +146,30 @@
     if (!panel) return;
     panel.classList.toggle('hide');
     if (!panel.classList.contains('hide')) render(true);
+    updateDockedPlayerLayout();
   };
 
   const renderLobby = (panel) => {
     // The native-client host bridge is an opt-in admin feature: only surface
     // the "Host From Another Device" picker when an admin has enabled it.
     const bridgeSection = state.allowThirdPartyHost ? `
-          <div class="jwp-section" style="border-top: 1px solid #333; padding-top: 15px;">
+          <div class="jwp-section jwp-section-divider">
             <div class="jwp-label">Host From Another Device (e.g. Fladder)</div>
             <div id="jwp-bridge-active"></div>
             <div id="jwp-bridge-available"></div>
           </div>` : '';
     panel.innerHTML = `
-      <div class="jwp-header"><span>JellyWatchParty</span> <span id="jwp-ws-indicator"></span></div>
+      <div class="jwp-header"><span>JellyWatchParty</span></div>
       <div class="jwp-lobby-container">
           <div class="jwp-section">
             <div class="jwp-label">Available Rooms</div>
             <div id="jwp-room-list"></div>
           </div>
-          <div class="jwp-section" style="border-top: 1px solid #333; padding-top: 15px;">
+          <div class="jwp-section jwp-section-divider">
             <button class="jwp-btn" style="width:100%" id="jwp-btn-create">Create Room</button>
           </div>
           ${bridgeSection}
       </div>
-      <div class="jwp-footer" id="jwp-server-footer">Server: ${(state.wsUrl || DEFAULT_WS_URL).replace(/^wss?:\/\//, '').replace('/ws', '')}</div>
     `;
     const btn = panel.querySelector('#jwp-btn-create');
     if (btn) btn.onclick = async () => {
@@ -80,21 +191,22 @@
     // Attaching a supported client (e.g. Android TV) as a receiver of this
     // room is an opt-in admin feature: only surface the picker when enabled.
     const bridgeSection = state.allowSupportedReceiver ? `
-      <div class="jwp-section" style="border-top: 1px solid #333; padding-top: 12px; flex-shrink:0;">
+      <div class="jwp-section jwp-section-divider" style="flex-shrink:0;">
         <div class="jwp-label">Add a Device to This Room</div>
         <div id="jwp-bridge-active"></div>
         <div id="jwp-bridge-available"></div>
       </div>` : '';
     panel.innerHTML = `
       <div class="jwp-header">
-        <span style="color:#69f0ae">\u25CF</span>
+        <span style="color:var(--jwp-success)">\u25CF</span>
         <span style="flex-grow:1; margin-left:8px;">${utils.escapeHtml(state.roomName)}</span>
         <button class="jwp-btn danger" id="jwp-btn-leave">${state.isHost ? 'Close' : 'Leave'}</button>
       </div>
       <div class="jwp-section" style="flex-shrink:0;">
         <div class="jwp-label">Participants</div>
-        <div id="jwp-participants-list" style="font-size:13px;">Online: ${state.participantCount || 1}</div>
+        <div id="jwp-participants-list" class="jwp-participants-list">Online: ${state.participantCount || 1}</div>
         ${syncIndicator}
+        ${state.isHost ? '<button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy guest invite</button>' : ''}
       </div>
       <div id="jwp-chat-section">
         <div class="jwp-label">Chat <span id="jwp-chat-badge" class="jwp-chat-badge"></span></div>
@@ -105,13 +217,15 @@
         </div>
       </div>
       ${bridgeSection}
-      <div class="jwp-meta" style="font-size:10px; color:#666; display:flex; justify-content:space-between; flex-shrink:0; padding-top:8px;">
+      <div class="jwp-meta" style="display:flex; justify-content:space-between; flex-shrink:0; padding-top:8px;">
           <span>RTT: <span class="jwp-latency">-</span></span>
           <span>ID: ${state.clientId.split('-')[1] || '...'}</span>
       </div>
     `;
     const leaveBtn = panel.querySelector('#jwp-btn-leave');
     if (leaveBtn) leaveBtn.onclick = () => JWP.actions && JWP.actions.leaveRoom && JWP.actions.leaveRoom();
+    const inviteBtn = panel.querySelector('#jwp-btn-invite');
+    if (inviteBtn) inviteBtn.onclick = () => createInviteLink(inviteBtn);
     ui.updateBridgeListUI();
   };
 
@@ -149,6 +263,7 @@
       ui.updateRoomListUI();
       ui.updateBridgeListUI();
       ui.renderHomeWatchParties();
+      updateDockedPlayerLayout();
       return;
     }
     panel.dataset.inRoom = String(state.inRoom);
@@ -160,6 +275,7 @@
     }
     ui.updateStatusIndicator();
     ui.renderHomeWatchParties();
+    updateDockedPlayerLayout();
   };
 
   const injectOsdButton = () => {
@@ -197,5 +313,5 @@
     headerRight.prepend(btn);
   };
 
-  Object.assign(ui, { render, injectOsdButton, injectGlobalButton, applyNativeSyncButtonVisibility });
+  Object.assign(ui, { render, injectOsdButton, injectGlobalButton, applyNativeSyncButtonVisibility, updateDockedPlayerLayout });
 })();

@@ -48,7 +48,7 @@ fn build_room(client_id: &str, host_name: &str, payload: Option<&serde_json::Val
         .and_then(|v| v.as_str())
         .filter(|pw| !pw.is_empty())
         .map(hash_password);
-    let room_name = format!("Room de {}", host_name);
+    let room_name = format!("{}'s room", host_name);
 
     info!(
         "Creating room '{}' ({}) for {}",
@@ -165,7 +165,7 @@ mod tests {
             })),
         );
         assert_eq!(room.host_id, "host-1");
-        assert_eq!(room.name, "Room de Alice");
+        assert_eq!(room.name, "Alice's room");
         assert_eq!(
             room.media_id,
             Some("550e8400e29b41d4a716446655440000".to_string())

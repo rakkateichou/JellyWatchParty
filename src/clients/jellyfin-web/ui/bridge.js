@@ -28,7 +28,7 @@
     const el = document.getElementById(containerId);
     if (!el) return;
     if (!items || !items.length) {
-      el.innerHTML = `<div style="font-size:12px; color:#555; padding:8px; text-align:center;">${emptyText}</div>`;
+      el.innerHTML = `<div class="jwp-empty-state">${emptyText}</div>`;
       return;
     }
     el.innerHTML = '';

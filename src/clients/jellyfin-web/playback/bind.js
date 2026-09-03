@@ -14,7 +14,13 @@
     const now = utils.nowMs();
     if (now - state.lastStateSentAt < STATE_UPDATE_MS) return;
     state.lastStateSentAt = now;
-    actions.send('state_update', { position: video.currentTime, play_state: video.paused ? 'paused' : 'playing' });
+    const mediaId = utils.getCurrentItemId();
+    if (mediaId) state.roomMediaId = mediaId;
+    actions.send('state_update', {
+      position: video.currentTime,
+      play_state: video.paused ? 'paused' : 'playing',
+      media_id: mediaId
+    });
   };
 
   const onHostEvent = (action, video) => {
@@ -39,9 +45,20 @@
       state.lastSentPosition = video.currentTime;
     }
     utils.log('HOST', { action, pos: video.currentTime, paused: video.paused });
-    actions.send('player_event', { action, position: video.currentTime, play_state: video.paused ? 'paused' : 'playing' });
+    const mediaId = utils.getCurrentItemId();
+    if (mediaId) state.roomMediaId = mediaId;
+    actions.send('player_event', {
+      action,
+      position: video.currentTime,
+      play_state: video.paused ? 'paused' : 'playing',
+      media_id: mediaId
+    });
     if (action === 'play' || action === 'pause' || action === 'seek') {
-      actions.send('state_update', { position: video.currentTime, play_state: video.paused ? 'paused' : 'playing' });
+      actions.send('state_update', {
+        position: video.currentTime,
+        play_state: video.paused ? 'paused' : 'playing',
+        media_id: mediaId
+      });
       state.lastStateSentAt = utils.nowMs();
     }
   };

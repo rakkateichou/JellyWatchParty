@@ -9,6 +9,43 @@
   let panelStopPropagation = null;
   let hadVideoElement = false;
 
+  const getInviteRoomId = () => {
+    const match = (window.location.hash || '').match(/[?&]jwpRoom=([0-9a-f-]{36})(?:&|$)/i);
+    if (!match) return '';
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(match[1])
+      ? match[1].toLowerCase()
+      : '';
+  };
+
+  const beginInviteJoin = () => {
+    const roomId = getInviteRoomId();
+    if (!roomId) return;
+    state.pendingJoinRoomId = roomId;
+    state.inviteJoinActive = true;
+
+    // Wait briefly for the room list, then start the exact media item the host
+    // is playing. The invitation already lands on that episode's detail page,
+    // but opening a detail page and starting its video are separate operations.
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      const room = state.rooms.find(candidate => candidate.id === roomId);
+      if (room?.media_id && playback?.ensurePlayback) {
+        clearInterval(timer);
+        playback.ensurePlayback(room.media_id);
+        return;
+      }
+      const playButton = document.querySelector('.mainDetailButtons .btnPlay, .mainDetailButtons button[data-action="resume"], .mainDetailButtons button[data-action="play"]');
+      if (playButton && (room || attempts >= 24)) {
+        clearInterval(timer);
+        playButton.click();
+      } else if (attempts >= 80) {
+        clearInterval(timer);
+        ui.showToast('Tap Play to join the watch party.');
+      }
+    }, 125);
+  };
+
   const clearAllIntervals = () => {
     if (state.intervals.ui) { clearInterval(state.intervals.ui); state.intervals.ui = null; }
     if (state.intervals.ping) { clearInterval(state.intervals.ping); state.intervals.ping = null; }
@@ -21,6 +58,7 @@
     console.log('[JellyWatchParty] Video player closed, cleaning up...');
     const panel = document.getElementById(JWP.constants.PANEL_ID);
     if (panel) panel.classList.add('hide');
+    if (ui.updateDockedPlayerLayout) ui.updateDockedPlayerLayout();
     if (state.inRoom && JWP.actions && JWP.actions.leaveRoom) {
       JWP.actions.leaveRoom();
     }
@@ -81,6 +119,7 @@
       // Jellyfin is an SPA; header DOM is frequently replaced during navigation.
       // Keep a global launcher button present even when no video OSD exists.
       ui.injectGlobalButton();
+      if (ui.updateDockedPlayerLayout) ui.updateDockedPlayerLayout();
     }, UI_CHECK_MS);
     state.intervals.home = setInterval(() => {
       if (document.visibilityState === 'visible' && utils.isHomeView()) {
@@ -110,6 +149,7 @@
     } else {
       console.error('[JellyWatchParty] JWP.actions.connect not available!');
     }
+    beginInviteJoin();
     startIntervals();
   };
 

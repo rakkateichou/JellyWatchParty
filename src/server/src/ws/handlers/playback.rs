@@ -3,7 +3,7 @@ use super::super::constants::{
     POSITION_JITTER_THRESHOLD,
 };
 use super::super::pending_play::{all_ready, schedule_pending_play};
-use super::super::validation::{is_valid_play_state, is_valid_position};
+use super::super::validation::{is_valid_media_id, is_valid_play_state, is_valid_position};
 use crate::types::{ClientMessageType, Clients, IncomingMessage, PendingPlay, Room, Rooms};
 use crate::utils::now_ms;
 use tokio::sync::mpsc;
@@ -54,6 +54,16 @@ fn absorb_during_pending(
 }
 
 fn should_process_state_update(room: &Room, payload: &serde_json::Value, current_ts: u64) -> bool {
+    let media_changed = payload
+        .get("media_id")
+        .and_then(|v| v.as_str())
+        .filter(|id| is_valid_media_id(id))
+        .map(|id| room.media_id.as_deref() != Some(id))
+        .unwrap_or(false);
+    if media_changed {
+        return true;
+    }
+
     let new_pos = payload
         .get("position")
         .and_then(|v| v.as_f64())
@@ -84,6 +94,13 @@ fn apply_state_changes(
     current_ts: u64,
 ) {
     if let Some(payload) = &parsed.payload {
+        if let Some(media_id) = payload
+            .get("media_id")
+            .and_then(|v| v.as_str())
+            .filter(|id| is_valid_media_id(id))
+        {
+            room.media_id = Some(media_id.to_string());
+        }
         if let Some(pos) = payload.get("position").and_then(|v| v.as_f64()) {
             if is_valid_position(pos) {
                 room.state.position = pos;
@@ -158,6 +175,24 @@ pub(in crate::ws) async fn handle_playback(
         } else {
             None
         };
+
+        // A room survives episode boundaries. When the host's Jellyfin player
+        // advances to another episode, the media id travels with the normal
+        // playback update. Store it for current followers and late joiners,
+        // and require followers to report ready for the new item again.
+        let media_changed = parsed
+            .payload
+            .as_ref()
+            .and_then(|p| p.get("media_id"))
+            .and_then(|v| v.as_str())
+            .filter(|id| is_valid_media_id(id))
+            .map(|id| room.media_id.as_deref() != Some(id))
+            .unwrap_or(false);
+        if media_changed {
+            room.pending_play = None;
+            room.ready_clients.clear();
+            room.ready_clients.insert(client_id.to_string());
+        }
 
         if is_player_event && action.as_deref() == Some("pause") {
             room.pending_play = None;
@@ -263,6 +298,21 @@ mod tests {
     }
 
     #[test]
+    fn should_process_state_update_media_change_even_during_cooldown() {
+        let mut room = test_helpers::create_room("r1", "host");
+        room.media_id = Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string());
+        let now = now_ms();
+        room.last_command_ts = now;
+        room.last_state_ts = now;
+        let payload = serde_json::json!({
+            "position": 0.0,
+            "play_state": "playing",
+            "media_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        });
+        assert!(should_process_state_update(&room, &payload, now + 100));
+    }
+
+    #[test]
     fn absorb_during_pending_state_update() {
         let mut room = test_helpers::create_room("r1", "host");
         room.pending_play = Some(PendingPlay {
@@ -346,7 +396,11 @@ mod tests {
             msg_type: ClientMessageType::StateUpdate,
             room: Some("r1".to_string()),
             client: None,
-            payload: Some(serde_json::json!({ "position": 42.0, "play_state": "playing" })),
+            payload: Some(serde_json::json!({
+                "position": 42.0,
+                "play_state": "playing",
+                "media_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            })),
             ts: 0,
             server_ts: None,
         };
@@ -354,6 +408,10 @@ mod tests {
         apply_state_changes(&mut room, &mut parsed, None, now);
         assert!((room.state.position - 42.0).abs() < f64::EPSILON);
         assert_eq!(room.state.play_state, "playing");
+        assert_eq!(
+            room.media_id.as_deref(),
+            Some("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+        );
         assert_eq!(room.last_state_ts, now);
     }
 

@@ -45,6 +45,8 @@
     send('leave_room');
     state.inRoom = false;
     state.roomId = '';
+    state.roomMediaId = '';
+    state.mediaChangeToken += 1;
     state.readyRoomId = '';
     state.isInitialSync = false;
     state.initialSyncUntil = 0;

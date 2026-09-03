@@ -33,7 +33,7 @@
     const roomList = document.getElementById('jwp-room-list');
     if (!roomList) return;
     if (state.rooms.length === 0) {
-      roomList.innerHTML = '<div style="font-size:12px; color:#555; padding: 10px; text-align:center;">No active rooms.</div>';
+      roomList.innerHTML = '<div class="jwp-empty-state">No active rooms.</div>';
       return;
     }
     roomList.innerHTML = '';
@@ -43,7 +43,7 @@
       const lockIcon = room.has_password
         ? '<span class="material-icons" style="font-size:12px;vertical-align:middle;" aria-hidden="true">lock</span> '
         : '';
-      item.innerHTML = `<div><div style="font-weight:bold">${lockIcon}${utils.escapeHtml(room.name)}</div><div style="font-size:10px; color:#888">${room.count} users</div></div><button class="jwp-btn secondary">Join</button>`;
+      item.innerHTML = `<div><div class="jwp-room-name">${lockIcon}${utils.escapeHtml(room.name)}</div><div class="jwp-room-meta">${room.count} users</div></div><button class="jwp-btn secondary">Join</button>`;
       item.onclick = () => joinRoomFromList(room);
       roomList.appendChild(item);
     });

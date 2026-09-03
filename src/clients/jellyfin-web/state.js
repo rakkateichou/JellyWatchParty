@@ -110,7 +110,10 @@
     lastParticipantCount: 0,
     joiningItemId: '',
     pendingJoinRoomId: '',  // Room to join after navigating to video player
+    inviteJoinActive: false, // True while handling an accountless ShareLinks invitation
     roomName: '',
+    roomMediaId: '',
+    mediaChangeToken: 0,
     participantCount: 0,
     lastSyncServerTs: 0,
     lastSyncPosition: 0,

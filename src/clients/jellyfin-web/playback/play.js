@@ -63,7 +63,12 @@
   const ensurePlayback = (itemId, attempt = 0) => {
     const state = JWP.state;
     if (!itemId || !window.ApiClient) return;
-    if (utils.getCurrentItemId() === itemId) return;
+    // The same item id can mean either "already playing" or merely "open on
+    // its details page". Jellyfin's SPA can retain a hidden <video> element
+    // on details pages, so the player route is the authoritative distinction.
+    // Guest invitation links need this path to start the episode they landed on.
+    const isVideoPage = /^#\/video(?:[/?]|$)/i.test(window.location.hash || '');
+    if (utils.getCurrentItemId() === itemId && isVideoPage) return;
     if (state.joiningItemId === itemId) return;
     const userId = ApiClient.getCurrentUserId?.() || ApiClient._currentUserId;
     if (!userId) {

@@ -10,6 +10,7 @@
     state.inRoom = true;
     state.roomId = msg.room;
     state.roomName = msg.payload.name;
+    state.roomMediaId = msg.payload.media_id || state.roomMediaId || '';
     state.participantCount = msg.payload.participant_count;
     if (!state.clientId && msg.client) {
       state.clientId = msg.client;
@@ -29,6 +30,66 @@
         : 0;
       state.lastSyncPlayState = msg.payload.state.play_state || 'paused';
     }
+
+    // Invitations open directly into the room and reveal the right-side chat;
+    // ordinary joins retain the user's existing panel preference.
+    if (state.inviteJoinActive) {
+      const panel = document.getElementById(JWP.constants.PANEL_ID);
+      if (panel) panel.classList.remove('hide');
+      state.inviteJoinActive = false;
+    }
+  };
+
+  const rememberRemoteState = (msg) => {
+    const payload = msg.payload || {};
+    const playbackState = payload.state || payload;
+    state.lastSyncServerTs = msg.server_ts || utils.getServerNow();
+    state.lastSyncPosition = typeof playbackState.position === 'number'
+      ? playbackState.position
+      : 0;
+    state.lastSyncPlayState = playbackState.play_state || 'paused';
+  };
+
+  const switchToMedia = (msg) => {
+    if (state.isHost || !msg.payload?.media_id) return false;
+    const mediaId = msg.payload.media_id;
+    if (!/^[a-f0-9]{32}$/i.test(mediaId)) return false;
+
+    const localId = utils.getCurrentItemId();
+    if (state.roomMediaId === mediaId && localId === mediaId) return false;
+
+    state.roomMediaId = mediaId;
+    state.readyRoomId = '';
+    state.isInitialSync = true;
+    state.initialSyncUntil = utils.nowMs() + JWP.constants.INITIAL_SYNC_MAX_MS;
+    rememberRemoteState(msg);
+    const changeToken = ++state.mediaChangeToken;
+
+    if (JWP.playback?.ensurePlayback) JWP.playback.ensurePlayback(mediaId);
+
+    let attempts = 0;
+    const settle = () => {
+      if (changeToken !== state.mediaChangeToken || !state.inRoom) return;
+      attempts += 1;
+      const video = utils.getVideo();
+      if (utils.getCurrentItemId() !== mediaId || !video || video.readyState < 2) {
+        if (attempts < 100) setTimeout(settle, 150);
+        else ui.showToast('Open the next episode to continue the watch party.');
+        return;
+      }
+
+      const target = utils.adjustedPosition(state.lastSyncPosition, state.lastSyncServerTs);
+      utils.startSyncing();
+      if (Math.abs(video.currentTime - target) > 0.35) video.currentTime = target;
+      if (state.lastSyncPlayState === 'playing') {
+        video.play().catch(() => ui.showToast('Tap Play to continue the watch party.'));
+      } else if (!video.paused) {
+        video.pause();
+      }
+      if (JWP.playback?.watchReady) JWP.playback.watchReady();
+    };
+    setTimeout(settle, 150);
+    return true;
   };
 
   const syncToRoom = (msg, video) => {
@@ -67,17 +128,16 @@
   h.handleRoomState = (msg, video) => {
     applyRoomState(msg);
     ui.render();
-    syncToRoom(msg, video);
     if (!state.isHost && msg.payload?.media_id) {
-      if (JWP.playback && JWP.playback.ensurePlayback) {
-        JWP.playback.ensurePlayback(msg.payload.media_id);
-        if (JWP.playback.watchReady) JWP.playback.watchReady();
-      }
+      if (switchToMedia(msg)) return;
     }
+    syncToRoom(msg, video);
   };
 
   h.handleStateUpdate = (msg, video) => {
-    if (state.isHost || !video) return;
+    if (state.isHost) return;
+    if (msg.payload?.media_id && switchToMedia(msg)) return;
+    if (!video) return;
     if (msg.payload) {
       state.lastSyncPlayState = msg.payload.play_state || state.lastSyncPlayState;
     }

@@ -7,7 +7,7 @@
     const el = document.getElementById('jwp-ws-indicator');
     if (!el) return;
     const connected = state.ws && state.ws.readyState === 1;
-    el.style.color = connected ? '#69f0ae' : '#ff5252';
+    el.style.color = connected ? 'var(--jwp-success)' : 'var(--jwp-danger)';
     el.textContent = connected ? 'Online' : 'Offline';
   };
 
