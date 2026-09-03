@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.9.0.0",
+        "changelog": "Rakkate edition: account-free direct-to-player invites, whole-series rooms, docked themed chat, custom emotes, shared cursor trails, tighter playback sync, WebRTC fast path with WebSocket fallback, guest confinement, and owner-managed room lifecycle.",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.9.0.0/JellyWatchParty-v1.9.0.0.zip",
+        "checksum": "80ca95704e055d4dc12d996621321d37",
+        "timestamp": "2026-09-03T18:41:05Z"
+      },
+      {
         "version": "1.8.0.0",
         "changelog": "This release brings a fix for #51 \r\n\r\n**Full Changelog**: https://github.com/TIGamingTV/JellyWatchParty/compare/v1.7.0.0...v1.8.0.0",
         "targetAbi": "10.11.11.0",
