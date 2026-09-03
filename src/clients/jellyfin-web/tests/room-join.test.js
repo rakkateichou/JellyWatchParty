@@ -38,6 +38,12 @@ describe('room-list join intent', () => {
     assert.equal(JWP.state.roomJoinPending, false);
   });
 
+  it('reports a failed join send so invite autoplay can retry after connecting', () => {
+    JWP.state.ws = { readyState: 0, send: () => {} };
+
+    assert.equal(JWP.actions.joinRoom('room-1'), false);
+  });
+
   it('never sends room passwords, including from legacy callers', () => {
     JWP.actions.createRoom('legacy-password');
     JWP.actions.joinRoom('room-1', 'legacy-password');

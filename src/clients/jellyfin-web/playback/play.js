@@ -9,6 +9,7 @@
     '.mainDetailButtons button[data-action="play"]'
   ].join(',');
 
+  const NATIVE_BUTTON_SETTLE_MS = 750;
   const NATIVE_LAUNCH_COOLDOWN_MS = 8000;
 
   const isVideoPage = () => {
@@ -29,27 +30,42 @@
   };
 
   const clickNativePlayButton = (itemId) => {
-    if (utils.getCurrentItemId() !== itemId) return false;
+    const normalizedItemId = utils.normalizeItemId?.(itemId) || itemId;
+    if ((utils.normalizeItemId?.(utils.getCurrentItemId()) || utils.getCurrentItemId()) !== normalizedItemId) return false;
     const state = JWP.state;
-    if (state.nativeLaunchItemId === itemId && Date.now() < state.nativeLaunchUntil) return true;
     const button = document.querySelector(PLAY_BUTTON_SELECTOR);
     if (!button || button.disabled) return false;
-    state.nativeLaunchItemId = itemId;
-    state.nativeLaunchUntil = Date.now() + NATIVE_LAUNCH_COOLDOWN_MS;
+    const now = Date.now();
+    if (state.nativeButtonItemId !== normalizedItemId) {
+      state.nativeButtonItemId = normalizedItemId;
+      state.nativeButtonReadyAt = now;
+      return false;
+    }
+    // Jellyfin inserts the button before the details-page controller finishes
+    // binding its delegated click action. Let the same button remain available
+    // briefly so a single synthetic click starts one playback session instead
+    // of racing the handler or repeatedly restarting transcodes.
+    if (now - state.nativeButtonReadyAt < NATIVE_BUTTON_SETTLE_MS) return false;
+    if (state.nativeLaunchItemId === normalizedItemId && now < state.nativeLaunchUntil) return true;
+    state.nativeLaunchItemId = normalizedItemId;
+    state.nativeLaunchUntil = now + NATIVE_LAUNCH_COOLDOWN_MS;
     button.click();
     console.log('[JellyWatchParty] Playback started via Jellyfin Play button');
     return true;
   };
 
   const openItemDetails = (itemId) => {
+    const normalizedItemId = utils.normalizeItemId?.(itemId) || itemId;
     const alreadyOnDetails = /^#\/details(?:[/?]|$)/i.test(window.location.hash || '');
-    if (alreadyOnDetails && utils.getCurrentItemId() === itemId) return false;
+    const currentItemId = utils.normalizeItemId?.(utils.getCurrentItemId()) || utils.getCurrentItemId();
+    if (alreadyOnDetails && currentItemId === normalizedItemId) return false;
     const state = JWP.state;
     const roomId = state.roomId || state.pendingJoinRoomId || '';
     const apiClient = window.ApiClient;
     const serverId = apiClient?.serverId?.() || apiClient?._serverId || '';
-    const params = [`id=${encodeURIComponent(itemId)}`];
+    const params = [`id=${encodeURIComponent(normalizedItemId)}`];
     if (roomId) params.push(`jwpRoom=${encodeURIComponent(roomId)}`);
+    params.push(`jwpMedia=${encodeURIComponent(normalizedItemId)}`);
     if (serverId) params.push(`serverId=${encodeURIComponent(serverId)}`);
     window.location.hash = `#/details?${params.join('&')}`;
     return true;
@@ -114,15 +130,17 @@
 
   const ensurePlayback = (itemId, attempt = 0) => {
     const state = JWP.state;
-    if (!itemId) return;
+    const normalizedItemId = utils.normalizeItemId?.(itemId) || itemId;
+    if (!normalizedItemId) return;
     // The same item id can mean either "already playing" or merely "open on
     // its details page". Jellyfin's SPA can retain a hidden <video> element
     // on details pages, so the player route is the authoritative distinction.
     // Guest invitation links need this path to start the episode they landed on.
-    if (utils.getCurrentItemId() === itemId && isVideoPage()) return;
-    if (state.joiningItemId === itemId) return;
+    const currentItemId = utils.normalizeItemId?.(utils.getCurrentItemId()) || utils.getCurrentItemId();
+    if (currentItemId === normalizedItemId && isVideoPage()) return;
+    if (state.joiningItemId === normalizedItemId) return;
     const retry = () => {
-      if (attempt < 80) setTimeout(() => ensurePlayback(itemId, attempt + 1), 250);
+      if (attempt < 80) setTimeout(() => ensurePlayback(normalizedItemId, attempt + 1), 250);
       else JWP.ui?.showToast?.('Tap Play to continue the watch party.');
     };
 
@@ -132,8 +150,8 @@
     // a redeemed ShareLinks guest. For episode changes, first move to the new
     // item's details page, then retry until that button has rendered.
     if (!utils.getPlaybackManager()) {
-      if (clickNativePlayButton(itemId)) return;
-      openItemDetails(itemId);
+      if (clickNativePlayButton(normalizedItemId)) return;
+      openItemDetails(normalizedItemId);
       retry();
       return;
     }
@@ -147,8 +165,8 @@
       retry();
       return;
     }
-    state.joiningItemId = itemId;
-    ApiClient.getItem(userId, itemId).then((item) => {
+    state.joiningItemId = normalizedItemId;
+    ApiClient.getItem(userId, normalizedItemId).then((item) => {
       if (!playItem(item)) retry();
     }).catch(() => {
       retry();

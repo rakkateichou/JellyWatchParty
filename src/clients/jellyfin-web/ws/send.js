@@ -65,7 +65,9 @@
       || state.userName
       || window.ApiClient?._currentUser?.Name
       || 'Anonymous';
-    if (!send('join_room', { user_name: userName }, id)) state.roomJoinPending = false;
+    const sent = send('join_room', { user_name: userName }, id);
+    if (!sent) state.roomJoinPending = false;
+    return sent;
   };
 
   const leaveRoom = () => {

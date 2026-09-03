@@ -18,6 +18,11 @@
       : '';
   };
 
+  const getInviteMediaId = () => {
+    const match = (window.location.hash || '').match(/[?&]jwpMedia=([a-f0-9-]{32,36})(?:&|$)/i);
+    return utils.normalizeItemId?.(match?.[1]) || '';
+  };
+
   const setJoinLaunchScreen = (visible) => {
     if (joinLaunchTimer) {
       clearTimeout(joinLaunchTimer);
@@ -43,29 +48,35 @@
   const beginInviteJoin = () => {
     const roomId = getInviteRoomId();
     if (!roomId) return;
+    const inviteMediaId = getInviteMediaId();
     state.pendingJoinRoomId = roomId;
     state.inviteJoinActive = true;
     setJoinLaunchScreen(true);
 
-    // Wait briefly for the room list, then start the exact media item the host
-    // is playing. The public URL lands on a dedicated player route; on Jellyfin
-    // builds that do not expose PlaybackManager, ensurePlayback briefly uses the
-    // native details-page Play button behind the launch screen.
+    // The signed invite already contains the validated episode id. Launch it
+    // immediately so Jellyfin can create a native playback session even if the
+    // WebSocket room list has not arrived yet. Room state below remains the
+    // authority and will replace this hint if the host changed episodes.
+    if (inviteMediaId && playback?.ensurePlayback) {
+      state.roomMediaId = inviteMediaId;
+      playback.ensurePlayback(inviteMediaId);
+    }
+
+    // Reconcile with the room's live media as soon as the room list arrives. On
+    // Jellyfin builds that do not expose PlaybackManager, ensurePlayback uses
+    // the native details-page Play button behind the launch screen.
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
       const room = state.rooms.find(candidate => candidate.id === roomId);
       if (room?.media_id && playback?.ensurePlayback) {
         clearInterval(timer);
-        state.roomMediaId = room.media_id;
-        playback.ensurePlayback(room.media_id);
+        const liveMediaId = utils.normalizeItemId?.(room.media_id) || room.media_id;
+        state.roomMediaId = liveMediaId;
+        playback.ensurePlayback(liveMediaId);
         return;
       }
-      const playButton = document.querySelector('.mainDetailButtons .btnPlay, .mainDetailButtons button[data-action="resume"], .mainDetailButtons button[data-action="play"]');
-      if (playButton && (room || attempts >= 24)) {
-        clearInterval(timer);
-        playButton.click();
-      } else if (attempts >= 80) {
+      if (attempts >= 80) {
         clearInterval(timer);
         setJoinLaunchScreen(false);
         ui.showToast('Tap Play to join the watch party.');
@@ -136,13 +147,10 @@
         if (playback.patchTrackSwitching) playback.patchTrackSwitching();
         if (state.pendingJoinRoomId) {
           console.log('[JellyWatchParty] Video detected, pendingJoinRoomId:', state.pendingJoinRoomId);
-          if (JWP.actions && JWP.actions.joinRoom) {
+          if (state.ws?.readyState === 1 && JWP.actions && JWP.actions.joinRoom) {
             const roomId = state.pendingJoinRoomId;
-            state.pendingJoinRoomId = '';
-            setTimeout(() => {
-              console.log('[JellyWatchParty] Auto-joining room:', roomId);
-              JWP.actions.joinRoom(roomId);
-            }, 500);
+            console.log('[JellyWatchParty] Auto-joining room:', roomId);
+            if (JWP.actions.joinRoom(roomId)) state.pendingJoinRoomId = '';
           }
         }
       }
@@ -197,6 +205,7 @@
     clearAllIntervals,
     onVideoPlayerExit,
     hasActiveVideo,
+    getInviteMediaId,
     setJoinLaunchScreen
   };
 

@@ -2,6 +2,7 @@ const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const JWP = require('./setup.js');
 
+require('../utils/media.js');
 require('../playback/play.js');
 
 describe('invite episode autoplay', () => {
@@ -15,8 +16,11 @@ describe('invite episode autoplay', () => {
     JWP.state.joiningItemId = '';
     JWP.state.nativeLaunchItemId = '';
     JWP.state.nativeLaunchUntil = 0;
+    JWP.state.nativeButtonItemId = itemId;
+    JWP.state.nativeButtonReadyAt = Date.now() - 1000;
     JWP.state.roomId = '';
     JWP.state.pendingJoinRoomId = '';
+    JWP.state.inviteJoinActive = false;
     globalThis.window.location.hash = '#/details?id=' + itemId;
     globalThis.document.querySelector = () => null;
     JWP.utils.getCurrentItemId = () => itemId;
@@ -73,7 +77,23 @@ describe('invite episode autoplay', () => {
 
     JWP.playback.ensurePlayback(itemId);
 
-    assert.match(globalThis.window.location.hash, new RegExp(`^#/details\\?id=${itemId}&jwpRoom=`));
+    assert.match(globalThis.window.location.hash, new RegExp(`^#/details\\?id=${itemId}&jwpRoom=.*&jwpMedia=${itemId}`));
+  });
+
+  it('normalizes UUID-style invite media before using Jellyfin native Play', () => {
+    let nativePlayCalls = 0;
+    const uuidItemId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    JWP.utils.getPlaybackManager = () => null;
+    JWP.utils.getCurrentItemId = () => itemId;
+    globalThis.document.querySelector = (selector) => selector.includes('.mainDetailButtons') ? ({
+      disabled: false,
+      click: () => { nativePlayCalls += 1; }
+    }) : null;
+
+    JWP.playback.ensurePlayback(uuidItemId);
+
+    assert.equal(nativePlayCalls, 1);
+    assert.equal(JWP.state.nativeLaunchItemId, itemId);
   });
 
   it('uses Jellyfin native Play when PlaybackManager is not exposed', () => {
@@ -107,6 +127,24 @@ describe('invite episode autoplay', () => {
     assert.equal(nativePlayCalls, 1);
   });
 
+  it('waits for Jellyfin to bind a newly rendered native Play button', async () => {
+    let nativePlayCalls = 0;
+    JWP.state.nativeButtonItemId = '';
+    JWP.state.nativeButtonReadyAt = 0;
+    JWP.utils.getPlaybackManager = () => null;
+    globalThis.document.querySelector = (selector) => selector.includes('.mainDetailButtons') ? ({
+      disabled: false,
+      click: () => { nativePlayCalls += 1; }
+    }) : null;
+
+    JWP.playback.ensurePlayback(itemId);
+    assert.equal(nativePlayCalls, 0);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    assert.equal(nativePlayCalls, 1);
+    globalThis.window.location.hash = '#/video';
+  });
+
   it('opens a changed episode before retrying the native Play button', async () => {
     const nextItemId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     let currentItemId = itemId;
@@ -126,7 +164,7 @@ describe('invite episode autoplay', () => {
     assert.match(globalThis.window.location.hash, new RegExp(`^#/details\\?id=${nextItemId}&jwpRoom=`));
 
     currentItemId = nextItemId;
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 1100));
     assert.equal(nativePlayCalls, 1);
   });
 });

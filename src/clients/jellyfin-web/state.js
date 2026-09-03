@@ -129,6 +129,8 @@
     joiningItemId: '',
     nativeLaunchItemId: '',
     nativeLaunchUntil: 0,
+    nativeButtonItemId: '',
+    nativeButtonReadyAt: 0,
     pendingJoinRoomId: '',  // Room to join after navigating to video player
     inviteJoinActive: false, // True while handling an accountless ShareLinks invitation
     roomJoinPending: false, // A signed-in user selected an existing room; await its authoritative room_state
