@@ -28,6 +28,7 @@ public class JellyWatchPartyController : ControllerBase
     // Cache for embedded script content using Lazy<T> for thread-safe initialization (fixes audit 4.5.1)
     private static readonly Lazy<(string Content, string ETag)> _scriptCache = new(LoadScriptFromResource, LazyThreadSafetyMode.ExecutionAndPublication);
     private static readonly ConcurrentDictionary<string, (string Content, string ETag)> _clientModuleCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, (byte[] Content, string ETag)> _clientAssetCache = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly HostBridgeManager _hostBridgeManager;
 
@@ -152,6 +153,67 @@ public class JellyWatchPartyController : ControllerBase
         using var reader = new StreamReader(stream);
         var content = reader.ReadToEnd();
         var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(content));
+        var etag = $"\"{Convert.ToBase64String(hash)[..16]}\"";
+        return (content, etag);
+    }
+
+    /// <summary>
+    /// Returns a bundled JellyWatchParty image asset. Assets are served from
+    /// the plugin assembly so guests do not need a browser extension or a
+    /// connection to the original emote CDN while watching.
+    /// </summary>
+    /// <param name="path">Relative WebP asset path, e.g. "emotes/kekw.webp".</param>
+    /// <returns>The requested WebP image.</returns>
+    [HttpGet("Asset/{*path}")]
+    [Produces("image/webp")]
+    public ActionResult GetClientAsset([FromRoute] string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return NotFound();
+        }
+
+        var normalizedPath = path.Replace('\\', '/').TrimStart('/');
+        if (normalizedPath.Contains("..", StringComparison.Ordinal)
+            || !normalizedPath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var (content, etag) = _clientAssetCache.GetOrAdd(normalizedPath, LoadClientAssetFromResource);
+            var requestETag = Request.Headers["If-None-Match"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(requestETag) && requestETag == etag)
+            {
+                return StatusCode(304);
+            }
+
+            Response.Headers["Cache-Control"] = "public, max-age=86400";
+            Response.Headers["ETag"] = etag;
+            return File(content, "image/webp");
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to serve embedded client asset '{Path}'", normalizedPath);
+            return StatusCode(500);
+        }
+    }
+
+    private static (byte[] Content, string ETag) LoadClientAssetFromResource(string normalizedPath)
+    {
+        var assembly = typeof(JellyWatchPartyController).Assembly;
+        var resourceName = "JellyWatchParty.Plugin.Web.assets." + normalizedPath.Replace('/', '.');
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new FileNotFoundException($"Embedded resource '{resourceName}' not found");
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        var content = memory.ToArray();
+        var hash = System.Security.Cryptography.SHA256.HashData(content);
         var etag = $"\"{Convert.ToBase64String(hash)[..16]}\"";
         return (content, etag);
     }

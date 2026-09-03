@@ -19,6 +19,7 @@
   if (!cacheBust) cacheBust = String(Date.now());
 
   const base = `${basePrefix}/JellyWatchParty/Client`;
+  JWP.assetBase = `${basePrefix}/JellyWatchParty/Asset`;
 
   const SCRIPT_TIMEOUT_MS = 10000;  // 10 seconds timeout per script
 

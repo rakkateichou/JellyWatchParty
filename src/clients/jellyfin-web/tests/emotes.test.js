@@ -24,8 +24,9 @@ describe('Twitch-style chat emotes', () => {
   it('renders known tokens as safe inline emotes and preserves unknown tokens', () => {
     const html = JWP.chat.renderEmotes('<b>:pog:</b> :unknown:');
 
-    assert.match(html, /&lt;b&gt;<span class="jwp-chat-emote"/);
-    assert.match(html, /aria-label="Pog"/);
+    assert.match(html, /&lt;b&gt;<img class="jwp-chat-emote"/);
+    assert.match(html, /alt="Pog"/);
+    assert.match(html, /\/JellyWatchParty\/Asset\/emotes\/pog\.webp/);
     assert.match(html, /:unknown:/);
     assert.doesNotMatch(html, /<b>/);
   });
@@ -42,7 +43,7 @@ describe('Twitch-style chat emotes', () => {
     assert.equal(input.focusCalled, true);
   });
 
-  it('converts emotes to plain emoji for notifications', () => {
-    assert.equal(JWP.chat.plainEmotes('that ending :dead:'), 'that ending 💀');
+  it('converts image emotes to readable labels for notifications', () => {
+    assert.equal(JWP.chat.plainEmotes('that ending :dead:'), 'that ending [Dead]');
   });
 });

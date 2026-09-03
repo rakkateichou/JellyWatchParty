@@ -75,7 +75,7 @@
         <div id="jwp-emote-picker" role="dialog" aria-label="Emotes" hidden>
           <div class="jwp-emote-picker-title">Emotes</div>
           <div class="jwp-emote-grid">
-            ${(JWP.chat?.emotes || []).map(emote => `<button type="button" class="jwp-emote-option" data-jwp-emote="${emote.token}" title="${emote.token}" aria-label="${emote.label}"><span aria-hidden="true">${emote.glyph}</span><small>${emote.label}</small></button>`).join('')}
+            ${(JWP.chat?.emotes || []).map(emote => `<button type="button" class="jwp-emote-option" data-jwp-emote="${emote.token}" title="${emote.token}" aria-label="${emote.label}"><img class="jwp-emote-picker-image" src="${emote.src}" alt="" loading="lazy" decoding="async"><small>${emote.label}</small></button>`).join('')}
           </div>
           <div class="jwp-emote-picker-hint">You can also type an emote name, like :pog:</div>
         </div>

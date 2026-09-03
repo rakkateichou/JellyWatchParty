@@ -3,25 +3,29 @@
   const chat = JWP.chat = JWP.chat || { messages: [], unreadCount: 0 };
   const utils = JWP.utils;
 
-  // Named, dependency-free emotes: the token is sent as ordinary chat text,
-  // so history, reconnects and accountless guests all render it identically.
+  const assetBase = JWP.assetBase || '/JellyWatchParty/Asset';
+  const image = (name) => `${assetBase}/emotes/${name}.webp`;
+
+  // The token is sent as ordinary chat text, while the actual image is bundled
+  // with JellyWatchParty. History, reconnects and accountless guests therefore
+  // render the same custom emote without needing 7TV or a browser extension.
   const EMOTES = Object.freeze([
-    { token: ':pog:', label: 'Pog', glyph: '😲' },
-    { token: ':kekw:', label: 'KEKW', glyph: '🤣' },
-    { token: ':sus:', label: 'Sus', glyph: '🤨' },
-    { token: ':copium:', label: 'Copium', glyph: '😮‍💨' },
-    { token: ':cry:', label: 'Cry', glyph: '😭' },
-    { token: ':hype:', label: 'Hype', glyph: '🤩' },
-    { token: ':bonk:', label: 'Bonk', glyph: '🔨' },
-    { token: ':dead:', label: 'Dead', glyph: '💀' },
-    { token: ':clown:', label: 'Clown', glyph: '🤡' },
-    { token: ':fire:', label: 'Fire', glyph: '🔥' },
-    { token: ':eyes:', label: 'Eyes', glyph: '👀' },
-    { token: ':popcorn:', label: 'Popcorn', glyph: '🍿' },
-    { token: ':salute:', label: 'Salute', glyph: '🫡' },
-    { token: ':chef:', label: 'Chef', glyph: '🧑‍🍳' },
-    { token: ':party:', label: 'Party', glyph: '🥳' },
-    { token: ':heart:', label: 'Heart', glyph: '❤️' }
+    { token: ':pog:', label: 'Pog', src: image('pog') },
+    { token: ':kekw:', label: 'KEKW', src: image('kekw') },
+    { token: ':sus:', label: 'Sus', src: image('sus') },
+    { token: ':copium:', label: 'Copium', src: image('copium') },
+    { token: ':cry:', label: 'Cry', src: image('cry') },
+    { token: ':hype:', label: 'Hype', src: image('hype') },
+    { token: ':bonk:', label: 'Bonk', src: image('bonk') },
+    { token: ':dead:', label: 'Dead', src: image('dead') },
+    { token: ':clown:', label: 'Clown', src: image('clown') },
+    { token: ':fire:', label: 'Fire', src: image('fire') },
+    { token: ':eyes:', label: 'Eyes', src: image('eyes') },
+    { token: ':popcorn:', label: 'Popcorn', src: image('popcorn') },
+    { token: ':salute:', label: 'Salute', src: image('salute') },
+    { token: ':chef:', label: 'Chef', src: image('chef') },
+    { token: ':party:', label: 'Party', src: image('party') },
+    { token: ':heart:', label: 'Heart', src: image('heart') }
   ]);
 
   const emoteByToken = Object.fromEntries(EMOTES.map(emote => [emote.token, emote]));
@@ -31,7 +35,7 @@
   const renderEmotes = (text) => utils.escapeHtml(String(text || '')).replace(tokenPattern(), match => {
     const emote = emoteByToken[match.toLowerCase()];
     if (!emote) return match;
-    return `<span class="jwp-chat-emote" role="img" aria-label="${emote.label}" title="${emote.token}">${emote.glyph}</span>`;
+    return `<img class="jwp-chat-emote" src="${utils.escapeHtml(emote.src)}" alt="${emote.label}" title="${emote.token}" loading="lazy" decoding="async">`;
   });
 
   const containsOnlyEmotes = (text) => {
@@ -40,7 +44,8 @@
   };
 
   const plainEmotes = (text) => String(text || '').replace(tokenPattern(), match => {
-    return emoteByToken[match.toLowerCase()]?.glyph || match;
+    const emote = emoteByToken[match.toLowerCase()];
+    return emote ? `[${emote.label}]` : match;
   });
 
   const insertEmote = (input, token) => {

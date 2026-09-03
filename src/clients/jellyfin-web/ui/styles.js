@@ -519,11 +519,11 @@
       font: inherit;
     }
     .jwp-emote-option:hover { border-color: var(--jwp-border); background: var(--jwp-surface-hover); color: var(--jwp-text); }
-    .jwp-emote-option > span { font-size: 1.45rem; line-height: 1.25; }
+    .jwp-emote-picker-image { width: auto; height: 2.2rem; max-width: 4.5rem; object-fit: contain; }
     .jwp-emote-option small { max-width: 100%; font-size: .56rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .jwp-emote-picker-hint { margin-top: .55rem; color: var(--jwp-faint); font-size: .62rem; text-align: center; }
-    .jwp-chat-emote { display: inline-block; margin: 0 .04em; font-size: 1.55em; line-height: .8; vertical-align: -.18em; }
-    .jwp-chat-emote-only .jwp-chat-emote { margin-right: .1em; font-size: 2.35rem; line-height: 1.1; vertical-align: middle; }
+    .jwp-chat-emote { display: inline-block; width: auto; height: 1.8em; max-width: 5em; margin: 0 .06em; object-fit: contain; vertical-align: -.48em; }
+    .jwp-chat-emote-only .jwp-chat-emote { width: auto; height: 3.25rem; max-width: 8rem; margin-right: .12em; vertical-align: middle; }
     .jwp-chat-emote-only .jwp-chat-text { line-height: 1.15; }
     #jwp-chat-send {
       padding: .55rem .8rem;

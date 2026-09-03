@@ -33,5 +33,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Web\configPage.html" />
     <EmbeddedResource Include="Web\**\*.js" />
+    <EmbeddedResource Include="Web\**\*.webp" />
   </ItemGroup>
 </Project>
