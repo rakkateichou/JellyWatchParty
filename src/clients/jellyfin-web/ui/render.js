@@ -93,12 +93,13 @@
     const isDesktop = typeof window.matchMedia === 'function'
       ? window.matchMedia('(min-width: 800px)').matches
       : (window.innerWidth || 1024) >= 800;
-    const isVideoPage = /^#\/video(?:[/?]|$)/i.test(window.location.hash || '');
+    const isVideoPage = JWP.playback?.isVideoPage
+      ? JWP.playback.isVideoPage()
+      : /^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '') && !!utils.getVideo();
     const shouldDock = !!(
       isDesktop
       && state.inRoom
       && isVideoPage
-      && utils.getVideo()
       && panel
       && !panel.classList.contains('hide')
     );

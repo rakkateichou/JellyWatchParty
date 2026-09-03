@@ -29,6 +29,7 @@ describe('room episode transitions', () => {
     JWP.utils.isVideoReady = () => true;
     JWP.utils.startSyncing = () => {};
     JWP.utils.log = () => {};
+    JWP.playback.isVideoPage = () => true;
     JWP.ui.prepareInviteLink = undefined;
     JWP.ui.resetPreparedInvite = undefined;
   });
@@ -59,6 +60,28 @@ describe('room episode transitions', () => {
     assert.equal(JWP.state.readyRoomId, '');
     assert.equal(JWP.state.lastSyncPosition, 12.5);
     assert.equal(JWP.state.lastSyncPlayState, 'playing');
+  });
+
+  it('starts the room episode when that item is only open on its details page', () => {
+    let openedMediaId = '';
+    JWP.state.roomMediaId = oldMediaId;
+    JWP.utils.getCurrentItemId = () => oldMediaId;
+    globalThis.window.location.hash = '#/details?id=' + oldMediaId;
+    JWP.playback.isVideoPage = () => false;
+    JWP.playback.ensurePlayback = (mediaId) => {
+      openedMediaId = mediaId;
+    };
+
+    JWP._wsHandlers.handleStateUpdate({
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        media_id: oldMediaId,
+        position: 42,
+        play_state: 'paused'
+      }
+    }, null);
+
+    assert.equal(openedMediaId, oldMediaId);
   });
 
   it('does not redirect the room host', () => {

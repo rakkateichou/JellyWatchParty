@@ -17,15 +17,31 @@
       : '';
   };
 
+  const setInviteLaunchScreen = (visible) => {
+    document.documentElement?.classList?.toggle('jwp-invite-launching', !!visible);
+  };
+
+  const hasActiveVideo = (video = utils.getVideo()) => {
+    if (!video) return false;
+    if (playback?.isVideoPage) return playback.isVideoPage();
+    return /^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '');
+  };
+
   const beginInviteJoin = () => {
     const roomId = getInviteRoomId();
     if (!roomId) return;
     state.pendingJoinRoomId = roomId;
     state.inviteJoinActive = true;
+    setInviteLaunchScreen(true);
+
+    // Never strand a guest behind the launch screen if Jellyfin cannot start
+    // playback automatically (for example, because a browser blocks autoplay).
+    setTimeout(() => setInviteLaunchScreen(false), 25000);
 
     // Wait briefly for the room list, then start the exact media item the host
-    // is playing. The invitation already lands on that episode's detail page,
-    // but opening a detail page and starting its video are separate operations.
+    // is playing. The public URL lands on a dedicated player route; on Jellyfin
+    // builds that do not expose PlaybackManager, ensurePlayback briefly uses the
+    // native details-page Play button behind the launch screen.
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
@@ -41,6 +57,7 @@
         playButton.click();
       } else if (attempts >= 80) {
         clearInterval(timer);
+        setInviteLaunchScreen(false);
         ui.showToast('Tap Play to join the watch party.');
       }
     }, 125);
@@ -89,13 +106,15 @@
       if (JWP.app?.disablePauseSplash) JWP.app.disablePauseSplash();
       if (document.visibilityState !== 'visible') return;
       const video = utils.getVideo();
-      if (hadVideoElement && !video) {
+      const activeVideo = hasActiveVideo(video);
+      if (hadVideoElement && !activeVideo) {
         hadVideoElement = false;
         onVideoPlayerExit();
         return;
       }
-      if (video) {
+      if (activeVideo) {
         hadVideoElement = true;
+        setInviteLaunchScreen(false);
         ui.injectOsdButton();
         playback.bindVideo();
         if (playback.patchTrackSwitching) playback.patchTrackSwitching();
@@ -167,7 +186,8 @@
     get hadVideoElement() { return hadVideoElement; },
     set hadVideoElement(v) { hadVideoElement = v; },
     clearAllIntervals,
-    onVideoPlayerExit
+    onVideoPlayerExit,
+    hasActiveVideo
   };
 
   JWP.app = JWP.app || {};

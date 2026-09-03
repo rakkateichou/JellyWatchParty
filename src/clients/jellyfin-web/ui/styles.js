@@ -4,6 +4,18 @@
   const { PANEL_ID, STYLE_ID } = JWP.constants;
 
   const CSS_STYLES = `
+    html.jwp-invite-launching body::before {
+      content: 'Joining watch party…';
+      position: fixed;
+      inset: 0;
+      z-index: 2147483000;
+      display: grid;
+      place-items: center;
+      background: #000;
+      color: rgba(255, 255, 255, .78);
+      font: 600 1rem/1.4 system-ui, sans-serif;
+      letter-spacing: .01em;
+    }
     #${PANEL_ID} {
       --jwp-panel-top: rgba(13, 13, 14, .85);
       --jwp-panel-bottom: rgba(0, 0, 0, .85);

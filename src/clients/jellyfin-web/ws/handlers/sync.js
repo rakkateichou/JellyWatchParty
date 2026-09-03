@@ -57,10 +57,10 @@
 
     // Invitations open directly into the room and reveal the right-side chat;
     // ordinary joins retain the user's existing panel preference.
-    if (state.inviteJoinActive) {
+    if (state.inviteJoinActive || state.guestMode) {
       const panel = document.getElementById(JWP.constants.PANEL_ID);
       if (panel) panel.classList.remove('hide');
-      state.inviteJoinActive = false;
+      if (state.inviteJoinActive) state.inviteJoinActive = false;
     }
     if (JWP.guestLockdown?.enforceSoon) JWP.guestLockdown.enforceSoon(100);
   };
@@ -86,7 +86,10 @@
     if (!/^[a-f0-9]{32}$/i.test(mediaId)) return false;
 
     const localId = utils.getCurrentItemId();
-    if (state.roomMediaId === mediaId && localId === mediaId) return false;
+    const isActiveVideo = JWP.playback?.isVideoPage
+      ? JWP.playback.isVideoPage()
+      : /^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '') && !!utils.getVideo();
+    if (state.roomMediaId === mediaId && localId === mediaId && isActiveVideo) return false;
 
     state.roomMediaId = mediaId;
     state.readyRoomId = '';

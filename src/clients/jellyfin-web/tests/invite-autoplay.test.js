@@ -54,6 +54,28 @@ describe('invite episode autoplay', () => {
     assert.equal(playCalls, 0);
   });
 
+  it('does not mistake an empty video invite route for active playback', async () => {
+    JWP.utils.getVideo = () => null;
+    globalThis.window.location.hash = '#/video?jwpRoom=686a02d6-c84c-4b7a-94c7-ef732a0fac9e&jwpMedia=' + itemId;
+
+    JWP.playback.ensurePlayback(itemId);
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(itemRequests, 1);
+    assert.equal(playCalls, 1);
+  });
+
+  it('uses a hidden details bridge when native playback is the only launcher', () => {
+    JWP.utils.getVideo = () => null;
+    JWP.utils.getPlaybackManager = () => null;
+    JWP.state.pendingJoinRoomId = '686a02d6-c84c-4b7a-94c7-ef732a0fac9e';
+    globalThis.window.location.hash = '#/video?jwpRoom=686a02d6-c84c-4b7a-94c7-ef732a0fac9e&jwpMedia=' + itemId;
+
+    JWP.playback.ensurePlayback(itemId);
+
+    assert.match(globalThis.window.location.hash, new RegExp(`^#/details\\?id=${itemId}&jwpRoom=`));
+  });
+
   it('uses Jellyfin native Play when PlaybackManager is not exposed', () => {
     let nativePlayCalls = 0;
     JWP.utils.getPlaybackManager = () => null;

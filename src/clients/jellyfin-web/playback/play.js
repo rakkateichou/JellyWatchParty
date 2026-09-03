@@ -12,10 +12,17 @@
   const NATIVE_LAUNCH_COOLDOWN_MS = 8000;
 
   const isVideoPage = () => {
-    if (/^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '')) return true;
-    const video = document.querySelector('.videoPlayerContainer video');
-    const container = video?.closest?.('.videoPlayerContainer');
-    if (!video || !container || container.hidden) return false;
+    // Jellyfin keeps an old <video> element mounted while its SPA is showing an
+    // episode details page. Conversely, an invite can briefly be on #/video
+    // before Jellyfin has created the real player. Both the player route and a
+    // live media element are therefore required.
+    if (!/^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '')) return false;
+    const video = utils.getVideo?.() || document.querySelector('video');
+    if (!video) return false;
+    if (video.__owpNativeAdapter) return true;
+    const container = video.closest?.('.videoPlayerContainer');
+    if (!container) return true;
+    if (container.hidden) return false;
     if (typeof window.getComputedStyle !== 'function') return true;
     const style = window.getComputedStyle(container);
     return style.display !== 'none' && style.visibility !== 'hidden';
@@ -35,7 +42,8 @@
   };
 
   const openItemDetails = (itemId) => {
-    if (utils.getCurrentItemId() === itemId) return false;
+    const alreadyOnDetails = /^#\/details(?:[/?]|$)/i.test(window.location.hash || '');
+    if (alreadyOnDetails && utils.getCurrentItemId() === itemId) return false;
     const state = JWP.state;
     const roomId = state.roomId || state.pendingJoinRoomId || '';
     const apiClient = window.ApiClient;
@@ -149,5 +157,5 @@
     });
   };
 
-  Object.assign(playback, { playItem, ensurePlayback });
+  Object.assign(playback, { isVideoPage, playItem, ensurePlayback });
 })();
