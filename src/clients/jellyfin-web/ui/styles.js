@@ -8,6 +8,7 @@
       --jwp-panel-top: rgba(13, 13, 14, .985);
       --jwp-panel-bottom: rgba(0, 0, 0, .992);
       --jwp-glow: rgba(255, 255, 255, .035);
+      --jwp-panel-background: #000;
       --jwp-surface: rgba(255, 255, 255, .055);
       --jwp-surface-hover: rgba(255, 255, 255, .105);
       --jwp-border: rgba(255, 255, 255, .14);
@@ -35,9 +36,7 @@
       padding: 1.15rem;
       border: 1px solid var(--jwp-border);
       border-radius: 1rem;
-      background:
-        radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
-        linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
+      background: var(--jwp-panel-background);
       -webkit-backdrop-filter: blur(24px) saturate(135%);
       backdrop-filter: blur(24px) saturate(135%);
       box-shadow: 0 18px 60px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .035);
@@ -50,6 +49,9 @@
       flex-direction: column;
     }
     #${PANEL_ID}[data-theme="frost"] {
+      --jwp-panel-background:
+        radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
+        linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
       --jwp-panel-top: rgba(30, 40, 54, .97);
       --jwp-panel-bottom: rgba(13, 20, 30, .985);
       --jwp-glow: rgba(105, 153, 188, .13);
@@ -72,6 +74,9 @@
       --jwp-danger-hover: rgba(205, 65, 76, .27);
     }
     #${PANEL_ID}[data-theme="violet"] {
+      --jwp-panel-background:
+        radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
+        linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
       --jwp-panel-top: rgba(30, 24, 43, .982);
       --jwp-panel-bottom: rgba(11, 7, 18, .992);
       --jwp-glow: rgba(151, 108, 226, .17);
@@ -94,6 +99,9 @@
       --jwp-danger-hover: rgba(202, 75, 98, .28);
     }
     #${PANEL_ID}[data-theme="ember"] {
+      --jwp-panel-background:
+        radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
+        linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
       --jwp-panel-top: rgba(43, 28, 22, .982);
       --jwp-panel-bottom: rgba(18, 9, 6, .992);
       --jwp-glow: rgba(224, 122, 65, .16);
@@ -379,10 +387,12 @@
     .jwp-theme-swatch {
       width: .85rem;
       height: .85rem;
-      border: 1px solid rgba(255, 255, 255, .24);
+      border: 0;
       border-radius: 50%;
       background: linear-gradient(135deg, #f5f5f5 0 48%, #111 52% 100%);
+      box-shadow: none;
       flex: 0 0 auto;
+      overflow: hidden;
     }
     .jwp-theme-option[data-jwp-theme="frost"] .jwp-theme-swatch { background: linear-gradient(135deg, #dce8f5 0 48%, #182638 52% 100%); }
     .jwp-theme-option[data-jwp-theme="violet"] .jwp-theme-swatch { background: linear-gradient(135deg, #e8dcf8 0 48%, #241332 52% 100%); }
