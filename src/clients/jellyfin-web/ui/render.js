@@ -6,6 +6,73 @@
   const { PANEL_ID, BTN_ID, SYNC_HIDE_STYLE_ID } = JWP.constants;
   const GLOBAL_BTN_ID = 'jwp-global-btn';
   const PLAYER_DOCK_CLASS = 'jwp-player-docked';
+  const CHAT_THEMES = [
+    { id: 'monochrome', label: 'Monochrome' },
+    { id: 'frost', label: 'Frost' },
+    { id: 'violet', label: 'Violet' },
+    { id: 'ember', label: 'Ember' }
+  ];
+
+  const storePreference = (key, value) => {
+    try { window.localStorage?.setItem(key, value); } catch (err) {}
+  };
+
+  const setPanelTheme = (theme, persist = false) => {
+    const allowed = JWP.constants.PANEL_THEMES || CHAT_THEMES.map(item => item.id);
+    const normalized = allowed.includes(theme) ? theme : 'monochrome';
+    state.panelTheme = normalized;
+    const panel = document.getElementById(PANEL_ID);
+    if (panel?.dataset) panel.dataset.theme = normalized;
+    if (persist) storePreference(JWP.constants.PANEL_THEME_STORAGE_KEY, normalized);
+  };
+
+  const saveNickname = (value) => {
+    const nickname = String(value || '')
+      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .trim()
+      .slice(0, 100);
+    if (!nickname) return false;
+    state.chatNickname = nickname;
+    storePreference(JWP.constants.CHAT_NICKNAME_STORAGE_KEY, nickname);
+    return true;
+  };
+
+  const renderThemeOptions = () => CHAT_THEMES.map(theme => `
+    <button type="button" class="jwp-theme-option" data-jwp-theme="${theme.id}" aria-pressed="${state.panelTheme === theme.id}">
+      <span class="jwp-theme-swatch" aria-hidden="true"></span>
+      <span>${theme.label}</span>
+    </button>
+  `).join('');
+
+  const renderNicknameGate = () => `
+    <div class="jwp-nickname-gate">
+      <div class="jwp-settings-title">Choose a nickname</div>
+      <div class="jwp-settings-copy">This is the name everyone in the room will see. It’s saved on this device.</div>
+      <input type="text" id="jwp-nickname-input" class="jwp-input" maxlength="100" autocomplete="nickname" placeholder="Nickname">
+      <button class="jwp-btn jwp-settings-save" id="jwp-nickname-save">Enter chat</button>
+    </div>
+  `;
+
+  const renderChatSettings = () => `
+    <div id="jwp-chat-settings">
+      <div class="jwp-settings-title">Chat settings</div>
+      <label class="jwp-settings-label" for="jwp-settings-nickname">Nickname</label>
+      <input type="text" id="jwp-settings-nickname" class="jwp-input" maxlength="100" autocomplete="nickname" value="${utils.escapeHtml(state.chatNickname)}" placeholder="Nickname">
+      <div class="jwp-settings-label">Theme</div>
+      <div class="jwp-theme-options">${renderThemeOptions()}</div>
+      <button class="jwp-btn jwp-settings-save" id="jwp-settings-save">Save settings</button>
+    </div>
+  `;
+
+  const renderChatArea = () => `
+    <div id="jwp-chat-section">
+      <div id="jwp-chat-messages"></div>
+      <div id="jwp-chat-input-container">
+        <input type="text" id="jwp-chat-input" placeholder="Type a message..." maxlength="500">
+        <button id="jwp-chat-send">Send</button>
+      </div>
+    </div>
+  `;
 
   const updateDockedPlayerLayout = () => {
     const root = document.documentElement;
@@ -197,21 +264,19 @@
         <div id="jwp-bridge-active"></div>
         <div id="jwp-bridge-available"></div>
       </div>` : '';
+    const roomContent = state.chatSettingsOpen
+      ? renderChatSettings()
+      : (state.chatNickname ? renderChatArea() : renderNicknameGate());
     panel.innerHTML = `
       <div class="jwp-room-toolbar">
         <div id="jwp-participants-list" class="jwp-participants-list">${participantCount} online</div>
         <div class="jwp-room-actions">
           ${state.isHost ? '<button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>' : ''}
+          <button class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-pressed="${state.chatSettingsOpen}"><span class="material-icons" aria-hidden="true">settings</span></button>
           <button class="jwp-icon-btn danger" id="jwp-btn-leave" title="${leaveLabel}" aria-label="${leaveLabel}"><span class="material-icons" aria-hidden="true">close</span></button>
         </div>
       </div>
-      <div id="jwp-chat-section">
-        <div id="jwp-chat-messages"></div>
-        <div id="jwp-chat-input-container">
-          <input type="text" id="jwp-chat-input" placeholder="Type a message..." maxlength="500">
-          <button id="jwp-chat-send">Send</button>
-        </div>
-      </div>
+      ${roomContent}
       ${bridgeSection}
     `;
     const leaveBtn = panel.querySelector('#jwp-btn-leave');
@@ -222,6 +287,51 @@
   };
 
   const setupChatInput = (panel) => {
+    const settingsButton = panel.querySelector('#jwp-btn-settings');
+    if (settingsButton) settingsButton.onclick = () => {
+      state.chatSettingsOpen = !state.chatSettingsOpen;
+      render(true);
+    };
+
+    const bindNicknameSave = (inputSelector, buttonSelector, closeSettings) => {
+      const input = panel.querySelector(inputSelector);
+      const button = panel.querySelector(buttonSelector);
+      if (!input || !button) return;
+      ui.stopPlayerCapture(input);
+      const submit = () => {
+        if (!saveNickname(input.value)) {
+          input.classList.add('jwp-input-error');
+          input.focus();
+          ui.showToast('Enter a nickname first');
+          return;
+        }
+        state.chatSettingsOpen = closeSettings ? false : state.chatSettingsOpen;
+        render(true);
+      };
+      button.onclick = submit;
+      input.addEventListener('input', () => input.classList.remove('jwp-input-error'));
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submit();
+        }
+      });
+    };
+
+    bindNicknameSave('#jwp-nickname-input', '#jwp-nickname-save', false);
+    bindNicknameSave('#jwp-settings-nickname', '#jwp-settings-save', true);
+
+    if (typeof panel.querySelectorAll === 'function') {
+      panel.querySelectorAll('[data-jwp-theme]').forEach(button => {
+        button.onclick = () => {
+          setPanelTheme(button.dataset.jwpTheme, true);
+          panel.querySelectorAll('[data-jwp-theme]').forEach(option => {
+            option.setAttribute('aria-pressed', String(option === button));
+          });
+        };
+      });
+    }
+
     const chatInput = panel.querySelector('#jwp-chat-input');
     const chatSend = panel.querySelector('#jwp-chat-send');
     if (!chatInput || !chatSend) return;
@@ -248,6 +358,7 @@
   const render = (forceFullRender = false) => {
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return;
+    setPanelTheme(state.panelTheme);
     if (!forceFullRender && panel.dataset.inRoom === String(state.inRoom) && panel.children.length > 0) {
       ui.updateStatusIndicator();
       ui.updateServerFooter();

@@ -66,6 +66,9 @@ describe('bridge picker reachability across panel views', () => {
     JWP.state.participantCount = 1;
     JWP.state.roomId = '';
     JWP.state.inRoom = false;
+    JWP.state.chatNickname = 'Tester';
+    JWP.state.chatSettingsOpen = false;
+    JWP.state.panelTheme = 'monochrome';
     // Both bridge roles are opt-in admin features; enable them so the picker
     // renders. Gating-off behaviour is covered separately below.
     JWP.state.allowThirdPartyHost = true;
@@ -101,6 +104,9 @@ describe('bridge picker opt-in gating', () => {
     JWP.state.participantCount = 1;
     JWP.state.roomId = '';
     JWP.state.inRoom = false;
+    JWP.state.chatNickname = 'Tester';
+    JWP.state.chatSettingsOpen = false;
+    JWP.state.panelTheme = 'monochrome';
     JWP.state.allowThirdPartyHost = false;
     JWP.state.allowSupportedReceiver = false;
   });
@@ -135,8 +141,34 @@ describe('bridge picker opt-in gating', () => {
 
     assert.match(panel.innerHTML, />1 online</);
     assert.match(panel.innerHTML, /> Copy link</);
+    assert.match(panel.innerHTML, /aria-label="Chat settings"/);
     assert.match(panel.innerHTML, /aria-label="Close room"/);
     assert.doesNotMatch(panel.innerHTML, /Participants|>Chat|RTT:|ID:|Test Room|jwp-sync-indicator/);
+  });
+
+  it('requires a nickname before showing the chat composer', () => {
+    JWP.state.inRoom = true;
+    JWP.state.roomId = 'ROOM1';
+    JWP.state.chatNickname = '';
+    JWP.ui.render(true);
+
+    assert.match(panel.innerHTML, /Choose a nickname/);
+    assert.match(panel.innerHTML, /id="jwp-nickname-save"/);
+    assert.doesNotMatch(panel.innerHTML, /id="jwp-chat-input"/);
+  });
+
+  it('shows chat settings with selectable themes', () => {
+    JWP.state.inRoom = true;
+    JWP.state.roomId = 'ROOM1';
+    JWP.state.chatSettingsOpen = true;
+    JWP.ui.render(true);
+
+    assert.match(panel.innerHTML, /Chat settings/);
+    assert.match(panel.innerHTML, /data-jwp-theme="monochrome"/);
+    assert.match(panel.innerHTML, />Frost</);
+    assert.match(panel.innerHTML, />Violet</);
+    assert.match(panel.innerHTML, />Ember</);
+    assert.doesNotMatch(panel.innerHTML, /id="jwp-chat-input"/);
   });
 
   it('in-room shows the receiver picker only when supported receivers are enabled', () => {

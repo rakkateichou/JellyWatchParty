@@ -1,5 +1,6 @@
 use super::super::constants::{MAX_CHAT_HISTORY, MAX_CHAT_MESSAGE_LENGTH};
 use super::super::dispatch::send_error;
+use super::super::validation::sanitize_name;
 use crate::types::{ChatHistoryEntry, Clients, IncomingMessage, Rooms, WsMessage};
 use crate::utils::now_ms;
 use tokio::sync::mpsc;
@@ -91,7 +92,16 @@ pub(in crate::ws) async fn handle_chat_message(
         return;
     }
 
-    let username = {
+    let requested_username = parsed
+        .payload
+        .as_ref()
+        .and_then(|p| p.get("username"))
+        .and_then(|v| v.as_str())
+        .and_then(sanitize_name);
+
+    let username = if let Some(nickname) = requested_username {
+        nickname
+    } else {
         let locked_clients = clients.read().await;
         locked_clients
             .get(client_id)
@@ -175,6 +185,36 @@ mod tests {
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].text, "hello");
         assert_eq!(history[0].username, "Host");
+    }
+
+    #[tokio::test]
+    async fn handle_chat_message_uses_sanitized_nickname() {
+        let clients = crate::test_helpers::create_clients();
+        let rooms = crate::test_helpers::create_rooms();
+        let (host, mut rx_h) = crate::test_helpers::create_client_with_rx("uh", "Host", true);
+        clients.write().await.insert("host".to_string(), host);
+        rooms.write().await.insert(
+            "room-1".to_string(),
+            crate::test_helpers::create_room("room-1", "host"),
+        );
+
+        let parsed = IncomingMessage {
+            msg_type: crate::types::ClientMessageType::ChatMessage,
+            room: Some("room-1".to_string()),
+            client: Some("host".to_string()),
+            payload: Some(serde_json::json!({
+                "text": "hello",
+                "username": "  Movie Fan  "
+            })),
+            ts: 0,
+            server_ts: None,
+        };
+        handle_chat_message("host", &parsed, &clients, &rooms).await;
+
+        let _ = crate::test_helpers::recv_msg(&mut rx_h);
+        let rooms_locked = rooms.read().await;
+        let history = &rooms_locked.get("room-1").unwrap().chat_history;
+        assert_eq!(history[0].username, "Movie Fan");
     }
 
     #[tokio::test]

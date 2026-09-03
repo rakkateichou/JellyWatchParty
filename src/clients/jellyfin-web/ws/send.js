@@ -19,7 +19,8 @@
   const createRoom = (password = '') => {
     const v = utils.getVideo();
     const mediaId = utils.getCurrentItemId();
-    const userName = state.userName
+    const userName = state.chatNickname
+      || state.userName
       || window.ApiClient?._currentUser?.Name
       || 'Anonymous';
     const payload = {
@@ -33,7 +34,8 @@
 
   const joinRoom = (id, password = '') => {
     state.roomId = id;
-    const userName = state.userName
+    const userName = state.chatNickname
+      || state.userName
       || window.ApiClient?._currentUser?.Name
       || 'Anonymous';
     const payload = { user_name: userName };
@@ -46,6 +48,7 @@
     state.inRoom = false;
     state.roomId = '';
     state.roomMediaId = '';
+    state.chatSettingsOpen = false;
     state.mediaChangeToken += 1;
     state.readyRoomId = '';
     state.isInitialSync = false;

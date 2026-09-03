@@ -4,6 +4,21 @@
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = window.location.hostname;
+  const CHAT_NICKNAME_STORAGE_KEY = 'jwp_chat_nickname';
+  const PANEL_THEME_STORAGE_KEY = 'jwp_panel_theme';
+  const PANEL_THEMES = ['monochrome', 'frost', 'violet', 'ember'];
+
+  const readPreference = (key) => {
+    try { return window.localStorage?.getItem(key) || ''; } catch (err) { return ''; }
+  };
+
+  const cleanNickname = (value) => String(value || '')
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, 100);
+
+  const savedNickname = cleanNickname(readPreference(CHAT_NICKNAME_STORAGE_KEY));
+  const savedTheme = readPreference(PANEL_THEME_STORAGE_KEY);
 
   // LRU Cache implementation for image URLs
   class LRUCache {
@@ -47,6 +62,9 @@
     STYLE_ID: 'jwp-style',
     SYNC_HIDE_STYLE_ID: 'jwp-hide-native-sync',
     HOME_SECTION_ID: 'jwp-home-section',
+    CHAT_NICKNAME_STORAGE_KEY,
+    PANEL_THEME_STORAGE_KEY,
+    PANEL_THEMES,
     protocol,
     host,
     DEFAULT_WS_URL: `${protocol}//${host}:3000/ws`,
@@ -139,6 +157,9 @@
     authEnabled: false,
     userId: '',
     userName: '',
+    chatNickname: savedNickname,
+    panelTheme: PANEL_THEMES.includes(savedTheme) ? savedTheme : 'monochrome',
+    chatSettingsOpen: false,
     tokenExpiresAt: 0,           // Timestamp when token expires
     tokenRefreshTimer: null,     // Timer for token refresh
     // Interval tracking (P4 - memory leak prevention)

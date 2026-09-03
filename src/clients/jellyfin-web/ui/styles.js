@@ -5,20 +5,28 @@
 
   const CSS_STYLES = `
     #${PANEL_ID} {
-      --jwp-panel-top: rgba(30, 40, 54, .97);
-      --jwp-panel-bottom: rgba(13, 20, 30, .985);
+      --jwp-panel-top: rgba(13, 13, 14, .985);
+      --jwp-panel-bottom: rgba(0, 0, 0, .992);
+      --jwp-glow: rgba(255, 255, 255, .035);
       --jwp-surface: rgba(255, 255, 255, .055);
-      --jwp-surface-hover: rgba(255, 255, 255, .09);
-      --jwp-border: rgba(190, 207, 229, .16);
-      --jwp-border-strong: rgba(190, 207, 229, .26);
-      --jwp-text: #e6ebf2;
-      --jwp-muted: #9aa6b6;
-      --jwp-faint: #6f7b8c;
-      --jwp-accent: #b7d5e9;
-      --jwp-accent-strong: #dce8f5;
-      --jwp-accent-ink: #101722;
-      --jwp-success: #76d6b0;
-      --jwp-danger: #ff9da4;
+      --jwp-surface-hover: rgba(255, 255, 255, .105);
+      --jwp-border: rgba(255, 255, 255, .14);
+      --jwp-border-strong: rgba(255, 255, 255, .27);
+      --jwp-text: #f5f5f5;
+      --jwp-muted: #b5b5b8;
+      --jwp-faint: #77777c;
+      --jwp-accent: #d8d8dc;
+      --jwp-accent-strong: #ffffff;
+      --jwp-accent-ink: #080808;
+      --jwp-success: #ffffff;
+      --jwp-danger: #ffffff;
+      --jwp-action-bg: rgba(255, 255, 255, .075);
+      --jwp-action-hover: rgba(255, 255, 255, .13);
+      --jwp-input-bg: rgba(255, 255, 255, .035);
+      --jwp-input-focus: rgba(255, 255, 255, .065);
+      --jwp-focus: rgba(255, 255, 255, .86);
+      --jwp-danger-bg: rgba(255, 255, 255, .075);
+      --jwp-danger-hover: rgba(255, 255, 255, .13);
       position: fixed;
       right: 20px;
       bottom: 100px;
@@ -28,7 +36,7 @@
       border: 1px solid var(--jwp-border);
       border-radius: 1rem;
       background:
-        radial-gradient(circle at 90% 0%, rgba(105, 153, 188, .13), transparent 38%),
+        radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
       -webkit-backdrop-filter: blur(24px) saturate(135%);
       backdrop-filter: blur(24px) saturate(135%);
@@ -40,6 +48,72 @@
       z-index: 20000;
       display: flex;
       flex-direction: column;
+    }
+    #${PANEL_ID}[data-theme="frost"] {
+      --jwp-panel-top: rgba(30, 40, 54, .97);
+      --jwp-panel-bottom: rgba(13, 20, 30, .985);
+      --jwp-glow: rgba(105, 153, 188, .13);
+      --jwp-border: rgba(190, 207, 229, .16);
+      --jwp-border-strong: rgba(190, 207, 229, .26);
+      --jwp-text: #e6ebf2;
+      --jwp-muted: #9aa6b6;
+      --jwp-faint: #6f7b8c;
+      --jwp-accent: #b7d5e9;
+      --jwp-accent-strong: #dce8f5;
+      --jwp-accent-ink: #101722;
+      --jwp-success: #76d6b0;
+      --jwp-danger: #ff9da4;
+      --jwp-action-bg: rgba(132, 171, 202, .16);
+      --jwp-action-hover: rgba(148, 186, 216, .24);
+      --jwp-input-bg: rgba(6, 12, 20, .42);
+      --jwp-input-focus: rgba(9, 17, 27, .65);
+      --jwp-focus: rgba(171, 210, 238, .9);
+      --jwp-danger-bg: rgba(190, 57, 67, .18);
+      --jwp-danger-hover: rgba(205, 65, 76, .27);
+    }
+    #${PANEL_ID}[data-theme="violet"] {
+      --jwp-panel-top: rgba(30, 24, 43, .982);
+      --jwp-panel-bottom: rgba(11, 7, 18, .992);
+      --jwp-glow: rgba(151, 108, 226, .17);
+      --jwp-border: rgba(208, 184, 242, .17);
+      --jwp-border-strong: rgba(216, 193, 248, .3);
+      --jwp-text: #f2ecf9;
+      --jwp-muted: #b7a9c8;
+      --jwp-faint: #7e718f;
+      --jwp-accent: #cbb2ee;
+      --jwp-accent-strong: #e8dcf8;
+      --jwp-accent-ink: #1b1028;
+      --jwp-success: #d4baff;
+      --jwp-danger: #ffabb8;
+      --jwp-action-bg: rgba(151, 108, 226, .16);
+      --jwp-action-hover: rgba(166, 123, 238, .25);
+      --jwp-input-bg: rgba(14, 8, 23, .5);
+      --jwp-input-focus: rgba(25, 15, 39, .72);
+      --jwp-focus: rgba(215, 187, 250, .9);
+      --jwp-danger-bg: rgba(185, 68, 88, .18);
+      --jwp-danger-hover: rgba(202, 75, 98, .28);
+    }
+    #${PANEL_ID}[data-theme="ember"] {
+      --jwp-panel-top: rgba(43, 28, 22, .982);
+      --jwp-panel-bottom: rgba(18, 9, 6, .992);
+      --jwp-glow: rgba(224, 122, 65, .16);
+      --jwp-border: rgba(235, 195, 168, .17);
+      --jwp-border-strong: rgba(241, 203, 177, .3);
+      --jwp-text: #f8eee7;
+      --jwp-muted: #c2aa9a;
+      --jwp-faint: #897366;
+      --jwp-accent: #e9b790;
+      --jwp-accent-strong: #f6d4b9;
+      --jwp-accent-ink: #26130b;
+      --jwp-success: #f3c5a0;
+      --jwp-danger: #ffac9f;
+      --jwp-action-bg: rgba(211, 111, 55, .16);
+      --jwp-action-hover: rgba(226, 127, 70, .25);
+      --jwp-input-bg: rgba(24, 12, 7, .5);
+      --jwp-input-focus: rgba(40, 21, 12, .72);
+      --jwp-focus: rgba(245, 192, 150, .9);
+      --jwp-danger-bg: rgba(185, 68, 64, .18);
+      --jwp-danger-hover: rgba(205, 78, 72, .28);
     }
     #${PANEL_ID}.hide { display: none; }
     #${PANEL_ID} * { box-sizing: border-box; }
@@ -133,23 +207,23 @@
     .jwp-select:focus-visible,
     #jwp-chat-input:focus-visible,
     #jwp-chat-send:focus-visible {
-      outline: 2px solid rgba(171, 210, 238, .9);
+      outline: 2px solid var(--jwp-focus);
       outline-offset: 2px;
     }
     .jwp-btn.secondary {
-      border-color: rgba(171, 204, 229, .2);
-      background: rgba(132, 171, 202, .16);
+      border-color: var(--jwp-border);
+      background: var(--jwp-action-bg);
       box-shadow: none;
-      color: #dbe9f5;
+      color: var(--jwp-text);
     }
-    .jwp-btn.secondary:hover { background: rgba(148, 186, 216, .24); }
+    .jwp-btn.secondary:hover { background: var(--jwp-action-hover); }
     .jwp-btn.danger {
-      border-color: rgba(255, 126, 136, .2);
-      background: rgba(190, 57, 67, .18);
+      border-color: var(--jwp-border);
+      background: var(--jwp-danger-bg);
       box-shadow: none;
       color: var(--jwp-danger);
     }
-    .jwp-btn.danger:hover { background: rgba(205, 65, 76, .27); }
+    .jwp-btn.danger:hover { background: var(--jwp-danger-hover); }
     .jwp-icon-btn {
       width: 2.25rem;
       height: 2.25rem;
@@ -166,8 +240,9 @@
     }
     .jwp-icon-btn:hover { border-color: var(--jwp-border-strong); background: var(--jwp-surface-hover); transform: translateY(-1px); }
     .jwp-icon-btn:active { transform: translateY(0); }
+    .jwp-icon-btn[aria-pressed="true"] { border-color: var(--jwp-border-strong); background: var(--jwp-action-hover); color: var(--jwp-accent-strong); }
     .jwp-icon-btn.danger { color: var(--jwp-muted); }
-    .jwp-icon-btn.danger:hover { color: var(--jwp-danger); background: rgba(190, 57, 67, .16); }
+    .jwp-icon-btn.danger:hover { color: var(--jwp-danger); background: var(--jwp-danger-hover); }
     .jwp-icon-btn .material-icons { font-size: 1.15rem; }
     .jwp-invite-btn {
       min-height: 2.25rem;
@@ -186,7 +261,7 @@
       width: 100%;
       border: 1px solid var(--jwp-border);
       border-radius: .72rem;
-      background: rgba(6, 12, 20, .42);
+      background: var(--jwp-input-bg);
       color: var(--jwp-text);
       font: inherit;
       transition: background .16s ease, border-color .16s ease;
@@ -201,8 +276,8 @@
     .jwp-input:focus,
     .jwp-select:focus,
     #jwp-chat-input:focus {
-      border-color: rgba(171, 210, 238, .5);
-      background: rgba(9, 17, 27, .65);
+      border-color: var(--jwp-border-strong);
+      background: var(--jwp-input-focus);
     }
     .jwp-select {
       padding: .62rem 2rem .62rem .72rem;
@@ -220,6 +295,79 @@
       font-size: .74rem;
     }
     .jwp-checkbox-row input { accent-color: #9ec8e5; }
+    .jwp-nickname-gate {
+      flex: 1;
+      min-height: 0;
+      padding: 1.35rem 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    #jwp-chat-settings {
+      flex: 1;
+      min-height: 0;
+      padding-top: 1rem;
+      overflow-y: auto;
+    }
+    .jwp-settings-title {
+      margin-bottom: .35rem;
+      color: var(--jwp-text);
+      font-size: 1rem;
+      font-weight: 720;
+    }
+    .jwp-settings-copy {
+      margin-bottom: 1rem;
+      color: var(--jwp-muted);
+      font-size: .74rem;
+      line-height: 1.5;
+    }
+    .jwp-settings-label {
+      margin: .25rem 0 .45rem;
+      display: block;
+      color: var(--jwp-muted);
+      font-size: .7rem;
+      font-weight: 650;
+      letter-spacing: .055em;
+      text-transform: uppercase;
+    }
+    .jwp-settings-save { width: 100%; margin-top: .15rem; }
+    .jwp-input-error { border-color: var(--jwp-danger) !important; }
+    .jwp-theme-options {
+      margin-bottom: .85rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .5rem;
+    }
+    .jwp-theme-option {
+      min-width: 0;
+      padding: .55rem .6rem;
+      border: 1px solid var(--jwp-border);
+      border-radius: .7rem;
+      background: var(--jwp-surface);
+      color: var(--jwp-muted);
+      display: flex;
+      align-items: center;
+      gap: .48rem;
+      cursor: pointer;
+      font: inherit;
+      font-size: .73rem;
+      font-weight: 650;
+      text-align: left;
+      transition: background .16s ease, border-color .16s ease, color .16s ease;
+    }
+    .jwp-theme-option:hover { border-color: var(--jwp-border-strong); background: var(--jwp-surface-hover); color: var(--jwp-text); }
+    .jwp-theme-option[aria-pressed="true"] { border-color: var(--jwp-focus); color: var(--jwp-text); }
+    .jwp-theme-swatch {
+      width: .85rem;
+      height: .85rem;
+      border: 1px solid rgba(255, 255, 255, .24);
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f5f5f5 0 48%, #111 52% 100%);
+      flex: 0 0 auto;
+    }
+    .jwp-theme-option[data-jwp-theme="frost"] .jwp-theme-swatch { background: linear-gradient(135deg, #dce8f5 0 48%, #182638 52% 100%); }
+    .jwp-theme-option[data-jwp-theme="violet"] .jwp-theme-swatch { background: linear-gradient(135deg, #e8dcf8 0 48%, #241332 52% 100%); }
+    .jwp-theme-option[data-jwp-theme="ember"] .jwp-theme-swatch { background: linear-gradient(135deg, #f6d4b9 0 48%, #35170c 52% 100%); }
     /* UX-P3: Sync status indicator styles */
     .jwp-sync-status {
       margin-top: .6rem;
@@ -259,23 +407,23 @@
     .jwp-chat-message { margin-bottom: .55rem; padding: .25rem 0; }
     .jwp-chat-message.jwp-chat-own .jwp-chat-username { color: var(--jwp-success); }
     .jwp-chat-meta { margin-bottom: .12rem; display: flex; align-items: baseline; gap: .5rem; }
-    .jwp-chat-username { color: #a9d2ed; font-size: .7rem; font-weight: 700; }
+    .jwp-chat-username { color: var(--jwp-accent); font-size: .7rem; font-weight: 700; }
     .jwp-chat-time { color: var(--jwp-faint); font-size: .64rem; }
     .jwp-chat-text { color: var(--jwp-text); line-height: 1.4; word-wrap: break-word; }
     #jwp-chat-input-container { padding-top: .65rem; border-top: 1px solid var(--jwp-border); display: flex; gap: .5rem; }
     #jwp-chat-input { min-width: 0; flex: 1; padding: .58rem .7rem; font-size: .75rem; }
     #jwp-chat-send {
       padding: .55rem .8rem;
-      border: 1px solid rgba(171, 204, 229, .2);
+      border: 1px solid var(--jwp-border);
       border-radius: .68rem;
-      background: rgba(132, 171, 202, .18);
-      color: #dbe9f5;
+      background: var(--jwp-action-bg);
+      color: var(--jwp-text);
       cursor: pointer;
       font: inherit;
       font-size: .75rem;
       font-weight: 700;
     }
-    #jwp-chat-send:hover { background: rgba(148, 186, 216, .26); }
+    #jwp-chat-send:hover { background: var(--jwp-action-hover); }
     .jwp-chat-badge { display: none; margin-left: .25rem; padding: .1rem .35rem; border-radius: 999px; background: rgba(190, 57, 67, .8); color: #fff; font-size: .62rem; }
     .jwp-meta { color: var(--jwp-faint) !important; font-size: .64rem !important; }
     /* Toast styles */

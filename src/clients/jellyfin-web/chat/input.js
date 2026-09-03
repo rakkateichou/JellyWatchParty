@@ -6,6 +6,11 @@
 
   const send = (text) => {
     console.log('[JellyWatchParty] Chat.send called with:', text);
+    const nickname = String(JWP.state.chatNickname || '').trim();
+    if (!nickname) {
+      JWP.ui.showToast('Choose a nickname before chatting');
+      return false;
+    }
     if (!text || !text.trim()) return false;
     const trimmed = text.trim();
     if (trimmed.length > MAX_MESSAGE_LENGTH) {
@@ -23,7 +28,7 @@
       return false;
     }
     console.log('[JellyWatchParty] Chat: Sending message to room', JWP.state.roomId);
-    JWP.actions.send('chat_message', { text: trimmed });
+    JWP.actions.send('chat_message', { text: trimmed, username: nickname });
     return true;
   };
 
