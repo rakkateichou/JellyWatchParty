@@ -66,6 +66,10 @@ pub async fn resend_room_state(client_id: &str, room_id: &str, clients: &Clients
         return;
     };
     let locked_clients = clients.read().await;
+    let is_owner = locked_clients
+        .get(client_id)
+        .map(|client| client.user_id == room.owner_user_id)
+        .unwrap_or(false);
     send_to_client(
         client_id,
         &locked_clients,
@@ -73,7 +77,7 @@ pub async fn resend_room_state(client_id: &str, room_id: &str, clients: &Clients
             msg_type: "room_state".to_string(),
             room: Some(room.room_id.clone()),
             client: Some(client_id.to_string()),
-            payload: Some(build_room_state_payload(room, room.clients.len())),
+            payload: Some(build_room_state_payload(room, room.clients.len(), is_owner)),
             ts: now_ms(),
             server_ts: Some(now_ms()),
         },

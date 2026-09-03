@@ -63,6 +63,7 @@
       <button class="jwp-btn jwp-settings-save" id="jwp-settings-save">Save settings</button>
       <div class="jwp-settings-room-actions">
         <button class="jwp-btn danger" id="jwp-settings-leave">Leave room</button>
+        ${state.isRoomOwner ? '<button class="jwp-btn danger jwp-delete-room" id="jwp-settings-delete">Delete room for everyone</button>' : ''}
       </div>
     </div>
   `;
@@ -389,6 +390,23 @@
 
     const leaveButton = panel.querySelector('#jwp-settings-leave');
     if (leaveButton) leaveButton.onclick = () => JWP.actions?.leaveRoom?.();
+
+    const deleteButton = panel.querySelector('#jwp-settings-delete');
+    if (deleteButton) deleteButton.onclick = async () => {
+      const confirmed = await ui.confirmAction?.({
+        title: 'Delete this room?',
+        message: 'Everyone will be disconnected immediately.',
+        submitLabel: 'Delete room',
+        danger: true
+      });
+      if (!confirmed) return;
+      deleteButton.disabled = true;
+      deleteButton.textContent = 'Deleting…';
+      if (!JWP.actions?.deleteRoom?.()) {
+        deleteButton.disabled = false;
+        deleteButton.textContent = 'Delete room for everyone';
+      }
+    };
 
     if (typeof panel.querySelectorAll === 'function') {
       panel.querySelectorAll('[data-jwp-theme]').forEach(button => {

@@ -5,7 +5,11 @@ use std::collections::HashMap;
 /// Builds the payload shared by every place a client needs to be told (or
 /// reminded) of a room's full state: initial create, join, and reattach
 /// after a dropped-connection reconnect.
-pub fn build_room_state_payload(room: &Room, participant_count: usize) -> serde_json::Value {
+pub fn build_room_state_payload(
+    room: &Room,
+    participant_count: usize,
+    is_owner: bool,
+) -> serde_json::Value {
     let chat_history: Vec<serde_json::Value> = room
         .chat_history
         .iter()
@@ -24,6 +28,7 @@ pub fn build_room_state_payload(room: &Room, participant_count: usize) -> serde_
         "peer_ids": room.clients,
         "state": room.state,
         "participant_count": participant_count,
+        "is_owner": is_owner,
         "media_id": room.media_id,
         "state_server_ts": room.last_state_ts,
         "chat_history": chat_history,
@@ -172,8 +177,9 @@ mod tests {
             server_ts: 123,
         });
 
-        let payload = build_room_state_payload(&room, 2);
+        let payload = build_room_state_payload(&room, 2, true);
         assert_eq!(payload.get("participant_count").unwrap(), 2);
+        assert_eq!(payload.get("is_owner").unwrap(), true);
         assert_eq!(payload.get("state_server_ts").unwrap(), room.last_state_ts);
         assert_eq!(
             payload.get("peer_ids").unwrap().as_array().unwrap().len(),

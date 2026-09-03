@@ -387,6 +387,8 @@
       margin-top: 1rem;
       padding-top: 1rem;
       border-top: 1px solid var(--jwp-border);
+      display: grid;
+      gap: .55rem;
     }
     .jwp-settings-room-actions .jwp-btn { width: 100%; }
     .jwp-input-error { border-color: var(--jwp-danger) !important; }
@@ -649,6 +651,7 @@
     .jwp-modal,
     .jwp-modal * { box-sizing: border-box; }
     .jwp-modal-title { margin-bottom: .8rem; font-size: .88rem; font-weight: 700; }
+    .jwp-modal-copy { color: var(--jwp-muted); font-size: .78rem; line-height: 1.45; }
     .jwp-modal-actions { margin-top: .8rem; display: flex; gap: .55rem; }
     .jwp-modal-actions .jwp-btn { flex: 1; }
     @media (min-width: 440px) {

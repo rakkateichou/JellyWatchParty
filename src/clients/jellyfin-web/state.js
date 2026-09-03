@@ -135,6 +135,7 @@
     guestShareItemId: '',    // Root item granted by ShareLinks (room media remains stricter)
     roomName: '',
     roomHostId: '',
+    isRoomOwner: false,
     roomMediaId: '',
     inviteRoomId: '',
     inviteBaseUrl: '',

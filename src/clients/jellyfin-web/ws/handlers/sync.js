@@ -25,6 +25,7 @@
     state.roomId = msg.room;
     state.roomName = msg.payload.name;
     state.roomHostId = msg.payload.host_id || '';
+    state.isRoomOwner = msg.payload.is_owner === true;
     state.roomMediaId = msg.payload.media_id || state.roomMediaId || '';
     if (msg.payload.invite_url) {
       state.inviteRoomId = msg.room;

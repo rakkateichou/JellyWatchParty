@@ -73,6 +73,7 @@
     state.inRoom = false;
     state.roomId = '';
     state.roomHostId = '';
+    state.isRoomOwner = false;
     state.roomMediaId = '';
     state.chatSettingsOpen = false;
     state.mediaChangeToken += 1;
@@ -95,5 +96,15 @@
     if (panel) panel.classList.add('hide');
   };
 
-  Object.assign(actions, { send, createRoom, joinRoom, leaveRoom });
+  const deleteRoom = () => {
+    if (!state.inRoom || !state.roomId) return false;
+    if (!state.isRoomOwner) {
+      JWP.ui?.showToast?.('Only the room owner can delete this room');
+      return false;
+    }
+    send('delete_room');
+    return true;
+  };
+
+  Object.assign(actions, { send, createRoom, joinRoom, leaveRoom, deleteRoom });
 })();

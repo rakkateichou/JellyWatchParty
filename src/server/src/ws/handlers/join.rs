@@ -27,7 +27,12 @@ fn add_client_to_room(
     }
 }
 
-fn notify_join(client_id: &str, room: &Room, locked_clients: &HashMap<String, Client>) {
+fn notify_join(
+    client_id: &str,
+    room: &Room,
+    locked_clients: &HashMap<String, Client>,
+    is_owner: bool,
+) {
     send_to_client(
         client_id,
         locked_clients,
@@ -35,7 +40,7 @@ fn notify_join(client_id: &str, room: &Room, locked_clients: &HashMap<String, Cl
             msg_type: "room_state".to_string(),
             room: Some(room.room_id.clone()),
             client: Some(client_id.to_string()),
-            payload: Some(build_room_state_payload(room, room.clients.len())),
+            payload: Some(build_room_state_payload(room, room.clients.len(), is_owner)),
             ts: now_ms(),
             server_ts: Some(now_ms()),
         },
@@ -140,13 +145,14 @@ pub(in crate::ws) async fn handle_join_room(
     }
 
     info!("Client {} joining room {}", client_id, room_id);
-    if !joining_user_id.is_empty() && joining_user_id == room.owner_user_id {
+    let is_owner = !joining_user_id.is_empty() && joining_user_id == room.owner_user_id;
+    if is_owner {
         // The creator always regains host control, even if a guest kept the
         // room alive and was temporarily promoted while the owner was away.
         room.host_id = client_id.to_string();
     }
     add_client_to_room(client_id, room, &mut locked_clients, &payload_name);
-    notify_join(client_id, room, &locked_clients);
+    notify_join(client_id, room, &locked_clients, is_owner);
 }
 
 #[cfg(test)]

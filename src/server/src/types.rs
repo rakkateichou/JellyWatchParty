@@ -87,6 +87,7 @@ pub enum ClientMessageType {
     JoinRoom,
     Ready,
     LeaveRoom,
+    DeleteRoom,
     PlayerEvent,
     StateUpdate,
     Ping,
@@ -196,6 +197,9 @@ mod tests {
 
         let json = serde_json::to_string(&ClientMessageType::CreateRoom).unwrap();
         assert_eq!(json, r#""create_room""#);
+
+        let json = serde_json::to_string(&ClientMessageType::DeleteRoom).unwrap();
+        assert_eq!(json, r#""delete_room""#);
     }
 
     #[test]

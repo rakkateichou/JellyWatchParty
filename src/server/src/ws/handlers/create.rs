@@ -113,7 +113,7 @@ fn insert_and_notify(
             msg_type: "room_state".to_string(),
             room: Some(room_id),
             client: Some(client_id.to_string()),
-            payload: Some(build_room_state_payload(&room, 1)),
+            payload: Some(build_room_state_payload(&room, 1, true)),
             ts: now_ms(),
             server_ts: Some(now_ms()),
         },
