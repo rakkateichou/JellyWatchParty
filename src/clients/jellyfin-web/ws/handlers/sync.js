@@ -21,6 +21,7 @@
     state.inRoom = true;
     state.roomId = msg.room;
     state.roomName = msg.payload.name;
+    state.roomHostId = msg.payload.host_id || '';
     state.roomMediaId = msg.payload.media_id || state.roomMediaId || '';
     state.participantCount = msg.payload.participant_count;
     if (!state.clientId && msg.client) {
@@ -43,6 +44,9 @@
     }
     if (previousRoomId !== state.roomId && ui.resetPreparedInvite) {
       ui.resetPreparedInvite();
+    }
+    if (JWP.p2p?.syncPeers) {
+      JWP.p2p.syncPeers(msg.payload.peer_ids || []);
     }
 
     // Invitations open directly into the room and reveal the right-side chat;

@@ -7,6 +7,8 @@
   const { DEFAULT_WS_URL, RECONNECT_BASE_MS, RECONNECT_MAX_MS, PING_INIT_MS, PING_STABLE_MS, PING_STABLE_AFTER } = JWP.constants;
 
   const CLIENT_ID_STORAGE_KEY = 'owp_persistent_client_id';
+  const recentMessageIds = new Map();
+  const MESSAGE_ID_TTL_MS = 30000;
 
   const generateUuid = () => {
     if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -72,9 +74,22 @@
     }
   };
 
-  const handleMessage = (msg) => {
+  const isDuplicate = (msg) => {
+    const id = msg?.payload?._jwp_message_id;
+    if (!id || typeof id !== 'string') return false;
+    const now = Date.now();
+    for (const [knownId, seenAt] of recentMessageIds) {
+      if (now - seenAt > MESSAGE_ID_TTL_MS) recentMessageIds.delete(knownId);
+    }
+    if (recentMessageIds.has(id)) return true;
+    recentMessageIds.set(id, now);
+    return false;
+  };
+
+  const handleIncomingMessage = (msg, source = 'ws') => {
+    if (isDuplicate(msg)) return;
     const video = utils.getVideo();
-    console.log('[JellyWatchParty] Received:', msg.type, msg);
+    console.log(`[JellyWatchParty] Received (${source}):`, msg.type, msg);
     const h = JWP._wsHandlers;
     switch (msg.type) {
       case 'room_list': h.handleRoomList(msg); break;
@@ -89,6 +104,7 @@
       case 'pong': h.handlePong(msg); break;
       case 'chat_message': if (JWP.chat && msg.payload) JWP.chat.receive(msg); break;
       case 'cursor_update': if (JWP.cursor && msg.payload) JWP.cursor.receive(msg); break;
+      case 'rtc_signal': if (JWP.p2p?.handleSignal) JWP.p2p.handleSignal(msg); break;
       case 'error': h.handleError(msg); break;
     }
   };
@@ -141,7 +157,7 @@
       try {
         const msg = JSON.parse(e.data);
         if (!state.inRoom || msg.room === state.roomId || !msg.room || msg.type === 'room_state') {
-          handleMessage(msg);
+          handleIncomingMessage(msg, 'ws');
         }
       } catch (err) {
         console.error('[JellyWatchParty] Failed to parse message:', err.message, 'Data:', e.data?.substring?.(0, 100));
@@ -161,5 +177,5 @@
     }, interval);
   };
 
-  Object.assign(actions, { connect, schedulePing });
+  Object.assign(actions, { connect, schedulePing, handleIncomingMessage });
 })();

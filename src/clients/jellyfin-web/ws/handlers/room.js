@@ -18,7 +18,9 @@
   };
 
   h.handleParticipantsUpdate = (msg) => {
+    if (msg.payload?.host_id) state.roomHostId = msg.payload.host_id;
     state.participantCount = msg.payload.participant_count;
+    if (JWP.p2p?.syncPeers) JWP.p2p.syncPeers(msg.payload?.peer_ids || []);
     if (state.inRoom) {
       const el = document.getElementById('jwp-participants-list');
       if (el) el.textContent = `${state.participantCount} online`;
@@ -30,6 +32,8 @@
   };
 
   h.handleClientLeft = (msg) => {
+    if (msg.payload?.host_id) state.roomHostId = msg.payload.host_id;
+    if (JWP.p2p?.syncPeers) JWP.p2p.syncPeers(msg.payload?.peer_ids || []);
     if (msg.payload?.participant_count !== undefined) {
       state.participantCount = msg.payload.participant_count;
       if (state.inRoom) {
@@ -45,8 +49,10 @@
     if (ui.resetPreparedInvite) ui.resetPreparedInvite();
     state.inRoom = false;
     state.roomId = '';
+    state.roomHostId = '';
     state.chatSettingsOpen = false;
     if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
+    if (JWP.p2p?.reset) JWP.p2p.reset();
     const reason = msg.payload?.reason || 'The room was closed';
     ui.showToast(reason);
     ui.render();
@@ -55,7 +61,9 @@
   h.handleHostChanged = (msg) => {
     if (!msg.payload) return;
     const wasHost = state.isHost;
+    state.roomHostId = msg.payload.host_id || '';
     state.isHost = (msg.payload.host_id === state.clientId);
+    if (JWP.p2p?.syncPeers) JWP.p2p.syncPeers(msg.payload.peer_ids || []);
     if (msg.payload.participant_count !== undefined) {
       state.participantCount = msg.payload.participant_count;
     }

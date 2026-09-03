@@ -134,6 +134,7 @@
     guestMode: false,        // Verified ShareLinks temporary guest session
     guestShareItemId: '',    // Root item granted by ShareLinks (room media remains stricter)
     roomName: '',
+    roomHostId: '',
     roomMediaId: '',
     inviteRoomId: '',
     inviteBaseUrl: '',

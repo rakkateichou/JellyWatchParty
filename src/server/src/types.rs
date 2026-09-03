@@ -79,6 +79,7 @@ pub enum ClientMessageType {
     ClientLog,
     ChatMessage,
     CursorUpdate,
+    RtcSignal,
     #[serde(other)]
     Unknown,
 }
@@ -101,6 +102,7 @@ pub enum ServerMessageType {
     RoomClosed,
     ChatMessage,
     CursorUpdate,
+    RtcSignal,
     HostChanged,
 }
 

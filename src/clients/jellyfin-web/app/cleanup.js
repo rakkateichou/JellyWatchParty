@@ -47,6 +47,7 @@
     cleanupPanel();
     cleanupVideo();
     if (JWP.cursor && JWP.cursor.cleanup) JWP.cursor.cleanup();
+    if (JWP.p2p?.reset) JWP.p2p.reset();
     state.bound = false;
     state.initialized = false;
   };

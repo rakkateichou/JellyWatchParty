@@ -46,7 +46,11 @@ fn notify_join(client_id: &str, room: &Room, locked_clients: &HashMap<String, Cl
             msg_type: "participants_update".to_string(),
             room: Some(room.room_id.clone()),
             client: None,
-            payload: Some(serde_json::json!({ "participant_count": room.clients.len() })),
+            payload: Some(serde_json::json!({
+                "participant_count": room.clients.len(),
+                "host_id": room.host_id,
+                "peer_ids": room.clients,
+            })),
             ts: now_ms(),
             server_ts: Some(now_ms()),
         },

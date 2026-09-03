@@ -34,7 +34,11 @@ fn detach_client_from_room(
         msg_type: "client_left".to_string(),
         room: Some(room_id),
         client: Some(client_id.to_string()),
-        payload: Some(serde_json::json!({ "participant_count": room.clients.len() })),
+        payload: Some(serde_json::json!({
+            "participant_count": room.clients.len(),
+            "host_id": room.host_id,
+            "peer_ids": room.clients,
+        })),
         ts: now_ms(),
         server_ts: Some(now_ms()),
     };
@@ -61,7 +65,8 @@ fn promote_new_host(room_id: &str, room: &mut Room, clients: &HashMap<String, Cl
         payload: Some(serde_json::json!({
             "host_id": new_host_id,
             "host_name": new_host_name,
-            "participant_count": room.clients.len()
+            "participant_count": room.clients.len(),
+            "peer_ids": room.clients,
         })),
         ts: now_ms(),
         server_ts: Some(now_ms()),

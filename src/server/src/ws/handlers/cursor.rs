@@ -53,7 +53,7 @@ pub(in crate::ws) async fn handle_cursor_update(
         .and_then(sanitize_name)
         .unwrap_or(fallback_name);
 
-    let payload = if let Some((x, y)) = position {
+    let mut payload = if let Some((x, y)) = position {
         serde_json::json!({
             "visible": true,
             "x": x,
@@ -66,6 +66,15 @@ pub(in crate::ws) async fn handle_cursor_update(
             "username": username,
         })
     };
+    if let Some(message_id) = parsed
+        .payload
+        .as_ref()
+        .and_then(|value| value.get("_jwp_message_id"))
+        .and_then(|value| value.as_str())
+        .filter(|id| id.len() <= 100)
+    {
+        payload["_jwp_message_id"] = serde_json::json!(message_id);
+    }
     let timestamp = now_ms();
     let message = WsMessage {
         msg_type: "cursor_update".to_string(),
@@ -140,7 +149,8 @@ mod tests {
                 "visible": true,
                 "x": 0.4,
                 "y": 0.6,
-                "username": "  Movie Fan  "
+                "username": "  Movie Fan  ",
+                "_jwp_message_id": "cursor-1"
             })),
             ts: 0,
             server_ts: None,
@@ -153,5 +163,6 @@ mod tests {
         assert_eq!(payload.get("username").unwrap(), "Movie Fan");
         assert_eq!(payload.get("x").unwrap(), 0.4);
         assert_eq!(payload.get("y").unwrap(), 0.6);
+        assert_eq!(payload.get("_jwp_message_id").unwrap(), "cursor-1");
     }
 }

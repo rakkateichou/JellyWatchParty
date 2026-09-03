@@ -25,6 +25,7 @@ fn collect_chat_senders(
     client_id: &str,
     username: &str,
     chat_text: &str,
+    message_id: Option<&str>,
     rooms: &mut std::collections::HashMap<String, crate::types::Room>,
     clients: &std::collections::HashMap<String, crate::types::Client>,
 ) -> Option<BroadcastData> {
@@ -44,14 +45,18 @@ fn collect_chat_senders(
         room.chat_history.pop_front();
     }
 
+    let mut payload = serde_json::json!({
+        "username": username,
+        "text": chat_text
+    });
+    if let Some(id) = message_id {
+        payload["_jwp_message_id"] = serde_json::json!(id);
+    }
     let msg = WsMessage {
         msg_type: "chat_message".to_string(),
         room: Some(room_id.to_string()),
         client: Some(client_id.to_string()),
-        payload: Some(serde_json::json!({
-            "username": username,
-            "text": chat_text
-        })),
+        payload: Some(payload),
         ts: server_ts,
         server_ts: Some(server_ts),
     };
@@ -108,6 +113,12 @@ pub(in crate::ws) async fn handle_chat_message(
             .map(|c| c.user_name.clone())
             .unwrap_or_else(|| "Anonymous".to_string())
     };
+    let message_id = parsed
+        .payload
+        .as_ref()
+        .and_then(|p| p.get("_jwp_message_id"))
+        .and_then(|v| v.as_str())
+        .filter(|id| id.len() <= 100);
 
     let broadcast_data = {
         let mut locked_rooms = rooms.write().await;
@@ -117,6 +128,7 @@ pub(in crate::ws) async fn handle_chat_message(
             client_id,
             &username,
             chat_text,
+            message_id,
             &mut locked_rooms,
             &locked_clients,
         )
@@ -173,13 +185,20 @@ mod tests {
             msg_type: crate::types::ClientMessageType::ChatMessage,
             room: Some("room-1".to_string()),
             client: Some("host".to_string()),
-            payload: Some(serde_json::json!({ "text": "hello" })),
+            payload: Some(serde_json::json!({
+                "text": "hello",
+                "_jwp_message_id": "message-1"
+            })),
             ts: 0,
             server_ts: None,
         };
         handle_chat_message("host", &parsed, &clients, &rooms).await;
 
-        let _ = crate::test_helpers::recv_msg(&mut rx_h); // drain the live broadcast
+        let live = crate::test_helpers::recv_msg(&mut rx_h).unwrap();
+        assert_eq!(
+            live.payload.unwrap().get("_jwp_message_id").unwrap(),
+            "message-1"
+        );
         let rooms_locked = rooms.read().await;
         let history = &rooms_locked.get("room-1").unwrap().chat_history;
         assert_eq!(history.len(), 1);
