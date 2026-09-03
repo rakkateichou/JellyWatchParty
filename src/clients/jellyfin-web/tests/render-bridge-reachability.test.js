@@ -147,6 +147,16 @@ describe('bridge picker opt-in gating', () => {
     assert.doesNotMatch(panel.innerHTML, /Participants|>Chat|RTT:|ID:|Test Room|jwp-sync-indicator/);
   });
 
+  it('shows Copy link and Settings to guests too', () => {
+    JWP.state.inRoom = true;
+    JWP.state.isHost = false;
+    JWP.state.roomId = 'ROOM1';
+    JWP.ui.render(true);
+
+    assert.match(panel.innerHTML, /> Copy link</);
+    assert.match(panel.innerHTML, /aria-label="Chat settings"/);
+  });
+
   it('requires a nickname before showing the chat composer', () => {
     JWP.state.inRoom = true;
     JWP.state.roomId = 'ROOM1';

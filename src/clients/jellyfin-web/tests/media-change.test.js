@@ -129,6 +129,33 @@ describe('room episode transitions', () => {
     assert.equal(prepares, 1);
   });
 
+  it('accepts the host-prepared invite from room state for a guest', () => {
+    JWP.state.clientId = 'guest-client';
+    JWP.state.roomId = '';
+    JWP.ui.resetPreparedInvite = () => {
+      JWP.state.inviteRoomId = '';
+      JWP.state.inviteBaseUrl = '';
+    };
+
+    JWP._wsHandlers.handleRoomState({
+      room: 'room-1',
+      client: 'guest-client',
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        name: "Host's room",
+        host_id: 'host-client',
+        media_id: oldMediaId,
+        participant_count: 2,
+        invite_url: 'https://jellyfin.example/share/prepared',
+        state: { position: 0, play_state: 'paused' },
+        chat_history: []
+      }
+    }, null);
+
+    assert.equal(JWP.state.inviteRoomId, 'room-1');
+    assert.equal(JWP.state.inviteBaseUrl, 'https://jellyfin.example/share/prepared');
+  });
+
   it('does not advance the saved position of a paused room', () => {
     JWP.state.clientId = 'guest-client';
     JWP.state.roomId = 'room-1';

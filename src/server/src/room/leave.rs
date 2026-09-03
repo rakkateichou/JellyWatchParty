@@ -8,7 +8,7 @@ fn detach_client_from_room(
     client_id: &str,
     clients: &mut HashMap<String, Client>,
     rooms: &mut HashMap<String, Room>,
-) -> Option<(String, Vec<String>)> {
+) -> Option<String> {
     let client = clients.get_mut(client_id)?;
     let room_id = client.room_id.take()?;
     let room = rooms.get_mut(&room_id)?;
@@ -21,8 +21,15 @@ fn detach_client_from_room(
     }
 
     if room.clients.is_empty() {
-        let clients_to_notify = room.clients.clone();
-        return Some((room_id, clients_to_notify));
+        // Keep an invitation-scoped dormant record so the same link can
+        // revive this room. It is hidden from the public room list and later
+        // pruned by the dormant-room cleanup task.
+        room.pending_play = None;
+        room.ready_clients.clear();
+        room.state.play_state = "paused".to_string();
+        room.dormant_since = Some(now_ms());
+        info!("Room {} is now dormant", room_id);
+        return Some(room_id);
     }
 
     if was_host {
@@ -74,41 +81,12 @@ fn promote_new_host(room_id: &str, room: &mut Room, clients: &HashMap<String, Cl
     broadcast_to_room(room, clients, &msg, None);
 }
 
-fn close_and_notify(
-    room_id: &str,
-    clients_to_notify: &[String],
-    clients: &HashMap<String, Client>,
-    rooms: &mut HashMap<String, Room>,
-) {
-    info!("Closing room {}", room_id);
-    rooms.remove(room_id);
-    let msg = WsMessage {
-        msg_type: "room_closed".to_string(),
-        room: Some(room_id.to_string()),
-        client: None,
-        payload: Some(serde_json::json!({ "reason": "Host left the room" })),
-        ts: now_ms(),
-        server_ts: Some(now_ms()),
-    };
-    if let Ok(msg_json) = serde_json::to_string(&msg) {
-        for cid in clients_to_notify {
-            if let Some(c) = clients.get(cid) {
-                let _ = c
-                    .sender
-                    .try_send(Ok(warp::ws::Message::text(msg_json.clone())));
-            }
-        }
-    }
-}
-
 pub fn handle_leave(
     client_id: &str,
     clients: &mut HashMap<String, Client>,
     rooms: &mut HashMap<String, Room>,
 ) {
-    if let Some((room_id, clients_to_notify)) = detach_client_from_room(client_id, clients, rooms) {
-        close_and_notify(&room_id, &clients_to_notify, clients, rooms);
-    }
+    detach_client_from_room(client_id, clients, rooms);
 }
 
 pub async fn handle_disconnect(client_id: &str, clients: &Clients, rooms: &Rooms) {
@@ -164,9 +142,11 @@ mod tests {
 
         detach_client_from_room("host-1", &mut clients, &mut rooms);
 
-        // Room should be returned for closing (host left)
-        // The pending_play is cleared before close_and_notify removes the room
+        // The empty room becomes dormant and can be revived by its invite.
         assert!(clients.get("host-1").unwrap().room_id.is_none());
+        let room = rooms.get("room-1").unwrap();
+        assert!(room.pending_play.is_none());
+        assert!(room.dormant_since.is_some());
     }
 
     #[test]
@@ -216,16 +196,17 @@ mod tests {
     }
 
     #[test]
-    fn detach_host_with_no_remaining_clients_signals_close() {
+    fn detach_host_with_no_remaining_clients_makes_room_dormant() {
         let mut clients = HashMap::new();
         let mut rooms = HashMap::new();
         let _rx = test_helpers::setup_room_with_host(&mut clients, &mut rooms, "host-1");
 
         let result = detach_client_from_room("host-1", &mut clients, &mut rooms);
 
-        assert!(result.is_some());
-        let (room_id, clients_to_notify) = result.unwrap();
-        assert_eq!(room_id, "room-1");
-        assert!(clients_to_notify.is_empty());
+        assert_eq!(result.as_deref(), Some("room-1"));
+        let room = rooms.get("room-1").unwrap();
+        assert!(room.clients.is_empty());
+        assert!(room.dormant_since.is_some());
+        assert_eq!(room.state.play_state, "paused");
     }
 }

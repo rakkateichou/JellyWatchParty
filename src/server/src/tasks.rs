@@ -6,6 +6,8 @@ use tokio::sync::oneshot;
 
 const ZOMBIE_CHECK_INTERVAL_SECS: u64 = 30;
 const ZOMBIE_TIMEOUT_MS: u64 = 60_000;
+const DORMANT_ROOM_CHECK_INTERVAL_SECS: u64 = 300;
+const DORMANT_ROOM_TTL_MS: u64 = 6 * 60 * 60 * 1000;
 
 pub fn spawn_zombie_cleanup(clients: Clients, rooms: Rooms) {
     tokio::spawn(async move {
@@ -27,6 +29,26 @@ pub fn spawn_zombie_cleanup(clients: Clients, rooms: Rooms) {
                 );
                 crate::room::schedule_disconnect(id, clients.clone(), rooms.clone()).await;
             }
+        }
+    });
+}
+
+pub fn spawn_dormant_room_cleanup(rooms: Rooms) {
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_secs(DORMANT_ROOM_CHECK_INTERVAL_SECS)).await;
+            let now = now_ms();
+            let mut locked_rooms = rooms.write().await;
+            locked_rooms.retain(|room_id, room| {
+                let expired = room.clients.is_empty()
+                    && room
+                        .dormant_since
+                        .is_some_and(|since| now.saturating_sub(since) > DORMANT_ROOM_TTL_MS);
+                if expired {
+                    info!("Pruning expired dormant room {}", room_id);
+                }
+                !expired
+            });
         }
     });
 }

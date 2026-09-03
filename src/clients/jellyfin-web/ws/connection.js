@@ -105,6 +105,7 @@
       case 'chat_message': if (JWP.chat && msg.payload) JWP.chat.receive(msg); break;
       case 'cursor_update': if (JWP.cursor && msg.payload) JWP.cursor.receive(msg); break;
       case 'rtc_signal': if (JWP.p2p?.handleSignal) JWP.p2p.handleSignal(msg); break;
+      case 'invite_update': h.handleInviteUpdate(msg); break;
       case 'error': h.handleError(msg); break;
     }
   };

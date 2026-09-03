@@ -39,6 +39,8 @@ pub fn create_room(room_id: &str, host_id: &str) -> Room {
         room_id: room_id.to_string(),
         name: format!("{}'s room", host_id),
         host_id: host_id.to_string(),
+        owner_user_id: host_id.to_string(),
+        owner_name: host_id.to_string(),
         media_id: None,
         clients: vec![host_id.to_string()],
         ready_clients: HashSet::from([host_id.to_string()]),
@@ -51,6 +53,8 @@ pub fn create_room(room_id: &str, host_id: &str) -> Room {
         last_command_ts: 0,
         chat_history: VecDeque::new(),
         password_hash: None,
+        invite_url: None,
+        dormant_since: None,
     }
 }
 

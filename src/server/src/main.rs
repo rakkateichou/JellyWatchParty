@@ -41,6 +41,7 @@ async fn main() {
     let rooms: Rooms = Arc::new(RwLock::new(HashMap::new()));
 
     tasks::spawn_zombie_cleanup(clients.clone(), rooms.clone());
+    tasks::spawn_dormant_room_cleanup(rooms.clone());
 
     let routes =
         routes::build_ws_route(clients, rooms, jwt_config.clone(), allowed_origins.clone())

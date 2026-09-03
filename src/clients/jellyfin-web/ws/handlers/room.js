@@ -18,7 +18,9 @@
   };
 
   h.handleParticipantsUpdate = (msg) => {
+    const wasHost = state.isHost;
     if (msg.payload?.host_id) state.roomHostId = msg.payload.host_id;
+    state.isHost = state.roomHostId === state.clientId;
     state.participantCount = msg.payload.participant_count;
     if (JWP.p2p?.syncPeers) JWP.p2p.syncPeers(msg.payload?.peer_ids || []);
     if (state.inRoom) {
@@ -29,6 +31,15 @@
       ui.showToast('A participant joined the room');
     }
     state.lastParticipantCount = state.participantCount;
+    if (wasHost !== state.isHost) ui.render(true);
+  };
+
+  h.handleInviteUpdate = (msg) => {
+    const inviteUrl = msg.payload?.invite_url;
+    if (!inviteUrl || msg.room !== state.roomId) return;
+    state.inviteRoomId = state.roomId;
+    state.inviteBaseUrl = inviteUrl;
+    state.invitePromise = null;
   };
 
   h.handleClientLeft = (msg) => {

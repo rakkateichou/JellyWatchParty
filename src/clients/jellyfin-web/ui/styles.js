@@ -5,10 +5,10 @@
 
   const CSS_STYLES = `
     #${PANEL_ID} {
-      --jwp-panel-top: rgba(13, 13, 14, .985);
-      --jwp-panel-bottom: rgba(0, 0, 0, .992);
+      --jwp-panel-top: rgba(13, 13, 14, .85);
+      --jwp-panel-bottom: rgba(0, 0, 0, .85);
       --jwp-glow: rgba(255, 255, 255, .035);
-      --jwp-panel-background: #000;
+      --jwp-panel-background: rgba(0, 0, 0, .85);
       --jwp-surface: rgba(255, 255, 255, .055);
       --jwp-surface-hover: rgba(255, 255, 255, .105);
       --jwp-border: rgba(255, 255, 255, .14);
@@ -52,8 +52,8 @@
       --jwp-panel-background:
         radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
-      --jwp-panel-top: rgba(30, 40, 54, .97);
-      --jwp-panel-bottom: rgba(13, 20, 30, .985);
+      --jwp-panel-top: rgba(30, 40, 54, .85);
+      --jwp-panel-bottom: rgba(13, 20, 30, .85);
       --jwp-glow: rgba(105, 153, 188, .13);
       --jwp-border: rgba(190, 207, 229, .16);
       --jwp-border-strong: rgba(190, 207, 229, .26);
@@ -77,8 +77,8 @@
       --jwp-panel-background:
         radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
-      --jwp-panel-top: rgba(30, 24, 43, .982);
-      --jwp-panel-bottom: rgba(11, 7, 18, .992);
+      --jwp-panel-top: rgba(30, 24, 43, .85);
+      --jwp-panel-bottom: rgba(11, 7, 18, .85);
       --jwp-glow: rgba(151, 108, 226, .17);
       --jwp-border: rgba(208, 184, 242, .17);
       --jwp-border-strong: rgba(216, 193, 248, .3);
@@ -102,8 +102,8 @@
       --jwp-panel-background:
         radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
-      --jwp-panel-top: rgba(43, 28, 22, .982);
-      --jwp-panel-bottom: rgba(18, 9, 6, .992);
+      --jwp-panel-top: rgba(43, 28, 22, .85);
+      --jwp-panel-bottom: rgba(18, 9, 6, .85);
       --jwp-glow: rgba(224, 122, 65, .16);
       --jwp-border: rgba(235, 195, 168, .17);
       --jwp-border-strong: rgba(241, 203, 177, .3);

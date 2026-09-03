@@ -10,15 +10,20 @@ require('../ui/render.js');
 describe('invite pre-generation', () => {
   let fetchCalls;
   let getItemCalls;
+  let sentMessages;
 
   beforeEach(() => {
     fetchCalls = 0;
     getItemCalls = 0;
+    sentMessages = [];
     JWP.state.inRoom = true;
     JWP.state.isHost = true;
     JWP.state.roomId = 'room-1';
     JWP.state.roomMediaId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     JWP.ui.resetPreparedInvite();
+    JWP.actions = {
+      send(type, payload) { sentMessages.push({ type, payload }); }
+    };
     globalThis.window.ApiClient = {
       serverAddress: () => 'https://jellyfin.example',
       accessToken: () => 'token',
@@ -51,6 +56,10 @@ describe('invite pre-generation', () => {
     assert.equal(getItemCalls, 1);
     assert.equal(fetchCalls, 1);
     assert.equal(JWP.state.inviteShareItemId, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+    assert.deepEqual(sentMessages, [{
+      type: 'invite_update',
+      payload: { invite_url: 'https://jellyfin.example/share/ready' }
+    }]);
   });
 
   it('starts a fresh request for a different room', async () => {
@@ -59,5 +68,18 @@ describe('invite pre-generation', () => {
     await JWP.ui.prepareInviteLink();
 
     assert.equal(fetchCalls, 2);
+  });
+
+  it('lets a guest reuse the invite prepared by the host', async () => {
+    JWP.state.isHost = false;
+    JWP.state.inviteRoomId = 'room-1';
+    JWP.state.inviteBaseUrl = 'https://jellyfin.example/share/from-host';
+    globalThis.window.ApiClient = null;
+
+    assert.equal(
+      await JWP.ui.prepareInviteLink(),
+      'https://jellyfin.example/share/from-host'
+    );
+    assert.equal(fetchCalls, 0);
   });
 });

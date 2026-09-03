@@ -26,7 +26,12 @@ fn resolve_host_name(
     (host_name, payload_name)
 }
 
-fn build_room(client_id: &str, host_name: &str, payload: Option<&serde_json::Value>) -> Room {
+fn build_room(
+    client_id: &str,
+    owner_user_id: &str,
+    host_name: &str,
+    payload: Option<&serde_json::Value>,
+) -> Room {
     let room_id = uuid::Uuid::new_v4().to_string();
     let raw_start_pos = payload
         .and_then(|p| p.get("start_pos"))
@@ -58,6 +63,8 @@ fn build_room(client_id: &str, host_name: &str, payload: Option<&serde_json::Val
         room_id,
         name: room_name,
         host_id: client_id.to_string(),
+        owner_user_id: owner_user_id.to_string(),
+        owner_name: host_name.to_string(),
         media_id,
         clients: vec![client_id.to_string()],
         ready_clients: HashSet::from([client_id.to_string()]),
@@ -70,6 +77,8 @@ fn build_room(client_id: &str, host_name: &str, payload: Option<&serde_json::Val
         last_command_ts: 0,
         chat_history: VecDeque::new(),
         password_hash,
+        invite_url: None,
+        dormant_since: None,
     }
 }
 
@@ -134,11 +143,16 @@ pub(in crate::ws) async fn handle_create_room(
     info!("create_room payload: {:?}", parsed.payload);
 
     let payload_ref = parsed.payload.as_ref();
-    let (host_name, payload_name) = {
+    let (host_name, payload_name, owner_user_id) = {
         let locked_clients = clients.read().await;
-        resolve_host_name(payload_ref, &locked_clients, client_id)
+        let (host_name, payload_name) = resolve_host_name(payload_ref, &locked_clients, client_id);
+        let owner_user_id = locked_clients
+            .get(client_id)
+            .map(|client| client.user_id.clone())
+            .unwrap_or_else(|| client_id.to_string());
+        (host_name, payload_name, owner_user_id)
     };
-    let room = build_room(client_id, &host_name, payload_ref);
+    let room = build_room(client_id, &owner_user_id, &host_name, payload_ref);
 
     {
         let mut locked_rooms = rooms.write().await;
@@ -164,6 +178,7 @@ mod tests {
     fn build_room_valid() {
         let room = build_room(
             "host-1",
+            "user-1",
             "Alice",
             Some(&serde_json::json!({
                 "media_id": "550e8400e29b41d4a716446655440000",
@@ -183,7 +198,7 @@ mod tests {
 
     #[test]
     fn build_room_no_media_id() {
-        let room = build_room("host-1", "Bob", Some(&serde_json::json!({})));
+        let room = build_room("host-1", "user-1", "Bob", Some(&serde_json::json!({})));
         assert_eq!(room.media_id, None);
     }
 
@@ -191,6 +206,7 @@ mod tests {
     fn build_room_invalid_media_id() {
         let room = build_room(
             "host-1",
+            "user-1",
             "Bob",
             Some(&serde_json::json!({ "media_id": "not-valid-hex" })),
         );
@@ -201,6 +217,7 @@ mod tests {
     fn build_room_clamps_position() {
         let room = build_room(
             "host-1",
+            "user-1",
             "Bob",
             Some(&serde_json::json!({ "start_pos": -10.0 })),
         );
@@ -208,6 +225,7 @@ mod tests {
 
         let room2 = build_room(
             "host-1",
+            "user-1",
             "Bob",
             Some(&serde_json::json!({ "start_pos": 100000.0 })),
         );
@@ -216,7 +234,7 @@ mod tests {
 
     #[test]
     fn build_room_no_password_by_default() {
-        let room = build_room("host-1", "Bob", Some(&serde_json::json!({})));
+        let room = build_room("host-1", "user-1", "Bob", Some(&serde_json::json!({})));
         assert!(room.password_hash.is_none());
     }
 
@@ -224,6 +242,7 @@ mod tests {
     fn build_room_hashes_provided_password() {
         let room = build_room(
             "host-1",
+            "user-1",
             "Bob",
             Some(&serde_json::json!({ "password": "hunter2" })),
         );
@@ -236,6 +255,7 @@ mod tests {
     fn build_room_ignores_empty_password() {
         let room = build_room(
             "host-1",
+            "user-1",
             "Bob",
             Some(&serde_json::json!({ "password": "" })),
         );
@@ -244,7 +264,7 @@ mod tests {
 
     #[test]
     fn build_room_starts_with_empty_history() {
-        let room = build_room("host-1", "Bob", Some(&serde_json::json!({})));
+        let room = build_room("host-1", "user-1", "Bob", Some(&serde_json::json!({})));
         assert!(room.chat_history.is_empty());
     }
 

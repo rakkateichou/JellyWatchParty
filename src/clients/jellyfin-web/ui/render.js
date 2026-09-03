@@ -136,8 +136,7 @@
   const prepareInviteLink = () => {
     const itemId = state.roomMediaId || utils.getCurrentItemId();
     const roomId = state.roomId;
-    const apiClient = window.ApiClient;
-    if (!itemId || !roomId || !apiClient) {
+    if (!itemId || !roomId) {
       return Promise.reject(new Error('Could not identify this room or title.'));
     }
     if (state.inviteRoomId === roomId && state.inviteBaseUrl) {
@@ -145,6 +144,14 @@
     }
     if (state.inviteRoomId === roomId && state.invitePromise) {
       return state.invitePromise;
+    }
+    if (!state.isHost) {
+      return Promise.reject(new Error('The host is still preparing this invitation.'));
+    }
+
+    const apiClient = window.ApiClient;
+    if (!apiClient) {
+      return Promise.reject(new Error('Could not access Jellyfin to prepare this invitation.'));
     }
 
     resetPreparedInvite();
@@ -191,6 +198,9 @@
       }
       state.inviteBaseUrl = rawUrl;
       state.inviteShareItemId = shareItemId;
+      // Share the reusable base URL with current and future room members.
+      // They can then copy the same invitation without admin permissions.
+      JWP.actions?.send?.('invite_update', { invite_url: rawUrl });
       return rawUrl;
     })();
 
@@ -232,7 +242,9 @@
         : `Invite ready: ${invite.toString()}`);
     } catch (err) {
       console.error('[JellyWatchParty] Could not create guest invite:', err);
-      ui.showToast('Could not create the invite link. Check that ShareLinks is enabled.');
+      ui.showToast(state.isHost
+        ? 'Could not create the invite link. Check that ShareLinks is enabled.'
+        : 'The invite link is still being prepared by the host.');
     } finally {
       button.disabled = false;
       button.innerHTML = oldHtml;
@@ -325,7 +337,7 @@
       <div class="jwp-room-toolbar">
         <div id="jwp-participants-list" class="jwp-participants-list">${participantCount} online</div>
         <div class="jwp-room-actions">
-          ${state.isHost ? '<button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>' : ''}
+          <button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>
           <button class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-pressed="${state.chatSettingsOpen}"><span class="material-icons" aria-hidden="true">settings</span></button>
           <button class="jwp-icon-btn" id="jwp-btn-hide" title="Hide panel" aria-label="Hide panel"><span class="material-icons" aria-hidden="true">chevron_right</span></button>
         </div>

@@ -18,11 +18,19 @@
 
   const applyRoomState = (msg) => {
     const previousRoomId = state.roomId;
+    if (previousRoomId !== msg.room && ui.resetPreparedInvite) {
+      ui.resetPreparedInvite();
+    }
     state.inRoom = true;
     state.roomId = msg.room;
     state.roomName = msg.payload.name;
     state.roomHostId = msg.payload.host_id || '';
     state.roomMediaId = msg.payload.media_id || state.roomMediaId || '';
+    if (msg.payload.invite_url) {
+      state.inviteRoomId = msg.room;
+      state.inviteBaseUrl = msg.payload.invite_url;
+      state.invitePromise = null;
+    }
     state.participantCount = msg.payload.participant_count;
     if (!state.clientId && msg.client) {
       state.clientId = msg.client;
@@ -41,9 +49,6 @@
         ? msg.payload.state.position
         : 0;
       state.lastSyncPlayState = msg.payload.state.play_state || 'paused';
-    }
-    if (previousRoomId !== state.roomId && ui.resetPreparedInvite) {
-      ui.resetPreparedInvite();
     }
     if (JWP.p2p?.syncPeers) {
       JWP.p2p.syncPeers(msg.payload.peer_ids || []);

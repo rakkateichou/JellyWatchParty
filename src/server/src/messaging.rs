@@ -27,12 +27,14 @@ pub fn build_room_state_payload(room: &Room, participant_count: usize) -> serde_
         "media_id": room.media_id,
         "state_server_ts": room.last_state_ts,
         "chat_history": chat_history,
+        "invite_url": room.invite_url,
     })
 }
 
 fn build_room_list_msg(rooms: &HashMap<String, Room>) -> WsMessage {
     let list: Vec<serde_json::Value> = rooms
         .values()
+        .filter(|r| !r.clients.is_empty())
         .map(|r| {
             serde_json::json!({
                 "id": r.room_id,
@@ -191,6 +193,18 @@ mod tests {
     }
 
     #[test]
+    fn dormant_rooms_are_hidden_from_room_list() {
+        let mut rooms = HashMap::new();
+        let mut room = test_helpers::create_room("r1", "host1");
+        room.clients.clear();
+        room.dormant_since = Some(123);
+        rooms.insert("r1".to_string(), room);
+
+        let msg = build_room_list_msg(&rooms);
+        assert!(msg.payload.unwrap().as_array().unwrap().is_empty());
+    }
+
+    #[test]
     fn build_room_list_msg_multiple() {
         let mut rooms = HashMap::new();
         rooms.insert(
@@ -199,6 +213,8 @@ mod tests {
                 room_id: "r1".to_string(),
                 name: "Room 1".to_string(),
                 host_id: "host1".to_string(),
+                owner_user_id: "user1".to_string(),
+                owner_name: "Host 1".to_string(),
                 media_id: None,
                 clients: vec!["a".to_string(), "b".to_string()],
                 ready_clients: HashSet::new(),
@@ -211,6 +227,8 @@ mod tests {
                 last_command_ts: 0,
                 chat_history: VecDeque::new(),
                 password_hash: None,
+                invite_url: None,
+                dormant_since: None,
             },
         );
         rooms.insert(
@@ -219,6 +237,8 @@ mod tests {
                 room_id: "r2".to_string(),
                 name: "Room 2".to_string(),
                 host_id: "host2".to_string(),
+                owner_user_id: "user2".to_string(),
+                owner_name: "Host 2".to_string(),
                 media_id: Some("abc".to_string()),
                 clients: vec!["c".to_string()],
                 ready_clients: HashSet::new(),
@@ -231,6 +251,8 @@ mod tests {
                 last_command_ts: 0,
                 chat_history: VecDeque::new(),
                 password_hash: None,
+                invite_url: None,
+                dormant_since: None,
             },
         );
         let msg = build_room_list_msg(&rooms);
