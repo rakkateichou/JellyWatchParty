@@ -438,7 +438,7 @@
       };
       panel.querySelectorAll('.jwp-emote-option').forEach(button => {
         button.onclick = () => {
-          if (JWP.chat?.insertEmote?.(chatInput, button.dataset.jwpEmote)) closeEmotePicker();
+          JWP.chat?.insertEmote?.(chatInput, button.dataset.jwpEmote);
         };
       });
     }
