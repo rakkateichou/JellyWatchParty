@@ -5,6 +5,16 @@ on:
     branches: [main, develop]
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to build and attach assets to
+        required: true
+        type: string
+      release_body:
+        description: Changelog stored in the Jellyfin plugin manifest
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -39,7 +49,7 @@ jobs:
     name: Build (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
     needs: changes
-    if: always() && (github.event_name == 'release' || needs.changes.outputs.server == 'true')
+    if: always() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.server == 'true')
     strategy:
       fail-fast: false
       matrix:
@@ -135,6 +145,8 @@ jobs:
             type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
             type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=${{ inputs.release_tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'workflow_dispatch' }}
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
@@ -150,7 +162,7 @@ jobs:
   build-plugin:
     name: Build Jellyfin Plugin
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
@@ -174,7 +186,7 @@ jobs:
       - name: Build plugin
         working-directory: src/plugins/jellyfin/JellyWatchParty
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: |
           VERSION="${RELEASE_TAG#v}"  # strip optional 'v' prefix to match the manifest version
           # Stamp the release version into the assembly so it matches the
@@ -189,7 +201,7 @@ jobs:
 
       - name: Create plugin zip
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: |
           cd src/plugins/jellyfin/JellyWatchParty/dist
           zip -r "../JellyWatchParty-${RELEASE_TAG}.zip" .
@@ -198,12 +210,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jellyfin-plugin
-          path: src/plugins/jellyfin/JellyWatchParty/JellyWatchParty-${{ github.event.release.tag_name }}.zip
+          path: src/plugins/jellyfin/JellyWatchParty/JellyWatchParty-${{ github.event.release.tag_name || inputs.release_tag }}.zip
 
   build-windows-server:
     name: Build Windows Session Server
     runs-on: windows-latest
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
@@ -222,7 +234,7 @@ jobs:
       - name: Package Windows build
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: |
           $version = $env:RELEASE_TAG
           $dest = "jwp-session-server-windows-$version"
@@ -261,7 +273,7 @@ jobs:
     name: Upload Release Assets
     runs-on: ubuntu-latest
     needs: [merge, build-plugin, build-windows-server]
-    if: always() && github.event_name == 'release' && needs.merge.result == 'success' && needs.build-plugin.result == 'success' && needs.build-windows-server.result == 'success'
+    if: always() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch') && needs.merge.result == 'success' && needs.build-plugin.result == 'success' && needs.build-windows-server.result == 'success'
     steps:
       - name: Download plugin artifact
         uses: actions/download-artifact@v4
@@ -278,6 +290,7 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name || inputs.release_tag }}
           files: artifacts/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -286,7 +299,7 @@ jobs:
     name: Update Plugin Repository Manifest
     runs-on: ubuntu-latest
     needs: [build-plugin, create-release-assets]
-    if: always() && github.event_name == 'release' && needs.build-plugin.result == 'success' && needs.create-release-assets.result == 'success'
+    if: always() && (github.event_name == 'release' || github.event_name == 'workflow_dispatch') && needs.build-plugin.result == 'success' && needs.create-release-assets.result == 'success'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -304,8 +317,8 @@ jobs:
         # develop manifest step. The tag is validated below, but interpolating
         # it directly would break the script before that check ever runs.
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+          RELEASE_BODY: ${{ github.event.release.body || inputs.release_body }}
         run: |
           VERSION="${RELEASE_TAG#v}"  # Remove 'v' prefix if present
 
@@ -338,7 +351,7 @@ jobs:
 
       - name: Commit and push manifest
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
