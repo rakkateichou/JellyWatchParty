@@ -29,7 +29,7 @@ describe('shared cursor video coordinates', () => {
   it('curves through sampled trail points instead of drawing sharp segments', () => {
     assert.equal(
       JWP.cursor.trailPath([{ x: 0, y: 0 }, { x: 12, y: 12 }, { x: 24, y: 0 }]),
-      'M 0.0,0.0 C 1.6,1.6 8.8,12.0 12.0,12.0 C 15.2,12.0 22.4,1.6 24.0,0.0'
+      'M 0.0,0.0 C 0.9,0.9 10.2,12.0 12.0,12.0 C 13.8,12.0 23.1,0.9 24.0,0.0'
     );
   });
 

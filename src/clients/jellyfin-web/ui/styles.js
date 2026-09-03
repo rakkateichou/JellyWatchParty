@@ -605,6 +605,9 @@
       transition: left .045s linear, top .045s linear, opacity .1s ease;
       z-index: 25000;
     }
+    .jwp-shared-cursor.local {
+      transition: opacity .1s ease;
+    }
     .jwp-shared-cursor-trail {
       --jwp-user-color: #ffffff;
       position: fixed;

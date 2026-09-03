@@ -4,10 +4,10 @@
   const state = JWP.state;
   const utils = JWP.utils;
 
-  const SEND_INTERVAL_MS = 32;
+  const SEND_INTERVAL_MS = 50;
   const STALE_AFTER_MS = 1600;
   const MAX_TRAIL_POINTS = 600;
-  const TRAIL_CURVE_TENSION = 0.8;
+  const TRAIL_CURVE_TENSION = 0.45;
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
   const elements = new Map();
   const trails = new Map();
@@ -19,8 +19,11 @@
   let lastPointer = null;
   let pendingPoint = null;
   let sendTimer = null;
+  let localRenderFrame = null;
+  let localRenderPoint = null;
 
   const nickname = () => String(state.chatNickname || '').trim();
+  const ownClientId = () => state.clientId || 'local';
 
   const isEditable = (target) => {
     if (!target) return false;
@@ -134,6 +137,7 @@
         </svg>
         <span class="jwp-shared-cursor-name"></span>
       `;
+      if (clientId === ownClientId()) element.classList.add('local');
       document.body.appendChild(element);
       elements.set(clientId, element);
     }
@@ -158,6 +162,7 @@
     element.style.left = `${x}px`;
     element.style.top = `${y}px`;
     element.classList.add('visible');
+    if (clientId === ownClientId()) return;
     const oldTimer = timers.get(clientId);
     if (oldTimer) clearTimeout(oldTimer);
     timers.set(clientId, setTimeout(() => removeCursor(clientId), STALE_AFTER_MS));
@@ -172,8 +177,30 @@
       y: point.y,
       username: nickname()
     });
-    showCursor(state.clientId || 'local', nickname(), point);
     visible = true;
+  };
+
+  const renderOwnCursor = (point) => {
+    localRenderPoint = point;
+    if (localRenderFrame !== null) return;
+    const render = () => {
+      localRenderFrame = null;
+      const nextPoint = localRenderPoint;
+      localRenderPoint = null;
+      if (holding && nextPoint) showCursor(ownClientId(), nickname(), nextPoint);
+    };
+    localRenderFrame = typeof window.requestAnimationFrame === 'function'
+      ? window.requestAnimationFrame(render)
+      : setTimeout(render, 0);
+  };
+
+  const cancelOwnRender = () => {
+    if (localRenderFrame !== null) {
+      if (typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(localRenderFrame);
+      else clearTimeout(localRenderFrame);
+    }
+    localRenderFrame = null;
+    localRenderPoint = null;
   };
 
   const flushPending = () => {
@@ -200,7 +227,8 @@
     if (sendTimer) clearTimeout(sendTimer);
     sendTimer = null;
     pendingPoint = null;
-    removeCursor(state.clientId || 'local');
+    cancelOwnRender();
+    removeCursor(ownClientId());
     if (visible && JWP.actions?.send && state.inRoom) {
       JWP.actions.send('cursor_update', { visible: false, username: nickname() });
     }
@@ -217,7 +245,10 @@
     event.preventDefault();
     holding = true;
     const point = lastPointer ? pointFromEvent(lastPointer) : null;
-    if (point) queuePoint(point);
+    if (point) {
+      renderOwnCursor(point);
+      queuePoint(point);
+    }
   };
 
   const onKeyUp = (event) => {
@@ -231,7 +262,10 @@
     lastPointer = { clientX: event.clientX, clientY: event.clientY };
     if (!holding) return;
     const point = pointFromEvent(event);
-    if (point) queuePoint(point);
+    if (point) {
+      renderOwnCursor(point);
+      queuePoint(point);
+    }
     else hideOwnCursor();
   };
 
