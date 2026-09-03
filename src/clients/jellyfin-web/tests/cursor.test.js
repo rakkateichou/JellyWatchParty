@@ -26,6 +26,13 @@ describe('shared cursor video coordinates', () => {
     assert.equal(JWP.cursor.pointFromEvent({ clientX: 300, clientY: 501 }, video), null);
   });
 
+  it('curves through sampled trail points instead of drawing sharp segments', () => {
+    assert.equal(
+      JWP.cursor.trailPath([{ x: 0, y: 0 }, { x: 12, y: 12 }, { x: 24, y: 0 }]),
+      'M 0.0,0.0 C 1.6,1.6 8.8,12.0 12.0,12.0 C 15.2,12.0 22.4,1.6 24.0,0.0'
+    );
+  });
+
   it('draws a colored trail and removes it with the cursor on release', () => {
     const appended = [];
     const makeStyle = () => ({ setProperty() {} });
@@ -70,7 +77,8 @@ describe('shared cursor video coordinates', () => {
 
     const trail = appended.find(element => element.tag === 'svg');
     assert.ok(trail);
-    assert.equal(trail.child.attributes.points, '300.0,275.0 500.0,275.0');
+    assert.equal(trail.child.tag, 'path');
+    assert.equal(trail.child.attributes.d, 'M 300.0,275.0 L 500.0,275.0');
 
     JWP.cursor.receive({
       client: 'remote-client',

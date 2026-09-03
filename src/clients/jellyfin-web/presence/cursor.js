@@ -4,9 +4,10 @@
   const state = JWP.state;
   const utils = JWP.utils;
 
-  const SEND_INTERVAL_MS = 50;
+  const SEND_INTERVAL_MS = 32;
   const STALE_AFTER_MS = 1600;
   const MAX_TRAIL_POINTS = 600;
+  const TRAIL_CURVE_TENSION = 0.8;
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
   const elements = new Map();
   const trails = new Map();
@@ -67,7 +68,7 @@
       element.setAttribute('aria-hidden', 'true');
       element.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
       element.setAttribute('preserveAspectRatio', 'none');
-      const line = document.createElementNS(SVG_NAMESPACE, 'polyline');
+      const line = document.createElementNS(SVG_NAMESPACE, 'path');
       line.classList.add('jwp-shared-cursor-trail-line');
       element.appendChild(line);
       document.body.appendChild(element);
@@ -76,6 +77,35 @@
     }
     trail.element.style.setProperty('--jwp-user-color', utils.userColor(username));
     return trail;
+  };
+
+  const trailPath = (points) => {
+    if (!points.length) return '';
+    const coordinate = point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`;
+    if (points.length === 1) return `M ${coordinate(points[0])}`;
+    if (points.length === 2) return `M ${coordinate(points[0])} L ${coordinate(points[1])}`;
+
+    // Convert the sampled pointer positions into a Catmull-Rom-style cubic
+    // spline. It still passes through every received point, but rounds the
+    // angle between samples instead of exposing the network-sized segments.
+    let path = `M ${coordinate(points[0])}`;
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const before = points[Math.max(0, index - 1)];
+      const current = points[index];
+      const next = points[index + 1];
+      const after = points[Math.min(points.length - 1, index + 2)];
+      const scale = TRAIL_CURVE_TENSION / 6;
+      const controlOne = {
+        x: current.x + ((next.x - before.x) * scale),
+        y: current.y + ((next.y - before.y) * scale)
+      };
+      const controlTwo = {
+        x: next.x - ((after.x - current.x) * scale),
+        y: next.y - ((after.y - current.y) * scale)
+      };
+      path += ` C ${coordinate(controlOne)} ${coordinate(controlTwo)} ${coordinate(next)}`;
+    }
+    return path;
   };
 
   const addTrailPoint = (clientId, username, x, y) => {
@@ -87,10 +117,7 @@
     if (trail.points.length > MAX_TRAIL_POINTS) {
       trail.points.splice(0, trail.points.length - MAX_TRAIL_POINTS);
     }
-    trail.line.setAttribute(
-      'points',
-      trail.points.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ')
-    );
+    trail.line.setAttribute('d', trailPath(trail.points));
   };
 
   const clearTrails = () => Array.from(trails.keys()).forEach(removeTrail);
@@ -260,5 +287,5 @@
     reset();
   };
 
-  Object.assign(cursor, { bind, cleanup, receive, reset, pointFromEvent });
+  Object.assign(cursor, { bind, cleanup, receive, reset, pointFromEvent, trailPath });
 })();
