@@ -65,6 +65,7 @@
       loadScript('playback/tracks.js'),
     ]);
     await Promise.all([
+      loadScript('chat/emotes.js'),
       loadScript('chat/messages.js'),
       loadScript('chat/input.js'),
     ]);

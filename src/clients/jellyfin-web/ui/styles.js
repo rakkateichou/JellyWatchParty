@@ -445,8 +445,61 @@
     .jwp-chat-username { color: var(--jwp-user-color, var(--jwp-accent)); font-size: .9rem; font-weight: 700; }
     .jwp-chat-time { color: var(--jwp-faint); font-size: .75rem; }
     .jwp-chat-text { color: var(--jwp-text); line-height: 1.4; word-wrap: break-word; }
-    #jwp-chat-input-container { padding-top: .65rem; border-top: 1px solid var(--jwp-border); display: flex; gap: .5rem; }
+    #jwp-chat-input-container { position: relative; padding-top: .65rem; border-top: 1px solid var(--jwp-border); display: flex; align-items: center; gap: .5rem; }
     #jwp-chat-input { min-width: 0; flex: 1; min-height: 2.75rem; padding: .65rem .8rem; font-size: 1rem; }
+    #jwp-emote-toggle {
+      width: 2.75rem;
+      height: 2.75rem;
+      flex: 0 0 2.75rem;
+      padding: 0;
+      border: 1px solid var(--jwp-border);
+      border-radius: .68rem;
+      background: var(--jwp-action-bg);
+      color: var(--jwp-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #jwp-emote-toggle:hover,
+    #jwp-emote-toggle[aria-expanded="true"] { background: var(--jwp-action-hover); border-color: var(--jwp-border-strong); }
+    #jwp-emote-toggle .material-icons { font-size: 1.25rem; }
+    #jwp-emote-picker {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(100% + .55rem);
+      padding: .75rem;
+      border: 1px solid var(--jwp-border-strong);
+      border-radius: .85rem;
+      background: var(--jwp-panel-background);
+      box-shadow: 0 -.5rem 2rem rgba(0, 0, 0, .4);
+      z-index: 4;
+    }
+    #jwp-emote-picker[hidden] { display: none; }
+    .jwp-emote-picker-title { margin-bottom: .55rem; color: var(--jwp-text); font-size: .78rem; font-weight: 750; }
+    .jwp-emote-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; }
+    .jwp-emote-option {
+      min-width: 0;
+      padding: .35rem .15rem .28rem;
+      border: 1px solid transparent;
+      border-radius: .58rem;
+      background: transparent;
+      color: var(--jwp-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .12rem;
+      cursor: pointer;
+      font: inherit;
+    }
+    .jwp-emote-option:hover { border-color: var(--jwp-border); background: var(--jwp-surface-hover); color: var(--jwp-text); }
+    .jwp-emote-option > span { font-size: 1.45rem; line-height: 1.25; }
+    .jwp-emote-option small { max-width: 100%; font-size: .56rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .jwp-emote-picker-hint { margin-top: .55rem; color: var(--jwp-faint); font-size: .62rem; text-align: center; }
+    .jwp-chat-emote { display: inline-block; margin: 0 .04em; font-size: 1.55em; line-height: .8; vertical-align: -.18em; }
+    .jwp-chat-emote-only .jwp-chat-emote { margin-right: .1em; font-size: 2.35rem; line-height: 1.1; vertical-align: middle; }
+    .jwp-chat-emote-only .jwp-chat-text { line-height: 1.15; }
     #jwp-chat-send {
       padding: .55rem .8rem;
       border: 1px solid var(--jwp-border);

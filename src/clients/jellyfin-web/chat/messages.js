@@ -27,13 +27,14 @@
     if (emptyMessage) emptyMessage.remove();
     const msgEl = document.createElement('div');
     msgEl.className = 'jwp-chat-message' + (message.isOwn ? ' jwp-chat-own' : '');
+    if (chat.containsOnlyEmotes?.(message.text)) msgEl.className += ' jwp-chat-emote-only';
     const identityColor = utils.userColor(message.username);
     msgEl.innerHTML = `
       <div class="jwp-chat-meta">
         <span class="jwp-chat-username" style="--jwp-user-color:${identityColor}">${utils.escapeHtml(message.username)}</span>
         <span class="jwp-chat-time">${formatTime(message.timestamp)}</span>
       </div>
-      <div class="jwp-chat-text">${utils.escapeHtml(message.text)}</div>
+      <div class="jwp-chat-text">${chat.renderEmotes ? chat.renderEmotes(message.text) : utils.escapeHtml(message.text)}</div>
     `;
     container.appendChild(msgEl);
     container.scrollTop = container.scrollHeight;
@@ -67,7 +68,7 @@
       chat.unreadCount++;
       chat.updateBadge();
       if (!message.isOwn && JWP.ui && JWP.ui.showChatToast) {
-        JWP.ui.showChatToast(message.username, message.text);
+        JWP.ui.showChatToast(message.username, chat.plainEmotes ? chat.plainEmotes(message.text) : message.text);
       }
     }
     renderMessage(message);

@@ -71,6 +71,14 @@
     <div id="jwp-chat-section">
       <div id="jwp-chat-messages"></div>
       <div id="jwp-chat-input-container">
+        <button type="button" id="jwp-emote-toggle" title="Emotes" aria-label="Emotes" aria-expanded="false"><span class="material-icons" aria-hidden="true">sentiment_very_satisfied</span></button>
+        <div id="jwp-emote-picker" role="dialog" aria-label="Emotes" hidden>
+          <div class="jwp-emote-picker-title">Emotes</div>
+          <div class="jwp-emote-grid">
+            ${(JWP.chat?.emotes || []).map(emote => `<button type="button" class="jwp-emote-option" data-jwp-emote="${emote.token}" title="${emote.token}" aria-label="${emote.label}"><span aria-hidden="true">${emote.glyph}</span><small>${emote.label}</small></button>`).join('')}
+          </div>
+          <div class="jwp-emote-picker-hint">You can also type an emote name, like :pog:</div>
+        </div>
         <input type="text" id="jwp-chat-input" placeholder="Type a message..." maxlength="500">
         <button id="jwp-chat-send">Send</button>
       </div>
@@ -340,18 +348,45 @@
     const chatInput = panel.querySelector('#jwp-chat-input');
     const chatSend = panel.querySelector('#jwp-chat-send');
     if (!chatInput || !chatSend) return;
+    const emoteToggle = panel.querySelector('#jwp-emote-toggle');
+    const emotePicker = panel.querySelector('#jwp-emote-picker');
+    const closeEmotePicker = () => {
+      if (!emotePicker || !emoteToggle) return;
+      emotePicker.hidden = true;
+      emoteToggle.setAttribute('aria-expanded', 'false');
+    };
+    if (emoteToggle && emotePicker) {
+      emoteToggle.onclick = (event) => {
+        event.stopPropagation();
+        const willOpen = emotePicker.hidden;
+        emotePicker.hidden = !willOpen;
+        emoteToggle.setAttribute('aria-expanded', String(willOpen));
+      };
+      panel.querySelectorAll('.jwp-emote-option').forEach(button => {
+        button.onclick = () => {
+          if (JWP.chat?.insertEmote?.(chatInput, button.dataset.jwpEmote)) closeEmotePicker();
+        };
+      });
+    }
     ui.stopPlayerCapture(chatInput);
     chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && emotePicker && !emotePicker.hidden) {
+        e.preventDefault();
+        closeEmotePicker();
+        return;
+      }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (JWP.chat && JWP.chat.send(chatInput.value)) {
           chatInput.value = '';
+          closeEmotePicker();
         }
       }
     });
     chatSend.addEventListener('click', () => {
       if (JWP.chat && JWP.chat.send(chatInput.value)) {
         chatInput.value = '';
+        closeEmotePicker();
       }
     });
     if (JWP.chat) {
