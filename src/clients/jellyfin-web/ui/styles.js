@@ -587,6 +587,28 @@
       transition: left .045s linear, top .045s linear, opacity .1s ease;
       z-index: 25000;
     }
+    .jwp-shared-cursor-trail {
+      --jwp-user-color: #ffffff;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 24999;
+    }
+    .jwp-shared-cursor-trail-line {
+      fill: none;
+      stroke: var(--jwp-user-color);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+      filter:
+        drop-shadow(0 0 2px #000)
+        drop-shadow(0 0 4px var(--jwp-user-color))
+        drop-shadow(0 0 8px var(--jwp-user-color));
+    }
     .jwp-shared-cursor.visible { opacity: 1; }
     .jwp-shared-cursor-arrow {
       position: absolute;

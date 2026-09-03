@@ -25,4 +25,58 @@ describe('shared cursor video coordinates', () => {
     assert.equal(JWP.cursor.pointFromEvent({ clientX: 99, clientY: 275 }, video), null);
     assert.equal(JWP.cursor.pointFromEvent({ clientX: 300, clientY: 501 }, video), null);
   });
+
+  it('draws a colored trail and removes it with the cursor on release', () => {
+    const appended = [];
+    const makeStyle = () => ({ setProperty() {} });
+    const makeSvgNode = (tag) => ({
+      tag,
+      removed: false,
+      attributes: {},
+      style: makeStyle(),
+      classList: { add() {} },
+      setAttribute(name, value) { this.attributes[name] = value; },
+      appendChild(child) { this.child = child; },
+      remove() { this.removed = true; }
+    });
+    const cursorName = { textContent: '' };
+    const cursorElement = {
+      removed: false,
+      style: { left: '', top: '', setProperty() {} },
+      classList: { add() {} },
+      setAttribute() {},
+      querySelector: () => cursorName,
+      remove() { this.removed = true; }
+    };
+    globalThis.window.innerWidth = 1000;
+    globalThis.window.innerHeight = 600;
+    globalThis.document = {
+      createElement: () => cursorElement,
+      createElementNS: (_namespace, tag) => makeSvgNode(tag),
+      body: { appendChild(element) { appended.push(element); } }
+    };
+    JWP.state.clientId = 'local-client';
+    JWP.utils.getVideo = () => video;
+    JWP.utils.userColor = () => '#ff55aa';
+
+    JWP.cursor.receive({
+      client: 'remote-client',
+      payload: { visible: true, x: 0.25, y: 0.5, username: 'Polina' }
+    });
+    JWP.cursor.receive({
+      client: 'remote-client',
+      payload: { visible: true, x: 0.5, y: 0.5, username: 'Polina' }
+    });
+
+    const trail = appended.find(element => element.tag === 'svg');
+    assert.ok(trail);
+    assert.equal(trail.child.attributes.points, '300.0,275.0 500.0,275.0');
+
+    JWP.cursor.receive({
+      client: 'remote-client',
+      payload: { visible: false, username: 'Polina' }
+    });
+    assert.equal(trail.removed, true);
+    assert.equal(cursorElement.removed, true);
+  });
 });

@@ -6,7 +6,10 @@
 
   const SEND_INTERVAL_MS = 50;
   const STALE_AFTER_MS = 1600;
+  const MAX_TRAIL_POINTS = 600;
+  const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
   const elements = new Map();
+  const trails = new Map();
   const timers = new Map();
   let bound = false;
   let holding = false;
@@ -40,14 +43,57 @@
     };
   };
 
+  const removeTrail = (clientId) => {
+    const trail = trails.get(clientId);
+    if (trail?.element) trail.element.remove();
+    trails.delete(clientId);
+  };
+
   const removeCursor = (clientId) => {
     const element = elements.get(clientId);
     if (element) element.remove();
     elements.delete(clientId);
+    removeTrail(clientId);
     const timer = timers.get(clientId);
     if (timer) clearTimeout(timer);
     timers.delete(clientId);
   };
+
+  const trailElement = (clientId, username) => {
+    let trail = trails.get(clientId);
+    if (!trail) {
+      const element = document.createElementNS(SVG_NAMESPACE, 'svg');
+      element.classList.add('jwp-shared-cursor-trail');
+      element.setAttribute('aria-hidden', 'true');
+      element.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+      element.setAttribute('preserveAspectRatio', 'none');
+      const line = document.createElementNS(SVG_NAMESPACE, 'polyline');
+      line.classList.add('jwp-shared-cursor-trail-line');
+      element.appendChild(line);
+      document.body.appendChild(element);
+      trail = { element, line, points: [] };
+      trails.set(clientId, trail);
+    }
+    trail.element.style.setProperty('--jwp-user-color', utils.userColor(username));
+    return trail;
+  };
+
+  const addTrailPoint = (clientId, username, x, y) => {
+    const trail = trailElement(clientId, username);
+    const previous = trail.points[trail.points.length - 1];
+    // Ignore sub-pixel jitter without breaking a continuous stroke.
+    if (previous && Math.hypot(x - previous.x, y - previous.y) < 1) return;
+    trail.points.push({ x, y });
+    if (trail.points.length > MAX_TRAIL_POINTS) {
+      trail.points.splice(0, trail.points.length - MAX_TRAIL_POINTS);
+    }
+    trail.line.setAttribute(
+      'points',
+      trail.points.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ')
+    );
+  };
+
+  const clearTrails = () => Array.from(trails.keys()).forEach(removeTrail);
 
   const cursorElement = (clientId, username) => {
     let element = elements.get(clientId);
@@ -79,8 +125,11 @@
     const rect = video.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     const element = cursorElement(clientId, username);
-    element.style.left = `${rect.left + (point.x * rect.width)}px`;
-    element.style.top = `${rect.top + (point.y * rect.height)}px`;
+    const x = rect.left + (point.x * rect.width);
+    const y = rect.top + (point.y * rect.height);
+    addTrailPoint(clientId, username, x, y);
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
     element.classList.add('visible');
     const oldTimer = timers.get(clientId);
     if (oldTimer) clearTimeout(oldTimer);
@@ -196,6 +245,7 @@
     document.addEventListener('mousemove', onPointerMove, true);
     document.addEventListener('visibilitychange', onVisibilityChange);
     window.addEventListener('blur', stopSharing);
+    window.addEventListener('resize', clearTrails);
   };
 
   const cleanup = () => {
@@ -205,6 +255,7 @@
     document.removeEventListener('mousemove', onPointerMove, true);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     window.removeEventListener('blur', stopSharing);
+    window.removeEventListener('resize', clearTrails);
     bound = false;
     reset();
   };
