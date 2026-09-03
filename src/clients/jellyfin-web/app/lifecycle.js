@@ -141,14 +141,7 @@
             state.pendingJoinRoomId = '';
             setTimeout(() => {
               console.log('[JellyWatchParty] Auto-joining room:', roomId);
-              const room = state.rooms.find(r => r.id === roomId);
-              if (room && room.has_password && ui.promptJoinWithPassword) {
-                // Ask up front instead of relying on the wrong_password
-                // error-retry fallback for a room we already know needs one.
-                ui.promptJoinWithPassword(roomId);
-              } else {
-                JWP.actions.joinRoom(roomId);
-              }
+              JWP.actions.joinRoom(roomId);
             }, 500);
           }
         }

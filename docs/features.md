@@ -51,7 +51,6 @@ session server, web client) work together to make this happen.
 
 ### Room Management
 - **Create rooms** - Start a watch party with a custom name
-- **Room passwords** - Optionally require a password to join a room
 - **Join rooms** - Enter a room ID to join an existing session
 - **Leave rooms** - Exit cleanly with proper cleanup
 - **Room list** - See all active rooms on the server
@@ -107,8 +106,7 @@ can't run the injected UI) into a room — in either role — see
 - **Host**: bring the native session in as the room's host. Guests still join
   normally; nothing changes on their end.
 - **Receiver**: while you're in a room, attach a native session that's already
-  playing the same item so it follows the room's play/pause/seek. (Rooms
-  without a password only.)
+  playing the same item so it follows the room's play/pause/seek.
 
 Both roles are **opt-in** and disabled by default. An administrator enables
 them independently from the plugin configuration page (**Client Bridging**
@@ -190,7 +188,6 @@ Safari uses its native HLS implementation, which behaves differently:
 | Message history for late joiners | Medium | Done |
 | Democratic mode | Medium | Planned |
 | Automatic host transfer | Medium | Done |
-| Room passwords | Low | Done |
 
 - **Democratic mode** - Allow all participants to control playback, not just the host
 - **Official Jellyfin plugin repository** - Publish to the [official Jellyfin plugin repository](https://jellyfin.org/docs/general/server/plugins/#official-plugins) for native discoverability and installation

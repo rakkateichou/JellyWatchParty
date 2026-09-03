@@ -143,9 +143,6 @@ follower to ready. `ready` persists for the room's lifetime, so it is sent
 once, on join.
 
 **Known limitations (receiver):**
-- **Password-protected rooms are not supported.** The follower's `join_room`
-  does not carry the room password (the web client doesn't retain it), so the
-  server rejects the join; the receiver simply never syncs.
 - **No reconnect.** Like `SessionHostBridge`, a follower does not re-establish
   its WebSocket after a drop — it must be re-attached. It also does not tear
   itself down on `room_closed` (it just stops following); use Stop, or it is

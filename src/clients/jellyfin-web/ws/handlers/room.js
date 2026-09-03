@@ -116,8 +116,5 @@
     state.roomJoinActive = false;
     JWP.app?.setJoinLaunchScreen?.(false);
     ui.showToast(message);
-    if (msg.payload?.reason === 'wrong_password' && msg.room) {
-      ui.promptJoinWithPassword(msg.room);
-    }
   };
 })();

@@ -46,7 +46,6 @@ fn build_room_list_msg(rooms: &HashMap<String, Room>) -> WsMessage {
                 "name": r.name,
                 "count": r.clients.len(),
                 "media_id": r.media_id,
-                "has_password": r.password_hash.is_some(),
             })
         })
         .collect();
@@ -153,16 +152,18 @@ mod tests {
     use std::collections::{HashSet, VecDeque};
 
     #[test]
-    fn room_list_msg_reports_has_password() {
+    fn room_list_omits_password_metadata() {
         let mut rooms = HashMap::new();
-        let mut room = test_helpers::create_room("r1", "host1");
-        room.password_hash = Some(crate::password::hash_password("secret"));
-        rooms.insert("r1".to_string(), room);
+        rooms.insert(
+            "r1".to_string(),
+            test_helpers::create_room("r1", "host1"),
+        );
 
         let msg = build_room_list_msg(&rooms);
         let list = msg.payload.unwrap();
         let entry = &list.as_array().unwrap()[0];
-        assert_eq!(entry.get("has_password").unwrap(), true);
+        assert!(entry.get("has_password").is_none());
+        assert!(entry.get("password").is_none());
     }
 
     #[test]
@@ -237,7 +238,6 @@ mod tests {
                 last_state_ts: 0,
                 last_command_ts: 0,
                 chat_history: VecDeque::new(),
-                password_hash: None,
                 invite_url: None,
                 dormant_since: None,
             },
@@ -262,7 +262,6 @@ mod tests {
                 last_state_ts: 0,
                 last_command_ts: 0,
                 chat_history: VecDeque::new(),
-                password_hash: None,
                 invite_url: None,
                 dormant_since: None,
             },

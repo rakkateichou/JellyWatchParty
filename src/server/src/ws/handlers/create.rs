@@ -1,7 +1,6 @@
 use super::super::dispatch::{is_authenticated, send_error};
 use super::super::validation::{is_valid_media_id, is_valid_position, sanitize_name};
 use crate::messaging::{broadcast_room_list, build_room_state_payload, send_to_client};
-use crate::password::hash_password;
 use crate::types::{Clients, IncomingMessage, PlaybackState, Room, Rooms, WsMessage};
 use crate::utils::now_ms;
 use log::info;
@@ -47,11 +46,6 @@ fn build_room(
         .and_then(|v| v.as_str())
         .filter(|id| is_valid_media_id(id))
         .map(|v| v.to_string());
-    let password_hash = payload
-        .and_then(|p| p.get("password"))
-        .and_then(|v| v.as_str())
-        .filter(|pw| !pw.is_empty())
-        .map(hash_password);
     let room_name = format!("{}'s room", host_name);
     let audio_stream_index = payload
         .and_then(|p| p.get("audio_stream_index"))
@@ -85,7 +79,6 @@ fn build_room(
         last_state_ts: now_ms(),
         last_command_ts: 0,
         chat_history: VecDeque::new(),
-        password_hash,
         invite_url: None,
         dormant_since: None,
     }
@@ -240,36 +233,6 @@ mod tests {
             Some(&serde_json::json!({ "start_pos": 100000.0 })),
         );
         assert!((room2.state.position - 0.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn build_room_no_password_by_default() {
-        let room = build_room("host-1", "user-1", "Bob", Some(&serde_json::json!({})));
-        assert!(room.password_hash.is_none());
-    }
-
-    #[test]
-    fn build_room_hashes_provided_password() {
-        let room = build_room(
-            "host-1",
-            "user-1",
-            "Bob",
-            Some(&serde_json::json!({ "password": "hunter2" })),
-        );
-        assert!(room.password_hash.is_some());
-        let (salt, hash) = room.password_hash.unwrap();
-        assert!(crate::password::verify_password("hunter2", &salt, &hash));
-    }
-
-    #[test]
-    fn build_room_ignores_empty_password() {
-        let room = build_room(
-            "host-1",
-            "user-1",
-            "Bob",
-            Some(&serde_json::json!({ "password": "" })),
-        );
-        assert!(room.password_hash.is_none());
     }
 
     #[test]

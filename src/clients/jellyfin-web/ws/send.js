@@ -38,7 +38,7 @@
     return true;
   };
 
-  const createRoom = (password = '') => {
+  const createRoom = () => {
     const v = utils.getVideo();
     const mediaId = utils.getCurrentItemId();
     const userName = state.chatNickname
@@ -51,11 +51,10 @@
       user_name: userName
     };
     JWP.playback?.addTrackSnapshot?.(payload);
-    if (password) payload.password = password;
     send('create_room', payload);
   };
 
-  const joinRoom = (id, password = '') => {
+  const joinRoom = (id) => {
     JWP.playback?.resetInitialTrackSync?.();
     state.roomId = id;
     // Invite links already launch playback before joining. A normal lobby/card
@@ -66,9 +65,7 @@
       || state.userName
       || window.ApiClient?._currentUser?.Name
       || 'Anonymous';
-    const payload = { user_name: userName };
-    if (password) payload.password = password;
-    if (!send('join_room', payload, id)) state.roomJoinPending = false;
+    if (!send('join_room', { user_name: userName }, id)) state.roomJoinPending = false;
   };
 
   const leaveRoom = () => {

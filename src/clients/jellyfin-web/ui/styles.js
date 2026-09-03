@@ -679,7 +679,7 @@
       from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
       to { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
     }
-    /* Modal (in-DOM window.prompt() replacement — see ui/modal.js) */
+    /* Confirmation modal */
     .jwp-modal-overlay {
       position: fixed; inset: 0; background: rgba(5, 9, 15, .68);
       z-index: 40000; display: flex; align-items: center; justify-content: center;

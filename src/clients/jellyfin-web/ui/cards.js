@@ -4,28 +4,7 @@
   const state = JWP.state;
   const utils = JWP.utils;
 
-  // Always prompts for a password and joins. Used to retry after the
-  // server rejects a join with "wrong_password" (e.g. the room list's
-  // cached has_password was stale, or the user mistyped it), and
-  // proactively wherever a room is already known to require one.
-  const promptJoinWithPassword = async (roomId) => {
-    if (!JWP.actions || !JWP.actions.joinRoom) return;
-    const password = await ui.promptText({
-      title: 'This room is password-protected. Enter password:',
-      placeholder: 'Password',
-      submitLabel: 'Join'
-    });
-    if (!password) return; // user cancelled or left it blank
-    JWP.actions.joinRoom(roomId, password);
-  };
-
-  // Joins a room from the lobby list, prompting for a password first only
-  // if the room list flagged it as password-protected.
   const joinRoomFromList = (room) => {
-    if (room.has_password) {
-      promptJoinWithPassword(room.id);
-      return;
-    }
     if (JWP.actions && JWP.actions.joinRoom) JWP.actions.joinRoom(room.id);
   };
 
@@ -40,19 +19,13 @@
     state.rooms.forEach(room => {
       const item = document.createElement('div');
       item.className = 'jwp-room-item';
-      const lockIcon = room.has_password
-        ? '<span class="material-icons" style="font-size:12px;vertical-align:middle;" aria-hidden="true">lock</span> '
-        : '';
-      item.innerHTML = `<div><div class="jwp-room-name">${lockIcon}${utils.escapeHtml(room.name)}</div><div class="jwp-room-meta">${room.count} users</div></div><button class="jwp-btn secondary">Join</button>`;
+      item.innerHTML = `<div><div class="jwp-room-name">${utils.escapeHtml(room.name)}</div><div class="jwp-room-meta">${room.count} users</div></div><button class="jwp-btn secondary">Join</button>`;
       item.onclick = () => joinRoomFromList(room);
       roomList.appendChild(item);
     });
   };
 
   const buildCardHtml = (room) => {
-    const lockIcon = room.has_password
-      ? '<span class="material-icons" style="font-size:14px;vertical-align:middle;" aria-hidden="true">lock</span> '
-      : '';
     return `
       <div class="cardBox cardBox-bottompadded">
         <div class="cardScalable">
@@ -74,7 +47,7 @@
           </div>
         </div>
         <div class="cardText cardTextCentered cardText-first jwp-card-name">
-          <bdi>${lockIcon}${utils.escapeHtml(room.name)}</bdi>
+          <bdi>${utils.escapeHtml(room.name)}</bdi>
         </div>
         <div class="cardText cardTextCentered cardText-secondary jwp-card-media">
           <bdi class="jwp-media-title">${room.media_id ? 'Loading...' : 'No media'}</bdi>
@@ -140,5 +113,5 @@
     return card;
   };
 
-  Object.assign(ui, { updateRoomListUI, createRoomCard, promptJoinWithPassword });
+  Object.assign(ui, { updateRoomListUI, createRoomCard });
 })();

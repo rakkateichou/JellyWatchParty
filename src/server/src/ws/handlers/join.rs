@@ -2,7 +2,6 @@ use super::super::constants::MAX_CLIENTS_PER_ROOM;
 use super::super::dispatch::{is_authenticated, send_error};
 use super::super::validation::sanitize_name;
 use crate::messaging::{broadcast_to_room, build_room_state_payload, send_to_client};
-use crate::password::verify_password;
 use crate::types::{Client, Clients, IncomingMessage, Room, Rooms, WsMessage};
 use crate::utils::now_ms;
 use log::info;
@@ -115,35 +114,6 @@ pub(in crate::ws) async fn handle_join_room(
         return;
     }
 
-    if !is_existing_member {
-        if let Some((salt, hash)) = &room.password_hash {
-            let provided = parsed
-                .payload
-                .as_ref()
-                .and_then(|p| p.get("password"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            if !verify_password(provided, salt, hash) {
-                send_to_client(
-                    client_id,
-                    &locked_clients,
-                    &WsMessage {
-                        msg_type: "error".to_string(),
-                        room: Some(room_id.clone()),
-                        client: Some(client_id.to_string()),
-                        payload: Some(serde_json::json!({
-                            "message": "Incorrect password",
-                            "reason": "wrong_password"
-                        })),
-                        ts: now_ms(),
-                        server_ts: Some(now_ms()),
-                    },
-                );
-                return;
-            }
-        }
-    }
-
     info!("Client {} joining room {}", client_id, room_id);
     let is_owner = !joining_user_id.is_empty() && joining_user_id == room.owner_user_id;
     if is_owner {
@@ -200,121 +170,6 @@ mod tests {
         add_client_to_room("guest-1", &mut room, &mut clients, &payload_name);
 
         assert_eq!(clients.get("guest-1").unwrap().user_name, "NewName");
-    }
-
-    #[tokio::test]
-    async fn handle_join_room_rejects_wrong_password() {
-        let clients = test_helpers::create_clients();
-        let rooms = test_helpers::create_rooms();
-        let (host, _rx_h) = test_helpers::create_client_with_rx("uh", "Host", true);
-        let (guest, mut rx_g) = test_helpers::create_client_with_rx("ug", "Guest", true);
-        {
-            let mut lc = clients.write().await;
-            lc.insert("host".to_string(), host);
-            lc.insert("guest".to_string(), guest);
-        }
-        {
-            let mut lr = rooms.write().await;
-            let mut room = test_helpers::create_room("room-1", "host");
-            room.password_hash = Some(crate::password::hash_password("secret"));
-            lr.insert("room-1".to_string(), room);
-        }
-
-        let parsed = IncomingMessage {
-            msg_type: crate::types::ClientMessageType::JoinRoom,
-            room: Some("room-1".to_string()),
-            client: Some("guest".to_string()),
-            payload: Some(serde_json::json!({ "password": "wrong" })),
-            ts: 0,
-            server_ts: None,
-        };
-        handle_join_room("guest", &parsed, &clients, &rooms).await;
-
-        let msg = test_helpers::recv_msg(&mut rx_g).unwrap();
-        assert_eq!(msg.msg_type, "error");
-        assert_eq!(
-            msg.payload.unwrap().get("reason").unwrap(),
-            "wrong_password"
-        );
-        let lr = rooms.read().await;
-        assert!(!lr
-            .get("room-1")
-            .unwrap()
-            .clients
-            .contains(&"guest".to_string()));
-    }
-
-    #[tokio::test]
-    async fn handle_join_room_accepts_correct_password() {
-        let clients = test_helpers::create_clients();
-        let rooms = test_helpers::create_rooms();
-        let (host, _rx_h) = test_helpers::create_client_with_rx("uh", "Host", true);
-        let (guest, mut rx_g) = test_helpers::create_client_with_rx("ug", "Guest", true);
-        {
-            let mut lc = clients.write().await;
-            lc.insert("host".to_string(), host);
-            lc.insert("guest".to_string(), guest);
-        }
-        {
-            let mut lr = rooms.write().await;
-            let mut room = test_helpers::create_room("room-1", "host");
-            room.password_hash = Some(crate::password::hash_password("secret"));
-            lr.insert("room-1".to_string(), room);
-        }
-
-        let parsed = IncomingMessage {
-            msg_type: crate::types::ClientMessageType::JoinRoom,
-            room: Some("room-1".to_string()),
-            client: Some("guest".to_string()),
-            payload: Some(serde_json::json!({ "password": "secret" })),
-            ts: 0,
-            server_ts: None,
-        };
-        handle_join_room("guest", &parsed, &clients, &rooms).await;
-
-        let msg = test_helpers::recv_msg(&mut rx_g).unwrap();
-        assert_eq!(msg.msg_type, "room_state");
-        let lr = rooms.read().await;
-        assert!(lr
-            .get("room-1")
-            .unwrap()
-            .clients
-            .contains(&"guest".to_string()));
-    }
-
-    #[tokio::test]
-    async fn handle_join_room_reattach_skips_password_check() {
-        let clients = test_helpers::create_clients();
-        let rooms = test_helpers::create_rooms();
-        let (host, _rx_h) = test_helpers::create_client_with_rx("uh", "Host", true);
-        let (guest, mut rx_g) = test_helpers::create_client_with_rx("ug", "Guest", true);
-        {
-            let mut lc = clients.write().await;
-            lc.insert("host".to_string(), host);
-            lc.insert("guest".to_string(), guest);
-        }
-        {
-            let mut lr = rooms.write().await;
-            let mut room = test_helpers::create_room("room-1", "host");
-            room.password_hash = Some(crate::password::hash_password("secret"));
-            room.clients.push("guest".to_string()); // already a member
-            lr.insert("room-1".to_string(), room);
-        }
-
-        // No password in payload at all — should still succeed since guest
-        // is already a room member (e.g. re-sending join after a panel refresh).
-        let parsed = IncomingMessage {
-            msg_type: crate::types::ClientMessageType::JoinRoom,
-            room: Some("room-1".to_string()),
-            client: Some("guest".to_string()),
-            payload: None,
-            ts: 0,
-            server_ts: None,
-        };
-        handle_join_room("guest", &parsed, &clients, &rooms).await;
-
-        let msg = test_helpers::recv_msg(&mut rx_g).unwrap();
-        assert_eq!(msg.msg_type, "room_state");
     }
 
     #[tokio::test]

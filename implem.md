@@ -89,12 +89,9 @@ Send immediately after connecting:
 ### 1.4 Join a room
 
 ```json
-{"type": "join_room", "room": "<room-id>", "payload": {"password": "..."}, "ts": <now_ms>}
+{"type": "join_room", "room": "<room-id>", "payload": {"user_name": "Guest"}, "ts": <now_ms>}
 ```
-`password` only if the room has one (rooms in `room_list` carry
-`has_password`). Handle the `error` response with `payload.reason ==
-"wrong_password"` explicitly — that's the only machine-readable error
-code the protocol currently defines.
+`user_name` is optional and is used as the participant's display name.
 
 On success you get `room_state`:
 ```json
@@ -240,7 +237,7 @@ At minimum:
 | 1 | `GET /JellyWatchParty/Token` | Auth + know whether `auth_enabled` |
 | 2 | Persistent `client_id` on every WS connect | Reconnect reattachment; without it, any disconnect = ejected from room |
 | 3 | `auth` message (if enabled) | Server requires it before other messages |
-| 4 | `join_room` (+ password handling) | Entry point for becoming a guest |
+| 4 | `join_room` | Entry point for becoming a guest |
 | 5 | `ping`/`pong` clock sync | Required to interpret `target_server_ts` correctly |
 | 6 | `ready` | Required for host's first `play` to ever fire |
 | 7 | Apply `player_event` (play/pause/seek/buffering) to native player | This *is* being "actively controlled" |
@@ -267,13 +264,13 @@ All REST calls use the user's normal Jellyfin access token:
 
 WebSocket `list_rooms` → `room_list` response (also pushed unsolicited on
 most room-lifecycle changes — no need to poll if you're already
-connected per Step 1). Render as a "Join a Watch Party" list: `name`,
-`count`, `has_password` (show a lock icon, prompt for password on join).
+connected per Step 1). Render as a "Join a Watch Party" list: `name`
+and `count`.
 
 ### 2.2 Create-room button
 
 ```json
-{"type": "create_room", "payload": {"name": "Movie Night", "start_pos": 0.0, "media_id": "<jellyfin-item-id>", "password": "optional"}, "ts": <now_ms>}
+{"type": "create_room", "payload": {"name": "Movie Night", "start_pos": 0.0, "media_id": "<jellyfin-item-id>"}, "ts": <now_ms>}
 ```
 On the `room_state` response, this client becomes host — see Step 1.8 if
 you've implemented host-sending; otherwise treat this as "create the
@@ -337,15 +334,7 @@ admin-gated) — response keys are camelCase; note in
 auto-camelCase, so match the field names exactly as shown above, not a
 PascalCase guess.
 
-### 2.6 Password-prompt UI note
-
-If your platform has an equivalent gap to `window.prompt()` being a
-silent no-op in CEF-based clients (see `docs/PROGRESS.md` Round 19), use
-your platform's native modal/dialog API for the password prompts in 2.2
-and the join flow in 2.1 — don't assume a browser-style blocking prompt
-exists or works.
-
-### 2.7 Summary checklist
+### 2.6 Summary checklist
 
 | # | Feature | Endpoint/message |
 |---|---|---|

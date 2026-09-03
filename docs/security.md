@@ -125,7 +125,6 @@ permissions, and payload structure on every incoming message.
 
 | Limitation | Notes |
 |------------|-------|
-| Room passwords are a fast salted SHA-256 hash, not a slow KDF | Rooms are in-memory/ephemeral, so there's no persisted hash database to protect against offline cracking (see `src/server/src/password.rs`) |
 | Ephemeral sessions | No persistence by design |
 | Single secret for all users | No per-user JWT secrets |
 | Rate limiting per client, not IP | Use reverse-proxy rate limiting |
@@ -135,15 +134,15 @@ permissions, and payload structure on every incoming message.
 
 | Scenario | Current Behavior | Mitigation |
 |----------|------------------|------------|
-| Room creation | Any authenticated user can create rooms, optionally with a password | By design — all Jellyfin users are trusted |
-| Room joining | Any authenticated user can join any room; password-protected rooms require the correct password | Set a room password for private rooms |
-| Room enumeration | All users see all active rooms (and whether each is password-protected) | By design — rooms are public within your Jellyfin instance |
+| Room creation | Any authenticated user can create rooms | By design — all Jellyfin users are trusted |
+| Room joining | Any authenticated user can join any active room | By design — rooms are shared within your Jellyfin instance |
+| Room enumeration | All users see all active rooms | By design — rooms are public within your Jellyfin instance |
 | Token revocation | Tokens valid until expiration | Rotate the JWT secret to invalidate all tokens at once |
 
 JWT authentication operates on a trust boundary at the **Jellyfin level**: if
 a user can log into Jellyfin, they can use JellyWatchParty. There's no
 additional access-control layer within JellyWatchParty itself — restrict
-Jellyfin access (or set room passwords) to control who can use watch parties,
+Jellyfin and invite-link access to control who can use watch parties,
 and use Jellyfin's library permissions to control media access for sensitive
 content.
 

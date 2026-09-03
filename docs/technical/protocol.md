@@ -90,8 +90,7 @@ Create a new watch party room.
   "payload": {
     "name": "Movie Night",
     "start_pos": 0.0,
-    "media_id": "abc123def456",
-    "password": "optional-room-password"
+    "media_id": "abc123def456"
   },
   "ts": 1678900000000
 }
@@ -102,7 +101,6 @@ Create a new watch party room.
 | `name` | string | Room display name |
 | `start_pos` | number | Initial position (seconds) |
 | `media_id` | string | Jellyfin media ID (optional) |
-| `password` | string | Optional room password. If set, `join_room` must supply a matching `password` (see below). Never echoed back to any client. |
 
 **Response:** `room_state`
 
@@ -119,7 +117,7 @@ Join an existing room.
   "type": "join_room",
   "room": "uuid-room-id",
   "payload": {
-    "password": "required-if-room-has-one"
+    "user_name": "Guest"
   },
   "ts": 1678900000000
 }
@@ -127,9 +125,9 @@ Join an existing room.
 
 | Payload Field | Type | Description |
 |---------------|------|-------------|
-| `password` | string | Required only if the room was created with a password. Not checked for a client that's already a member of the room (e.g. a re-sent join after a panel refresh). |
+| `user_name` | string | Display name to use in the room (optional) |
 
-**Response:** `room_state`, or `error` with `payload.reason: "wrong_password"` if the password is missing/incorrect.
+**Response:** `room_state`
 
 **Effects:**
 - Client added to `room.clients`
@@ -313,8 +311,7 @@ List of active rooms.
       "id": "uuid-room-id",
       "name": "Movie Night",
       "count": 3,
-      "media_id": "abc123def456",
-      "has_password": false
+      "media_id": "abc123def456"
     }
   ],
   "ts": 1678900000000,
@@ -540,8 +537,7 @@ Error response.
 {
   "type": "error",
   "payload": {
-    "message": "Error description",
-    "reason": "wrong_password"
+    "message": "Error description"
   },
   "ts": 1678900000000,
   "server_ts": 1678900000000
@@ -551,7 +547,7 @@ Error response.
 | Payload Field | Type | Description |
 |---------------|------|-------------|
 | `message` | string | Human-readable error description |
-| `reason` | string | Optional machine-readable code for errors a client may want to special-case (currently only `"wrong_password"`, from `join_room`) |
+| `reason` | string | Optional machine-readable code for errors a client may want to special-case |
 
 ## Sequence Diagram: Complete Session
 

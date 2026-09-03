@@ -30,8 +30,7 @@ see [Host Bridge]({{ '/technical/host-bridge/' | relative_url }}) — in one of 
   from their own room list; nothing changes on their end.
 - **Receiver**: start playing the same item on the TV, then, from a browser
   that's already in the room, add your TV session as a *receiver* — it will
-  follow the room's play, pause, and seek. (Works for rooms without a
-  password.)
+  follow the room's play, pause, and seek.
 
 > **Both roles are opt-in.** An administrator must enable them from the
 > plugin configuration page (**Client Bridging** section): *Allow

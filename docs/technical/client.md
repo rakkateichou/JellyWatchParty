@@ -272,8 +272,8 @@ room-leave cleanup.
 
 ### `ws/send.js`
 `send(type, payload?, roomOverride?)` — the low-level message sender
-(adds `ts` and `client` automatically). `createRoom(password?)`,
-`joinRoom(id, password?)`, and `leaveRoom()` build on top of it;
+(adds `ts` and `client` automatically). `createRoom()`, `joinRoom(id)`,
+and `leaveRoom()` build on top of it;
 `leaveRoom()` also resets all sync/drift state fields and hides the panel.
 
 ### `ws/auth.js`

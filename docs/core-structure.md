@@ -178,8 +178,9 @@ reattachment possible.
 
 ```
 Client { sender, room_id, user_id, user_name, authenticated, message_count, last_reset, last_seen }
-Room   { room_id, name, host_id, clients, ready_clients, pending_play, state,
-         last_state_ts, last_command_ts, chat_history (capped at 50), password_hash }
+Room   { room_id, name, host_id, owner_user_id, media_id, clients, ready_clients,
+         pending_play, state, last_state_ts, last_command_ts,
+         chat_history (capped at 50), invite_url, dormant_since }
 ```
 
 **Client** (`JWP.state`): `ws`, `roomId`, `clientId`, `isHost`, `serverOffsetMs`,

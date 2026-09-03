@@ -4,6 +4,8 @@ const JWP = require('./setup.js');
 
 JWP.actions = {};
 JWP.playback = { resetInitialTrackSync() {} };
+JWP.utils.getVideo = () => null;
+JWP.utils.getCurrentItemId = () => '';
 require('../ws/send.js');
 
 describe('room-list join intent', () => {
@@ -34,5 +36,14 @@ describe('room-list join intent', () => {
     JWP.actions.joinRoom('room-1');
 
     assert.equal(JWP.state.roomJoinPending, false);
+  });
+
+  it('never sends room passwords, including from legacy callers', () => {
+    JWP.actions.createRoom('legacy-password');
+    JWP.actions.joinRoom('room-1', 'legacy-password');
+
+    const [create, join] = JWP.state.ws.sent.slice(-2);
+    assert.equal(Object.hasOwn(create.payload, 'password'), false);
+    assert.equal(Object.hasOwn(join.payload, 'password'), false);
   });
 });

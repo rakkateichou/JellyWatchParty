@@ -308,15 +308,9 @@
       </div>
     `;
     const btn = panel.querySelector('#jwp-btn-create');
-    if (btn) btn.onclick = async () => {
+    if (btn) btn.onclick = () => {
       if (!JWP.actions || !JWP.actions.createRoom) return;
-      const password = await ui.promptText({
-        title: 'Room password (optional, leave blank for none):',
-        placeholder: 'Password',
-        submitLabel: 'Create Room'
-      });
-      if (password === null) return; // cancelled — don't create a room
-      JWP.actions.createRoom(password);
+      JWP.actions.createRoom();
     };
     ui.updateRoomListUI();
     ui.updateBridgeListUI();

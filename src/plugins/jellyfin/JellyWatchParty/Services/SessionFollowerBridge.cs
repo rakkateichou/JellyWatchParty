@@ -94,8 +94,7 @@ public sealed class SessionFollowerBridge : IAsyncDisposable
 
         // RoomId is set only once the server confirms the join with a
         // room_state message (see HandleServerMessageAsync) — not optimistically
-        // here — so a rejected join (e.g. a password-protected room, which this
-        // bridge does not support) does not surface as a phantom connected bridge.
+        // here — so a rejected join does not surface as a phantom connected bridge.
         _receiveLoop = Task.Run(() => ReceiveLoopAsync(_cts.Token), CancellationToken.None);
         _heartbeatLoop = Task.Run(() => HeartbeatLoopAsync(_cts.Token), CancellationToken.None);
     }

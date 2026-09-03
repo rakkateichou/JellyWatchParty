@@ -48,7 +48,6 @@ function stubUi() {
     updateServerFooter() {},
     updateSyncIndicator() {},
     renderHomeWatchParties() {},
-    promptText: async () => null,
     stopPlayerCapture() {}
   });
 }

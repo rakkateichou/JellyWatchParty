@@ -151,11 +151,11 @@ Or open Developer Tools (F12) > Network tab > filter "WS" to inspect WebSocket m
 
 **What happens if the host leaves?** A brief disconnect (network blip, backgrounded app) is invisible to participants for 90 seconds while the server waits for reconnection. If the host doesn't return and other participants remain, the earliest-joined one is automatically promoted to host and the room stays open. It only closes if no one is left.
 
-**Can I use the official Android TV app (or Fladder) in a watch party?** Yes, via the [Native Client Bridge]({{ '/technical/host-bridge/' | relative_url }}) — any logged-in user with browser access can bridge the native session into a room as **host** (it drives the room) or, while in the room, as a **receiver** (it follows the room's play/pause/seek; the TV must already be playing the same item, and the room must not be password-protected).
+**Can I use the official Android TV app (or Fladder) in a watch party?** Yes, via the [Native Client Bridge]({{ '/technical/host-bridge/' | relative_url }}) — any logged-in user with browser access can bridge the native session into a room as **host** (it drives the room) or, while in the room, as a **receiver** (it follows the room's play/pause/seek; the TV must already be playing the same item).
 
 **Can I chat with other viewers?** Yes — real-time text chat in the panel, with the last 50 messages replayed to late joiners/reconnecting clients.
 
-**Can I make a room private?** Yes, with an optional password set at room creation.
+**Can I make a room private?** Rooms do not currently have separate passwords. Control access through Jellyfin and only share guest invite links with the people you want to join.
 
 **Does everyone need the same video quality?** No — each client transcodes independently; sync is based on playback position, not video quality.
 
