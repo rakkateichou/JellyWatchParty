@@ -13,7 +13,12 @@ describe('invite episode autoplay', () => {
     playCalls = 0;
     itemRequests = 0;
     JWP.state.joiningItemId = '';
+    JWP.state.nativeLaunchItemId = '';
+    JWP.state.nativeLaunchUntil = 0;
+    JWP.state.roomId = '';
+    JWP.state.pendingJoinRoomId = '';
     globalThis.window.location.hash = '#/details?id=' + itemId;
+    globalThis.document.querySelector = () => null;
     JWP.utils.getCurrentItemId = () => itemId;
     JWP.utils.getPlaybackManager = () => ({
       play: () => { playCalls += 1; }
@@ -47,5 +52,59 @@ describe('invite episode autoplay', () => {
 
     assert.equal(itemRequests, 0);
     assert.equal(playCalls, 0);
+  });
+
+  it('uses Jellyfin native Play when PlaybackManager is not exposed', () => {
+    let nativePlayCalls = 0;
+    JWP.utils.getPlaybackManager = () => null;
+    globalThis.document.querySelector = (selector) => selector.includes('.mainDetailButtons') ? ({
+      disabled: false,
+      click: () => {
+        nativePlayCalls += 1;
+        globalThis.window.location.hash = '#/video';
+      }
+    }) : null;
+
+    JWP.playback.ensurePlayback(itemId);
+
+    assert.equal(nativePlayCalls, 1);
+    assert.equal(itemRequests, 0);
+  });
+
+  it('does not relaunch native playback while Jellyfin is opening the player', () => {
+    let nativePlayCalls = 0;
+    JWP.utils.getPlaybackManager = () => null;
+    globalThis.document.querySelector = (selector) => selector.includes('.mainDetailButtons') ? ({
+      disabled: false,
+      click: () => { nativePlayCalls += 1; }
+    }) : null;
+
+    JWP.playback.ensurePlayback(itemId);
+    JWP.playback.ensurePlayback(itemId);
+
+    assert.equal(nativePlayCalls, 1);
+  });
+
+  it('opens a changed episode before retrying the native Play button', async () => {
+    const nextItemId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    let currentItemId = itemId;
+    let nativePlayCalls = 0;
+    JWP.state.roomId = '686a02d6-c84c-4b7a-94c7-ef732a0fac9e';
+    JWP.utils.getPlaybackManager = () => null;
+    JWP.utils.getCurrentItemId = () => currentItemId;
+    globalThis.document.querySelector = (selector) => selector.includes('.mainDetailButtons') && currentItemId === nextItemId ? ({
+      disabled: false,
+      click: () => {
+        nativePlayCalls += 1;
+        globalThis.window.location.hash = '#/video';
+      }
+    }) : null;
+
+    JWP.playback.ensurePlayback(nextItemId);
+    assert.match(globalThis.window.location.hash, new RegExp(`^#/details\\?id=${nextItemId}&jwpRoom=`));
+
+    currentItemId = nextItemId;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    assert.equal(nativePlayCalls, 1);
   });
 });

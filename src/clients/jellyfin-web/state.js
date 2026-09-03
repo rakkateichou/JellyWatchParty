@@ -127,6 +127,8 @@
     homeRoomCache: new LRUCache(50),
     lastParticipantCount: 0,
     joiningItemId: '',
+    nativeLaunchItemId: '',
+    nativeLaunchUntil: 0,
     pendingJoinRoomId: '',  // Room to join after navigating to video player
     inviteJoinActive: false, // True while handling an accountless ShareLinks invitation
     guestMode: false,        // Verified ShareLinks temporary guest session

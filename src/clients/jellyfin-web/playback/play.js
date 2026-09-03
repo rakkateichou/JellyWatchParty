@@ -3,6 +3,50 @@
   const playback = JWP.playback = JWP.playback || {};
   const utils = JWP.utils;
 
+  const PLAY_BUTTON_SELECTOR = [
+    '.mainDetailButtons .btnPlay',
+    '.mainDetailButtons button[data-action="resume"]',
+    '.mainDetailButtons button[data-action="play"]'
+  ].join(',');
+
+  const NATIVE_LAUNCH_COOLDOWN_MS = 8000;
+
+  const isVideoPage = () => {
+    if (/^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '')) return true;
+    const video = document.querySelector('.videoPlayerContainer video');
+    const container = video?.closest?.('.videoPlayerContainer');
+    if (!video || !container || container.hidden) return false;
+    if (typeof window.getComputedStyle !== 'function') return true;
+    const style = window.getComputedStyle(container);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+  };
+
+  const clickNativePlayButton = (itemId) => {
+    if (utils.getCurrentItemId() !== itemId) return false;
+    const state = JWP.state;
+    if (state.nativeLaunchItemId === itemId && Date.now() < state.nativeLaunchUntil) return true;
+    const button = document.querySelector(PLAY_BUTTON_SELECTOR);
+    if (!button || button.disabled) return false;
+    state.nativeLaunchItemId = itemId;
+    state.nativeLaunchUntil = Date.now() + NATIVE_LAUNCH_COOLDOWN_MS;
+    button.click();
+    console.log('[JellyWatchParty] Playback started via Jellyfin Play button');
+    return true;
+  };
+
+  const openItemDetails = (itemId) => {
+    if (utils.getCurrentItemId() === itemId) return false;
+    const state = JWP.state;
+    const roomId = state.roomId || state.pendingJoinRoomId || '';
+    const apiClient = window.ApiClient;
+    const serverId = apiClient?.serverId?.() || apiClient?._serverId || '';
+    const params = [`id=${encodeURIComponent(itemId)}`];
+    if (roomId) params.push(`jwpRoom=${encodeURIComponent(roomId)}`);
+    if (serverId) params.push(`serverId=${encodeURIComponent(serverId)}`);
+    window.location.hash = `#/details?${params.join('&')}`;
+    return true;
+  };
+
   const tryPlayMethods = (pm, item) => {
     const playOptions = { startPositionTicks: 0 };
     const errors = [];
@@ -62,26 +106,44 @@
 
   const ensurePlayback = (itemId, attempt = 0) => {
     const state = JWP.state;
-    if (!itemId || !window.ApiClient) return;
+    if (!itemId) return;
     // The same item id can mean either "already playing" or merely "open on
     // its details page". Jellyfin's SPA can retain a hidden <video> element
     // on details pages, so the player route is the authoritative distinction.
     // Guest invitation links need this path to start the episode they landed on.
-    const isVideoPage = /^#\/video(?:[/?]|$)/i.test(window.location.hash || '');
-    if (utils.getCurrentItemId() === itemId && isVideoPage) return;
+    if (utils.getCurrentItemId() === itemId && isVideoPage()) return;
     if (state.joiningItemId === itemId) return;
+    const retry = () => {
+      if (attempt < 80) setTimeout(() => ensurePlayback(itemId, attempt + 1), 250);
+      else JWP.ui?.showToast?.('Tap Play to continue the watch party.');
+    };
+
+    // Jellyfin Web keeps PlaybackManager inside its module bundle on current
+    // releases, so it is often unavailable on window. Its own Play button is
+    // nevertheless ready and is the most reliable way to open the player for
+    // a redeemed ShareLinks guest. For episode changes, first move to the new
+    // item's details page, then retry until that button has rendered.
+    if (!utils.getPlaybackManager()) {
+      if (clickNativePlayButton(itemId)) return;
+      openItemDetails(itemId);
+      retry();
+      return;
+    }
+
+    if (!window.ApiClient) {
+      retry();
+      return;
+    }
     const userId = ApiClient.getCurrentUserId?.() || ApiClient._currentUserId;
     if (!userId) {
-      if (attempt < 5) setTimeout(() => ensurePlayback(itemId, attempt + 1), 500);
+      retry();
       return;
     }
     state.joiningItemId = itemId;
     ApiClient.getItem(userId, itemId).then((item) => {
-      if (!playItem(item) && attempt < 5) {
-        setTimeout(() => ensurePlayback(itemId, attempt + 1), 500);
-      }
+      if (!playItem(item)) retry();
     }).catch(() => {
-      if (attempt < 5) setTimeout(() => ensurePlayback(itemId, attempt + 1), 500);
+      retry();
     }).finally(() => {
       state.joiningItemId = '';
     });
