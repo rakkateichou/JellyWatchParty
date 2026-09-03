@@ -8,6 +8,8 @@
   const BLOCKED_CONTROL_SELECTOR = [
     '.btnUserData',
     '.btnUserData-favorite',
+    '.btnUserRating',
+    'button[is="emby-ratingbutton"]',
     '.headerBackButton',
     '.headerHomeButton',
     '.headerSearchButton',

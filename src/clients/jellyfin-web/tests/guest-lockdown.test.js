@@ -64,4 +64,14 @@ describe('ShareLinks watch-party guest lockdown', () => {
     assert.equal(JWP.guestLockdown.enforce(), false);
     assert.equal(requestedMedia, '');
   });
+
+  it('blocks Jellyfin 10.11 player favourite controls for guests', () => {
+    const target = {
+      closest(selector) {
+        return selector.includes('.btnUserRating') ? {} : null;
+      }
+    };
+
+    assert.equal(JWP.guestLockdown.isAllowedControl(target), false);
+  });
 });

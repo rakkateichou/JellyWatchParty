@@ -505,7 +505,7 @@
     btn.title = 'Watch Party';
     btn.innerHTML = '<span class="material-icons groups" aria-hidden="true"></span>';
     btn.onclick = togglePanel;
-    const favBtn = videoOsd.querySelector('[title="Add to favorites"], [title="Remove from favorites"]');
+    const favBtn = videoOsd.querySelector('.btnUserRating, button[is="emby-ratingbutton"], [title="Add to favorites"], [title="Remove from favorites"]');
     if (favBtn) {
       favBtn.insertAdjacentElement('beforebegin', btn);
     } else {
