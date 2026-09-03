@@ -155,6 +155,7 @@ describe('bridge picker opt-in gating', () => {
 
     assert.match(panel.innerHTML, /> Copy link</);
     assert.match(panel.innerHTML, /aria-label="Chat settings"/);
+    assert.match(panel.innerHTML, /id="jwp-btn-settings"[^>]+aria-expanded="false"/);
   });
 
   it('requires a nickname before showing the chat composer', () => {

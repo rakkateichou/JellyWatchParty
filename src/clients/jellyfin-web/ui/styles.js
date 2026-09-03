@@ -229,8 +229,8 @@
       gap: .75rem;
       flex-shrink: 0;
     }
-    .jwp-room-actions { display: flex; align-items: center; gap: .45rem; }
-    .jwp-participants-list { color: var(--jwp-muted); font-size: .78rem; font-weight: 650; }
+    .jwp-room-actions { display: flex; align-items: center; flex: 0 0 auto; gap: .45rem; }
+    .jwp-participants-list { min-width: 0; color: var(--jwp-muted); font-size: .78rem; font-weight: 650; }
     .jwp-room-item {
       min-height: 3.35rem;
       margin-bottom: .55rem;
@@ -295,6 +295,7 @@
     .jwp-icon-btn {
       width: 2.25rem;
       height: 2.25rem;
+      flex: 0 0 2.25rem;
       padding: 0;
       border: 1px solid var(--jwp-border);
       border-radius: 50%;
@@ -308,7 +309,12 @@
     }
     .jwp-icon-btn:hover { border-color: var(--jwp-border-strong); background: var(--jwp-surface-hover); transform: translateY(-1px); }
     .jwp-icon-btn:active { transform: translateY(0); }
-    .jwp-icon-btn[aria-pressed="true"] { border-color: var(--jwp-border-strong); background: var(--jwp-action-hover); color: var(--jwp-accent-strong); }
+    #jwp-btn-settings {
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    #jwp-btn-settings[aria-expanded="true"] { border-color: var(--jwp-border-strong); background: var(--jwp-action-hover); color: var(--jwp-accent-strong); }
     .jwp-icon-btn.danger { color: var(--jwp-muted); }
     .jwp-icon-btn.danger:hover { color: var(--jwp-danger); background: var(--jwp-danger-hover); }
     .jwp-icon-btn .material-icons { font-size: 1.15rem; }

@@ -340,7 +340,7 @@
         <div id="jwp-participants-list" class="jwp-participants-list">${participantCount} online</div>
         <div class="jwp-room-actions">
           <button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>
-          <button class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-pressed="${state.chatSettingsOpen}"><span class="material-icons" aria-hidden="true">settings</span></button>
+          <button type="button" class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-expanded="${state.chatSettingsOpen}"><span class="material-icons" aria-hidden="true">settings</span></button>
           <button class="jwp-icon-btn" id="jwp-btn-hide" title="Hide panel" aria-label="Hide panel"><span class="material-icons" aria-hidden="true">chevron_right</span></button>
         </div>
       </div>
