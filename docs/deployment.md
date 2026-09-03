@@ -290,7 +290,7 @@ docker compose start jellyfin
 
 1. **Backup first:** `docker compose stop && tar -czf backup-before-upgrade.tar.gz ./config`
 2. **Pull new images:** `docker compose pull`
-3. **Update plugin:** download the new `.dll` from [Releases](https://github.com/TIGamingTV/JellyWatchParty/releases) and replace it in your plugins volume
+3. **Update plugin:** download the new `.dll` from [Releases](https://github.com/rakkateichou/JellyWatchParty/releases) and replace it in your plugins volume
 4. **Restart:** `docker compose up -d`
 5. **Verify:** check Dashboard for plugin status, test Watch Party functionality, check logs for errors
 

@@ -85,7 +85,7 @@ push only rebuilds the components that actually changed.
 
 #### Plugin Repository
 
-On release, the workflow automatically updates the [Jellyfin plugin repository](https://tigamingtv.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest.json):
+On release, the workflow automatically updates the [Jellyfin plugin repository](https://rakkateichou.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest.json):
 
 1. Downloads the built plugin zip
 2. Calculates MD5 checksum
@@ -104,16 +104,16 @@ testers install it.
 
 ```bash
 # Latest stable release
-docker pull ghcr.io/tigamingtv/jwp-session-server:latest
+docker pull ghcr.io/rakkateichou/jwp-session-server:latest
 
 # Specific version
-docker pull ghcr.io/tigamingtv/jwp-session-server:v0.1.0
+docker pull ghcr.io/rakkateichou/jwp-session-server:v1.9.0.0
 
 # Latest build from main (pre-release)
-docker pull ghcr.io/tigamingtv/jwp-session-server:beta
+docker pull ghcr.io/rakkateichou/jwp-session-server:beta
 
 # Latest build from develop
-docker pull ghcr.io/tigamingtv/jwp-session-server:dev
+docker pull ghcr.io/rakkateichou/jwp-session-server:dev
 ```
 
 ## Build Configuration
@@ -189,7 +189,7 @@ docker build -t test ./src/server
 The README includes CI status badges:
 
 ```markdown
-[![CI](https://img.shields.io/github/actions/workflow/status/TIGamingTV/JellyWatchParty/ci.yml?branch=main)](https://github.com/TIGamingTV/JellyWatchParty/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/rakkateichou/JellyWatchParty/ci.yml?branch=main)](https://github.com/rakkateichou/JellyWatchParty/actions/workflows/ci.yml)
 ```
 
 | Badge | Meaning |

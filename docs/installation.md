@@ -23,7 +23,7 @@ The fastest way to get running:
 # docker-compose.yml
 services:
   jwp-session:
-    image: ghcr.io/tigamingtv/jwp-session-server:latest
+    image: ghcr.io/rakkateichou/jwp-session-server:latest
     container_name: jwp-session
     restart: unless-stopped
     ports:
@@ -52,15 +52,15 @@ docker run -d \
   --name jwp-session \
   -p 3000:3000 \
   -e ALLOWED_ORIGINS="http://localhost:8096" \
-  ghcr.io/tigamingtv/jwp-session-server:latest
+  ghcr.io/rakkateichou/jwp-session-server:latest
 
 # Or a specific version
 docker run -d --name jwp-session -p 3000:3000 \
-  ghcr.io/tigamingtv/jwp-session-server:v0.1.0
+  ghcr.io/rakkateichou/jwp-session-server:v1.9.0.0
 
 # Or the beta channel (latest build from main)
 docker run -d --name jwp-session -p 3000:3000 \
-  ghcr.io/tigamingtv/jwp-session-server:beta
+  ghcr.io/rakkateichou/jwp-session-server:beta
 ```
 
 ### Docker: Build from Source
@@ -89,7 +89,7 @@ cargo build --release
 
 No Docker, no Rust, nothing to install — download a ready-to-run binary:
 
-1. Go to [Releases](https://github.com/TIGamingTV/JellyWatchParty/releases)
+1. Go to [Releases](https://github.com/rakkateichou/JellyWatchParty/releases)
    and download `jwp-session-server-windows-vX.Y.Z.zip` from the latest release
 2. Extract it anywhere on the Windows Server host
 3. (Optional) Set configuration via environment variables before launching,
@@ -131,12 +131,22 @@ that injects the client script into `index.html` — no configuration needed.
 
 ## Plugin Install
 
+For account-free guest invitations, first add the companion ShareLinks repository and install
+**ShareLinks**:
+
+```
+https://raw.githubusercontent.com/rakkateichou/jellyfin-plugin-sharelinks/main/manifest.json
+```
+
+This dependency is optional for ordinary signed-in watch parties, but required for short guest
+links that create a confined temporary Jellyfin account.
+
 ### Option A: Via Jellyfin Plugin Repository (Recommended) {#plugin-install}
 
 1. Go to **Dashboard** > **Plugins** > **Repositories**
 2. Click **Add** and enter:
    ```
-   https://tigamingtv.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest.json
+   https://rakkateichou.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest.json
    ```
 3. Go to the **Catalog** tab
 4. Find **JellyWatchParty** and click **Install**
@@ -151,15 +161,15 @@ Channel]({{ '/development/release/' | relative_url }}#develop-plugin-channel).
 ### Option B: Manual Download
 
 1. Download the latest release zip (`JellyWatchParty-vX.Y.Z.zip`) from the
-   [releases page](https://github.com/TIGamingTV/JellyWatchParty/releases)
+   [releases page](https://github.com/rakkateichou/JellyWatchParty/releases)
 2. Extract it to your Jellyfin plugins directory:
    ```bash
    # Linux (Docker)
-   unzip JellyWatchParty-v0.1.0.zip -d /tmp/jwp
+   unzip JellyWatchParty-v1.9.0.0.zip -d /tmp/jwp
    docker cp /tmp/jwp/. jellyfin:/config/plugins/JellyWatchParty/
 
    # Linux (native)
-   sudo unzip JellyWatchParty-v0.1.0.zip -d /var/lib/jellyfin/plugins/JellyWatchParty/
+   sudo unzip JellyWatchParty-v1.9.0.0.zip -d /var/lib/jellyfin/plugins/JellyWatchParty/
 
    # Windows
    # Extract to: C:\ProgramData\Jellyfin\Server\plugins\JellyWatchParty\
@@ -218,7 +228,7 @@ docker run -d \
   -e ALLOWED_ORIGINS="https://jellyfin.example.com" \
   -e JWT_SECRET="your-32-character-secret-key-here" \
   -e LOG_LEVEL="debug" \
-  ghcr.io/tigamingtv/jwp-session-server:latest
+  ghcr.io/rakkateichou/jwp-session-server:latest
 ```
 
 ## Firewall Configuration

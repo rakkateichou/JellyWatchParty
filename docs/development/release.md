@@ -218,16 +218,16 @@ Docker images are automatically built and pushed to GitHub Container Registry (G
 
 ```bash
 # Latest stable
-docker pull ghcr.io/tigamingtv/jwp-session-server:latest
+docker pull ghcr.io/rakkateichou/jwp-session-server:latest
 
 # Specific version
-docker pull ghcr.io/tigamingtv/jwp-session-server:v0.1.0
+docker pull ghcr.io/rakkateichou/jwp-session-server:v1.9.0.0
 
 # Latest from main
-docker pull ghcr.io/tigamingtv/jwp-session-server:beta
+docker pull ghcr.io/rakkateichou/jwp-session-server:beta
 
 # Latest from develop
-docker pull ghcr.io/tigamingtv/jwp-session-server:dev
+docker pull ghcr.io/rakkateichou/jwp-session-server:dev
 ```
 
 ### Build Locally (optional)
@@ -244,8 +244,8 @@ components without waiting for a tagged release.
 
 | Component | Where it lands | Version scheme |
 |-----------|-----------------|----------------|
-| Session Server | Docker image `ghcr.io/tigamingtv/jwp-session-server:dev` | Tag stays `dev`, content changes each push |
-| Jellyfin Plugin | Rolling pre-release [`develop-latest`](https://github.com/TIGamingTV/JellyWatchParty/releases/tag/develop-latest), tracked via `manifest-dev.json` | `0.0.<GitHub run number>` (always increasing, always below `1.0`) |
+| Session Server | Docker image `ghcr.io/rakkateichou/jwp-session-server:dev` | Tag stays `dev`, content changes each push |
+| Jellyfin Plugin | Rolling pre-release [`develop-latest`](https://github.com/rakkateichou/JellyWatchParty/releases/tag/develop-latest), tracked via `manifest-dev.json` | `0.0.<GitHub run number>` (always increasing, always below `1.0`) |
 
 ### Develop Plugin Channel
 
@@ -254,7 +254,7 @@ plugin repository so they can be installed/updated like a beta channel,
 without touching the stable `manifest.json` feed:
 
 1. Go to Dashboard > Plugins > Repositories
-2. Add: `https://tigamingtv.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest-dev.json`
+2. Add: `https://rakkateichou.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest-dev.json`
 3. Go to Catalog > Find "JellyWatchParty (Develop)" > Install
 4. Restart Jellyfin
 
@@ -304,7 +304,7 @@ Users can install the plugin in three ways:
 #### Via Jellyfin UI (Recommended, stable)
 
 1. Go to Dashboard > Plugins > Repositories
-2. Add: `https://tigamingtv.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest.json`
+2. Add: `https://rakkateichou.github.io/JellyWatchParty/jellyfin-plugin-repo/manifest.json`
 3. Go to Catalog > Find "JellyWatchParty" > Install
 4. Restart Jellyfin
 
@@ -314,7 +314,7 @@ See [Develop Plugin Channel](#develop-plugin-channel) above.
 
 #### Via Direct Download
 
-1. Go to [Releases](https://github.com/TIGamingTV/JellyWatchParty/releases)
+1. Go to [Releases](https://github.com/rakkateichou/JellyWatchParty/releases)
 2. Download `JellyWatchParty-vX.Y.Z.zip`
 3. Extract to Jellyfin plugins folder
 4. Restart Jellyfin

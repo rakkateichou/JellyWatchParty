@@ -19,7 +19,7 @@ nav_order: 1
 
 ```bash
 # Clone the repository
-git clone https://github.com/TIGamingTV/JellyWatchParty.git
+git clone https://github.com/rakkateichou/JellyWatchParty.git
 cd JellyWatchParty
 
 # Configure git hooks (required once after clone)

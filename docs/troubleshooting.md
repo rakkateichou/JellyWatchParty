@@ -183,6 +183,6 @@ Or open Developer Tools (F12) > Network tab > filter "WS" to inspect WebSocket m
 
 When reporting issues, include: your Jellyfin version, browser and OS, Docker version (if applicable), session server + plugin configuration (without secrets), reverse proxy setup, relevant logs (server/Jellyfin/browser console), and steps to reproduce.
 
-- [GitHub Issues](https://github.com/TIGamingTV/JellyWatchParty/issues) - Bug reports
-- [GitHub Discussions](https://github.com/TIGamingTV/JellyWatchParty/discussions) - Questions
+- [GitHub Issues](https://github.com/rakkateichou/JellyWatchParty/issues) - Bug reports
+- [GitHub Discussions](https://github.com/rakkateichou/JellyWatchParty/discussions) - Questions
 - [Jellyfin Forums](https://forum.jellyfin.org/) - Community help
