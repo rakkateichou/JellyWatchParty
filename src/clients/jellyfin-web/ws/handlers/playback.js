@@ -30,14 +30,26 @@
         state.syncStatus = 'syncing';
         state.pendingPlayUntil = 0;
         if (ui.updateSyncIndicator) ui.updateSyncIndicator();
-        video.play().catch(() => {});
+        if (state.isHost) {
+          state.coordinatedPlayPending = false;
+          state.coordinatedPlayStarting = true;
+        }
+        video.play().catch(() => {
+          if (state.isHost) state.coordinatedPlayStarting = false;
+        });
       });
     } else {
       state.syncStatus = 'syncing';
       if (ui.updateSyncIndicator) ui.updateSyncIndicator();
-      video.play().catch(() => {});
+      if (state.isHost) {
+        state.coordinatedPlayPending = false;
+        state.coordinatedPlayStarting = true;
+      }
+      video.play().catch(() => {
+        if (state.isHost) state.coordinatedPlayStarting = false;
+      });
     }
-    ui.showToast('Host resumed playback');
+    if (!state.isHost) ui.showToast('Host resumed playback');
   };
 
   const handlePlayerPause = (msg, video) => {
@@ -83,8 +95,9 @@
   };
 
   h.handlePlayerEvent = (msg, video) => {
-    if (state.isHost || !video) return;
-    utils.startSyncing();
+    const coordinated = msg.payload?.coordinated === true;
+    if (!video || (state.isHost && !coordinated)) return;
+    if (!state.isHost) utils.startSyncing();
     if (msg.payload && typeof msg.payload.position === 'number') {
       const action = msg.payload.action;
       const sampleTs = positionServerTs(msg);

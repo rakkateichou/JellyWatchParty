@@ -8,6 +8,7 @@
   const sendStateUpdate = (video) => {
     const actions = JWP.actions;
     if (!state.isHost || !actions || !actions.send) return;
+    if (state.coordinatedPlayPending) return;
     if (state.isSyncing) return;
     if (utils.isSeeking()) return;
     if (state.isBuffering || !utils.isVideoReady()) return;
@@ -30,6 +31,15 @@
 
   const onHostEvent = (action, video) => {
     const actions = JWP.actions;
+    if (action === 'play' && state.coordinatedPlayStarting) {
+      state.coordinatedPlayStarting = false;
+      return;
+    }
+    if (action === 'pause' && state.coordinatedPlayPending) return;
+    if (action === 'play' && state.coordinatedPlayPending) {
+      if (!video.paused) video.pause();
+      return;
+    }
     if (!state.isHost || !actions || !actions.send || !utils.shouldSend()) return;
     if (state.isSyncing) return;
     if (action === 'seek' && !utils.isVideoReady()) return;
@@ -41,6 +51,12 @@
     if (action === 'play') {
       if (utils.isSeeking()) return;
       state.wantsToPlay = true;
+      // Jellyfin starts the host immediately. Hold it on the exact frame that
+      // was requested until the server gives every participant one common
+      // future start time. The resulting synthetic Pause event is ignored by
+      // the coordinatedPlayPending guard above.
+      state.coordinatedPlayPending = true;
+      if (!video.paused) video.pause();
     }
     if (action === 'seek') {
       const now = utils.nowMs();
@@ -62,8 +78,21 @@
       sample_server_ts: sampleServerTs
     };
     playback.addTrackSnapshot?.(payload);
-    actions.send('player_event', payload);
-    if (action === 'play' || action === 'pause' || action === 'seek') {
+    const eventSent = actions.send('player_event', payload);
+    if (action === 'play' && eventSent === false) {
+      // Do not strand the host on a paused frame if the room connection drops
+      // at the exact moment they resume.
+      state.coordinatedPlayPending = false;
+      state.coordinatedPlayStarting = true;
+      video.play().catch(() => {
+        state.coordinatedPlayStarting = false;
+      });
+      return;
+    }
+    // A coordinated Play is already stored and rebroadcast by the server.
+    // Sending the host's temporary local Pause as a second state snapshot can
+    // race that command and incorrectly mark the room paused again.
+    if (action === 'pause' || action === 'seek') {
       const statePayload = {
         position,
         play_state: video.paused ? 'paused' : 'playing',
@@ -91,6 +120,7 @@
         if (wasBuffering) utils.log('VIDEO', { event: 'ready', pos: video.currentTime, readyState: video.readyState });
       },
       playing: () => {
+        state.coordinatedPlayStarting = false;
         const wasBuffering = state.isBuffering;
         state.isBuffering = false;
         if (wasBuffering) {
@@ -154,5 +184,5 @@
     state.currentVideoElement = null;
   };
 
-  Object.assign(playback, { bindVideo, cleanupVideoListeners });
+  Object.assign(playback, { bindVideo, cleanupVideoListeners, onHostEvent });
 })();

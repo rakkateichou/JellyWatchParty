@@ -75,6 +75,12 @@
     state.isInitialSync = false;
     state.initialSyncUntil = 0;
     state.pendingPlayUntil = 0;
+    state.coordinatedPlayPending = false;
+    state.coordinatedPlayStarting = false;
+    if (state.pendingActionTimer) {
+      clearTimeout(state.pendingActionTimer);
+      state.pendingActionTimer = null;
+    }
     JWP.playback?.resetInitialTrackSync?.();
     JWP.chat?.clear?.();
     if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();

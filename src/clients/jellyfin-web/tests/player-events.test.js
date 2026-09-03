@@ -19,6 +19,8 @@ describe('host pause and resume events', () => {
     JWP.state.isHost = false;
     JWP.state.syncCooldownUntil = 0;
     JWP.state.pendingActionTimer = null;
+    JWP.state.coordinatedPlayPending = false;
+    JWP.state.coordinatedPlayStarting = false;
     video = {
       currentTime: 20,
       paused: false,
@@ -79,5 +81,27 @@ describe('host pause and resume events', () => {
 
     assert.equal(video.currentTime, 21);
     assert.equal(JWP.state.lastSyncPosition, 21);
+  });
+
+  it('lets the host obey the coordinated start without skipping ahead', () => {
+    JWP.state.isHost = true;
+    JWP.state.coordinatedPlayPending = true;
+    video.paused = true;
+
+    JWP._wsHandlers.handlePlayerEvent({
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        action: 'play',
+        position: 20,
+        play_state: 'playing',
+        coordinated: true
+      }
+    }, video);
+
+    assert.equal(video.currentTime, 20);
+    assert.equal(video.paused, false);
+    assert.equal(video.playCalls, 1);
+    assert.equal(JWP.state.coordinatedPlayPending, false);
+    assert.equal(JWP.state.coordinatedPlayStarting, true);
   });
 });

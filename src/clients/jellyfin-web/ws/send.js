@@ -91,6 +91,8 @@
     state.syncCooldownUntil = 0;
     state.syncStatus = 'synced';
     state.pendingPlayUntil = 0;
+    state.coordinatedPlayPending = false;
+    state.coordinatedPlayStarting = false;
     state.currentDrift = 0;
     JWP.playback?.resetInitialTrackSync?.();
     if (state.pendingActionTimer) {

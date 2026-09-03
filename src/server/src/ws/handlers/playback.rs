@@ -1,7 +1,7 @@
 use super::super::constants::{
     COMMAND_COOLDOWN_MS, MIN_STATE_UPDATE_INTERVAL_MS, PLAY_SCHEDULE_MS, POSITION_JITTER_THRESHOLD,
 };
-use super::super::pending_play::{all_ready, schedule_pending_play};
+use super::super::pending_play::{all_ready, release_pending_play, schedule_pending_play};
 use super::super::validation::{is_valid_media_id, is_valid_play_state, is_valid_position};
 use crate::types::{ClientMessageType, Clients, IncomingMessage, PendingPlay, Room, Rooms};
 use crate::utils::now_ms;
@@ -164,18 +164,13 @@ fn apply_state_changes(
     if parsed.msg_type == ClientMessageType::PlayerEvent {
         room.last_command_ts = current_ts;
         if action == Some("play") {
-            // The host is already playing during the countdown. Pair the
-            // future start timestamp with the position the host will have at
-            // that timestamp; sending the position sampled one second earlier
-            // left every follower roughly one second behind after each resume.
+            // Coordinated play holds every participant, including the host, on
+            // this exact position until the shared future timestamp.
             let target_server_ts = current_ts + PLAY_SCHEDULE_MS;
             if let Some(payload) = parsed.payload.as_mut() {
-                if let Some(position) = payload.get("position").and_then(|v| v.as_f64()) {
-                    payload["position"] =
-                        serde_json::json!(position + PLAY_SCHEDULE_MS as f64 / 1000.0);
-                }
                 payload["target_server_ts"] = serde_json::json!(target_server_ts);
                 payload["sample_server_ts"] = serde_json::json!(target_server_ts);
+                payload["coordinated"] = serde_json::json!(true);
             }
             parsed.server_ts = Some(target_server_ts);
         } else {
@@ -198,6 +193,7 @@ pub(in crate::ws) async fn handle_playback(
     };
 
     let mut pending_schedule: Option<(String, u64)> = None;
+    let mut immediate_schedule: Option<(String, u64)> = None;
     let broadcast_data: Option<(Vec<mpsc::Sender<_>>, String)> = 'broadcast: {
         let mut locked_rooms = rooms.write().await;
         let locked_clients = clients.read().await;
@@ -254,7 +250,7 @@ pub(in crate::ws) async fn handle_playback(
             room.pending_play = None;
         }
 
-        if is_player_event && action.as_deref() == Some("play") && !all_ready(room) {
+        if is_player_event && action.as_deref() == Some("play") {
             if let Some(payload) = parsed.payload.as_ref() {
                 apply_track_selection(room, payload);
             }
@@ -265,7 +261,14 @@ pub(in crate::ws) async fn handle_playback(
                 .and_then(|v| v.as_f64())
                 .filter(|pos| is_valid_position(*pos))
                 .unwrap_or(room.state.position);
-            pending_schedule = handle_play_not_ready(room, position, current_ts);
+            let everyone_ready = all_ready(room);
+            if let Some(schedule) = handle_play_not_ready(room, position, current_ts) {
+                if everyone_ready {
+                    immediate_schedule = Some(schedule);
+                } else {
+                    pending_schedule = Some(schedule);
+                }
+            }
             if media_changed {
                 // Tell followers what to load while Play waits for their
                 // `ready` acknowledgement. The eventual scheduled Play is
@@ -341,6 +344,9 @@ pub(in crate::ws) async fn handle_playback(
                 log::warn!("Failed to send player event (buffer full or closed): {}", e);
             }
         }
+    }
+    if let Some((room_id, created_at)) = immediate_schedule {
+        release_pending_play(&room_id, created_at, clients, rooms).await;
     }
     if let Some((room_id, created_at)) = pending_schedule {
         schedule_pending_play(room_id, created_at, clients.clone(), rooms.clone());
@@ -547,9 +553,9 @@ mod tests {
         let payload = parsed.payload.expect("play payload");
         assert_eq!(payload["target_server_ts"], target_ts);
         assert_eq!(payload["sample_server_ts"], target_ts);
-        assert!((payload["position"].as_f64().unwrap() - 11.0).abs() < f64::EPSILON);
-        // The room stores the position sampled now; only the outgoing command
-        // carries the predicted position at the scheduled start time.
+        assert_eq!(payload["coordinated"], true);
+        assert!((payload["position"].as_f64().unwrap() - 10.0).abs() < f64::EPSILON);
+        // Both the room and outgoing command retain the frame sampled now.
         assert!((room.state.position - 10.0).abs() < f64::EPSILON);
     }
 
@@ -570,6 +576,64 @@ mod tests {
         assert_eq!(parsed.server_ts, Some(now));
         assert_eq!(parsed.payload.unwrap()["position"], 10.0);
         assert_eq!(room.state.play_state, "paused");
+    }
+
+    #[tokio::test]
+    async fn ready_room_schedules_the_same_frame_for_host_and_guest() {
+        let clients = test_helpers::create_clients();
+        let rooms = test_helpers::create_rooms();
+        let (host, mut host_rx) = test_helpers::create_client_with_rx("uh", "Host", true);
+        let (guest, mut guest_rx) = test_helpers::create_client_with_rx("ug", "Guest", true);
+        let media_id = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+        {
+            let mut locked_clients = clients.write().await;
+            locked_clients.insert("host".to_string(), host);
+            locked_clients.insert("guest".to_string(), guest);
+        }
+        {
+            let mut locked_rooms = rooms.write().await;
+            let mut room = test_helpers::create_room("room-1", "host");
+            room.clients.push("guest".to_string());
+            room.ready_clients.insert("guest".to_string());
+            room.media_id = Some(media_id.to_string());
+            room.state.position = 42.0;
+            room.state.play_state = "paused".to_string();
+            locked_rooms.insert("room-1".to_string(), room);
+        }
+
+        handle_playback(
+            "host",
+            IncomingMessage {
+                msg_type: ClientMessageType::PlayerEvent,
+                room: Some("room-1".to_string()),
+                client: Some("host".to_string()),
+                payload: Some(serde_json::json!({
+                    "action": "play",
+                    "position": 42.0,
+                    "play_state": "playing",
+                    "media_id": media_id,
+                })),
+                ts: 1,
+                server_ts: None,
+            },
+            &clients,
+            &rooms,
+        )
+        .await;
+
+        for message in [
+            test_helpers::recv_msg(&mut host_rx).expect("host scheduled play"),
+            test_helpers::recv_msg(&mut guest_rx).expect("guest scheduled play"),
+        ] {
+            assert_eq!(message.msg_type, "player_event");
+            let payload = message.payload.expect("scheduled play payload");
+            assert_eq!(payload["coordinated"], true);
+            assert!((payload["position"].as_f64().unwrap() - 42.0).abs() < f64::EPSILON);
+        }
+
+        let locked_rooms = rooms.read().await;
+        assert!(locked_rooms.get("room-1").unwrap().pending_play.is_none());
     }
 
     #[tokio::test]
