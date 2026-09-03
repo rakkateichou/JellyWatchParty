@@ -117,6 +117,25 @@
     }
     #${PANEL_ID}.hide { display: none; }
     #${PANEL_ID} * { box-sizing: border-box; }
+    /* Globally suppress Jellyfin Enhanced's pause splash, including its
+       accountless-guest fallback before per-user settings have loaded. */
+    #pause-screen-overlay {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    html.pause-screen-active .videoOsdBottom {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    html.pause-screen-active .skinHeader.osdHeader {
+      width: auto !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+    html.pause-screen-active .skinHeader.osdHeader .headerRight {
+      display: flex !important;
+    }
     .jwp-header {
       min-height: 2.35rem;
       margin-bottom: 1rem;

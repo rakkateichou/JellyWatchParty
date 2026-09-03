@@ -85,6 +85,7 @@
 
   const startIntervals = () => {
     state.intervals.ui = setInterval(() => {
+      if (JWP.app?.disablePauseSplash) JWP.app.disablePauseSplash();
       if (document.visibilityState !== 'visible') return;
       const video = utils.getVideo();
       if (hadVideoElement && !video) {
@@ -143,6 +144,7 @@
     console.log('%c JellyWatchParty Plugin Loaded (OSD Mode) ', 'background: #2e7d32; color: #fff; font-size: 12px; padding: 2px; border-radius: 2px;');
     clearAllIntervals();
     ui.injectStyles();
+    if (JWP.app?.disablePauseSplash) JWP.app.disablePauseSplash();
     createPanel();
     if (JWP.cursor && JWP.cursor.bind) JWP.cursor.bind();
     if (JWP.actions && JWP.actions.connect) {

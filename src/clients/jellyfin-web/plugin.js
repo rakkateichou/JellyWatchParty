@@ -78,6 +78,7 @@
       loadScript('ws/handlers/clock.js'),
     ]);
     await loadScript('ws/connection.js');
+    await loadScript('app/pause-splash.js');
     await loadScript('app/lifecycle.js');
     await loadScript('app/cleanup.js');
   };
