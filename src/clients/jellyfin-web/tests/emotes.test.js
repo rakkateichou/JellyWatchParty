@@ -1,5 +1,7 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const JWP = require('./setup.js');
 
 require('../chat/emotes.js');
@@ -45,5 +47,17 @@ describe('Twitch-style chat emotes', () => {
 
   it('converts image emotes to readable labels for notifications', () => {
     assert.equal(JWP.chat.plainEmotes('that ending :dead:'), 'that ending [Dead]');
+  });
+
+  it('includes 30 additional 7TV emotes with unique tokens and bundled images', () => {
+    assert.equal(JWP.chat.emotes.length, 46);
+    assert.equal(new Set(JWP.chat.emotes.map(emote => emote.token)).size, 46);
+    assert.equal(JWP.chat.renderEmotes(':petpet: :7cinema:').match(/jwp-chat-emote/g)?.length, 2);
+
+    for (const emote of JWP.chat.emotes) {
+      const filename = path.basename(new URL(emote.src, 'https://jellyfin.test').pathname);
+      const asset = path.join(__dirname, '..', 'assets', 'emotes', filename);
+      assert.equal(fs.existsSync(asset), true, `missing bundled emote: ${filename}`);
+    }
   });
 });

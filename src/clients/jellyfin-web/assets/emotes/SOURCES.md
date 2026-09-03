@@ -1,6 +1,7 @@
 # Bundled chat emotes
 
-These WebP files were downloaded from 7TV's public CDN on 2026-09-03.
+These WebP files were downloaded from 7TV's public CDN on 2026-09-03 and
+2026-09-04.
 The local filenames are stable JellyWatchParty tokens; the source names and
 7TV IDs below preserve their provenance.
 
@@ -22,6 +23,36 @@ The local filenames are stable JellyWatchParty tokens; the source names and
 | `chef.webp` | ChefKiss | `01FFR5Q96R0007P57XYW0BJAXG` |
 | `party.webp` | PartyParrot | `01F6Q93YK8000EQZ7QARQERNWC` |
 | `heart.webp` | peepoLove | `01F6NPP6YG00013ACMMJP3W06V` |
+| `raintime.webp` | RainTime | `01FCY771D800007PQ2DF3GDTN6` |
+| `petpet.webp` | PETPET | `01FE3XY508000AA32JP519W2EW` |
+| `ppl.webp` | ppL | `01GGD5PJA8000FH13S498E9D8X` |
+| `clap.webp` | Clap | `01GAM8EFQ00004MXFXAJYKA859` |
+| `pepepls.webp` | PepePls | `01GAFTZ9K80003DHH026MC7JW0` |
+| `peepohappy.webp` | peepoHappy | `01GAZ199Z8000FEWHS6AT5QZV0` |
+| `peeposad.webp` | peepoSad | `01GAZ4SBX80007YCE2RXBT44B2` |
+| `feelsdankman.webp` | FeelsDankMan | `01GB9W8JN80004CKF2H1TWA99H` |
+| `billyapprove.webp` | BillyApprove | `01GB2S7H7000018VJGJ4A9BMFS` |
+| `forsenpls.webp` | forsenPls | `01GB8EQNJ8000497KFBZWNSDFZ` |
+| `aliendance.webp` | AlienDance | `01GB2ZJFBG000DTBJYANG8XYFP` |
+| `basedgod.webp` | BasedGod | `01GB9W2CDG000BFSD141G0MGSA` |
+| `peepopls.webp` | peepoPls | `01HM524VE80004SKSHMCZWXH1T` |
+| `teatime.webp` | TeaTime | `01HM4P26CR000449DZBT4FVMA5` |
+| `pianotime.webp` | PianoTime | `01G98V81Q80000BRQD106P0ZEK` |
+| `nymncorn.webp` | nymnCorn | `01HM6NJ2X000035ZKVAPWBNW26` |
+| `seventv.webp` | sevenTV | `01J107C3E8000DX4MZBQSYGRXS` |
+| `nanaayaya.webp` | nanaAYAYA | `01FTEZEE900001E12995B12GR4` |
+| `biblethump.webp` | BibleThump | `01J8NMZ2HG0005G1FWF2H9Y615` |
+| `glorp.webp` | glorp | `01H16FA16G0005EZED5J0EY7KN` |
+| `stare.webp` | Stare | `01GG3YGWK8000DWE419062SG28` |
+| `acestare.webp` | aceStare | `01JY2MX5BE5BVWWFV153ANMMHZ` |
+| `ayaya.webp` | AYAYA | `01GB32XE6R00018VJGJ4A9BNCV` |
+| `rareparrot.webp` | RareParrot | `01GB4XE3ZR000DKFRGM9Q1M7VS` |
+| `feelsweirdman.webp` | FeelsWeirdMan | `01GB4FWTR8000DGEZ8VYY59RBN` |
+| `ez.webp` | EZ | `01GB4CK01800090V9B3D8CGEEX` |
+| `feelsokayman.webp` | FeelsOkayMan | `01GB46137R000BJ5HR8F6XV8J1` |
+| `feelsstrongman.webp` | FeelsStrongMan | `01GB4EV0Q800090V9B3D8CGEHV` |
+| `7cinema.webp` | 7Cinema | `01GBFDVP18000CRDCG0DV7KEMY` |
+| `xdx.webp` | xdx | `01FZBTBQDG000DX0N9GHCRXYPH` |
 
 The source URL for each file is:
 

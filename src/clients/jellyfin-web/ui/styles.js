@@ -527,7 +527,16 @@
     }
     #jwp-emote-picker[hidden] { display: none; }
     .jwp-emote-picker-title { margin-bottom: .55rem; color: var(--jwp-text); font-size: .78rem; font-weight: 750; }
-    .jwp-emote-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .35rem; }
+    .jwp-emote-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .35rem;
+      max-height: min(55vh, 29rem);
+      padding-right: .18rem;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
     .jwp-emote-option {
       min-width: 0;
       padding: .35rem .15rem .28rem;
