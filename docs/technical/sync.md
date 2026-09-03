@@ -120,7 +120,7 @@ Messages take time to arrive. When client receives "position = 120s", the host i
 function adjustedPosition(position, serverTs) {
     const serverNow = getServerNow();
     const elapsed = Math.max(0, serverNow - serverTs);  // Time since send
-    const lead = SYNC_LEAD_MS;  // 300ms margin
+    const lead = SYNC_LEAD_MS;  // 75ms decode/start margin
 
     return position + (elapsed + lead) / 1000;
 }
@@ -168,12 +168,12 @@ function syncLoop() {
 
     if (!isDriftCorrecting) {
         // Not currently correcting: ignore anything below the enter threshold
-        if (absDrift < DRIFT_CORRECTION_ENTER_SEC) {  // 0.3s
+        if (absDrift < DRIFT_CORRECTION_ENTER_SEC) {  // 0.2s
             video.playbackRate = 1;
             return;
         }
         isDriftCorrecting = true;  // crossed into correction territory
-    } else if (absDrift < DRIFT_CORRECTION_EXIT_SEC) {  // 0.1s
+    } else if (absDrift < DRIFT_CORRECTION_EXIT_SEC) {  // 0.06s
         // Already correcting and caught back up: stop and go quiet
         isDriftCorrecting = false;
         video.playbackRate = 1;
@@ -181,7 +181,7 @@ function syncLoop() {
     }
 
     // Excessive drift: forced seek
-    if (absDrift >= DRIFT_SOFT_MAX_SEC) {  // 2.0s
+    if (absDrift >= DRIFT_SOFT_MAX_SEC) {  // 0.75s
         video.currentTime = expected;
         video.playbackRate = 1;
         isDriftCorrecting = false;
@@ -201,13 +201,13 @@ function syncLoop() {
 ### Visualization
 
 ```
-                    DRIFT_SOFT_MAX_SEC = 2.0s
+                   DRIFT_SOFT_MAX_SEC = 0.75s
                            │
     ◄─────────────────────┼────────────────────►
     │         │           │           │        │
   SEEK     SLOW       QUIET ZONE     FAST     SEEK
- (<−2.0s) (−2.0s      (hysteresis)  (+0.3s   (>+2.0s)
-           to −0.3s)   ±0.1-0.3s     to +2.0s)
+ (<−.75s) (−.75s      (hysteresis)  (+.2s    (>+.75s)
+           to −.2s)    ±.06-.2s      to +.75s)
     │         │                         │        │
     │    rate = 0.85               rate = 2.0     │
     │     (min)                       (max)       │
@@ -215,8 +215,8 @@ function syncLoop() {
                          │
                     rate = 1.0
 
-Once a burst starts (|drift| crosses ±0.3s), it holds the rate-adjustment path
-until |drift| falls back under ±0.1s — not just until it re-crosses ±0.3s.
+Once a burst starts (|drift| crosses ±0.2s), it holds the rate-adjustment path
+until |drift| falls back under ±0.06s — not just until it re-crosses ±0.2s.
 ```
 
 ### Rate Formula (Progressive Sqrt Curve)
@@ -469,20 +469,19 @@ fn schedule_pending_play(room_id, created_at, rooms, clients) {
 | `SUPPRESS_MS` | 2000ms | Client | Anti-feedback lock duration |
 | `TRACK_SWITCH_SUPPRESS_MS` | 8000ms | Client | Anti-feedback lock safety-net for host audio/subtitle track switches (collapses early via settle-shortcut) |
 | `SEEK_THRESHOLD` | 1.0s | Client | Min difference for seek broadcast |
-| `STATE_UPDATE_MS` | 1000ms | Client | State send interval |
-| `SYNC_LEAD_MS` | 300ms | Client | Compensation advance |
-| `DRIFT_CORRECTION_ENTER_SEC` | 0.3s | Client | Drift needed to start a correction burst |
-| `DRIFT_CORRECTION_EXIT_SEC` | 0.1s | Client | Drift must fall under this to stop correcting |
-| `DRIFT_SOFT_MAX_SEC` | 2.0s | Client | Forced seek threshold |
+| `STATE_UPDATE_MS` | 500ms | Client | State send interval |
+| `SYNC_LEAD_MS` | 75ms | Client | Decode/start allowance after timestamp compensation |
+| `DRIFT_CORRECTION_ENTER_SEC` | 0.2s | Client | Drift needed to start a correction burst |
+| `DRIFT_CORRECTION_EXIT_SEC` | 0.06s | Client | Drift must fall under this to stop correcting |
+| `DRIFT_SOFT_MAX_SEC` | 0.75s | Client | Forced seek threshold |
 | `PLAYBACK_RATE_MIN` | 0.85 | Client | Min catchup speed |
 | `PLAYBACK_RATE_MAX` | 2.0 | Client | Max catchup speed |
 | `DRIFT_GAIN` | 0.50 | Client | Proportional gain (sqrt curve) |
 | `INITIAL_SYNC_COOLDOWN_MS` | 8000ms | Client | Cooldown after join (no HARD_SEEK) |
 | `INITIAL_SYNC_MAX_MS` | 30000ms | Client | Max initial sync phase duration |
-| `INITIAL_SYNC_DRIFT_THRESHOLD` | 0.5s | Client | Exit initial sync when caught up |
-| `SYNC_LOOP_MS` | 500ms | Client | Sync loop interval |
+| `INITIAL_SYNC_DRIFT_THRESHOLD` | 0.25s | Client | Exit initial sync when caught up |
+| `SYNC_LOOP_MS` | 250ms | Client | Sync loop interval |
 | `PLAY_SCHEDULE_MS` | 1000ms | Server | Delay before play |
-| `CONTROL_SCHEDULE_MS` | 300ms | Server | Delay before pause/seek |
 | `MAX_READY_WAIT_MS` | 2000ms | Server | Ready timeout |
 | `MIN_STATE_UPDATE_INTERVAL_MS` | 500ms | Server | State rate limit |
 | `POSITION_JITTER_THRESHOLD` | 0.5s | Server | Position noise threshold |

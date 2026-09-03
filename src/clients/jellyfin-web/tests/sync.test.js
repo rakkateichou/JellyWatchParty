@@ -56,11 +56,12 @@ describe('playback/sync syncLoop drift correction', () => {
   });
 
   it('speeds up when behind (positive drift) past the enter threshold', () => {
-    video.currentTime = 10.0 - 1.0; // ~1s behind -> drift ~= +1.0
+    const testDrift = (DRIFT_CORRECTION_ENTER_SEC + DRIFT_SOFT_MAX_SEC) / 2;
+    video.currentTime = 10.0 - testDrift;
     JWP.playback.syncLoop();
     // Real wall-clock time elapses between the beforeEach baseline and this
-    // call, so drift is ~1.0s but not bit-exact — compare with tolerance.
-    const expectedRate = Math.min(Math.max(1 + Math.sqrt(1.0) * 0.5, PLAYBACK_RATE_MIN), PLAYBACK_RATE_MAX);
+    // call, so drift is not bit-exact — compare with tolerance.
+    const expectedRate = Math.min(Math.max(1 + Math.sqrt(testDrift) * 0.5, PLAYBACK_RATE_MIN), PLAYBACK_RATE_MAX);
     assert.ok(Math.abs(video.playbackRate - expectedRate) < 0.01);
     assert.ok(video.playbackRate > 1, 'should speed up to catch up when behind');
     assert.equal(JWP.state.isDriftCorrecting, true);
@@ -68,7 +69,8 @@ describe('playback/sync syncLoop drift correction', () => {
   });
 
   it('slows down when ahead (negative drift) past the enter threshold', () => {
-    video.currentTime = 10.0 + 1.0; // 1s ahead -> drift = -1.0
+    const testDrift = (DRIFT_CORRECTION_ENTER_SEC + DRIFT_SOFT_MAX_SEC) / 2;
+    video.currentTime = 10.0 + testDrift;
     JWP.playback.syncLoop();
     assert.ok(video.playbackRate < 1, 'should slow down when ahead of host');
   });
@@ -92,7 +94,8 @@ describe('playback/sync syncLoop drift correction', () => {
 
   it('hysteresis: keeps correcting between the exit and enter thresholds once started', () => {
     // Cross the enter threshold to start a correction burst.
-    video.currentTime = 10.0 - 1.0;
+    const testDrift = (DRIFT_CORRECTION_ENTER_SEC + DRIFT_SOFT_MAX_SEC) / 2;
+    video.currentTime = 10.0 - testDrift;
     JWP.playback.syncLoop();
     assert.equal(JWP.state.isDriftCorrecting, true);
 
@@ -107,7 +110,8 @@ describe('playback/sync syncLoop drift correction', () => {
   });
 
   it('hysteresis: snaps back to 1x once drift falls under the exit threshold', () => {
-    video.currentTime = 10.0 - 1.0;
+    const testDrift = (DRIFT_CORRECTION_ENTER_SEC + DRIFT_SOFT_MAX_SEC) / 2;
+    video.currentTime = 10.0 - testDrift;
     JWP.playback.syncLoop();
     assert.equal(JWP.state.isDriftCorrecting, true);
 

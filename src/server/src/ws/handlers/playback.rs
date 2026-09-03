@@ -1,6 +1,5 @@
 use super::super::constants::{
-    COMMAND_COOLDOWN_MS, CONTROL_SCHEDULE_MS, MIN_STATE_UPDATE_INTERVAL_MS, PLAY_SCHEDULE_MS,
-    POSITION_JITTER_THRESHOLD,
+    COMMAND_COOLDOWN_MS, MIN_STATE_UPDATE_INTERVAL_MS, PLAY_SCHEDULE_MS, POSITION_JITTER_THRESHOLD,
 };
 use super::super::pending_play::{all_ready, schedule_pending_play};
 use super::super::validation::{is_valid_media_id, is_valid_play_state, is_valid_position};
@@ -126,16 +125,25 @@ fn apply_state_changes(
 
     if parsed.msg_type == ClientMessageType::PlayerEvent {
         room.last_command_ts = current_ts;
-        let schedule_delay = if action == Some("play") {
-            PLAY_SCHEDULE_MS
+        if action == Some("play") {
+            // The host is already playing during the countdown. Pair the
+            // future start timestamp with the position the host will have at
+            // that timestamp; sending the position sampled one second earlier
+            // left every follower roughly one second behind after each resume.
+            let target_server_ts = current_ts + PLAY_SCHEDULE_MS;
+            if let Some(payload) = parsed.payload.as_mut() {
+                if let Some(position) = payload.get("position").and_then(|v| v.as_f64()) {
+                    payload["position"] =
+                        serde_json::json!(position + PLAY_SCHEDULE_MS as f64 / 1000.0);
+                }
+                payload["target_server_ts"] = serde_json::json!(target_server_ts);
+                payload["sample_server_ts"] = serde_json::json!(target_server_ts);
+            }
+            parsed.server_ts = Some(target_server_ts);
         } else {
-            CONTROL_SCHEDULE_MS
-        };
-        let target_server_ts = current_ts + schedule_delay;
-        if let Some(payload) = parsed.payload.as_mut() {
-            payload["target_server_ts"] = serde_json::json!(target_server_ts);
+            // Pause, seek and buffering controls are applied immediately.
+            parsed.server_ts = Some(current_ts);
         }
-        parsed.server_ts = Some(target_server_ts);
     } else {
         parsed.server_ts = Some(current_ts);
     }
@@ -468,9 +476,34 @@ mod tests {
         apply_state_changes(&mut room, &mut parsed, Some("play"), now);
         assert_eq!(room.state.play_state, "playing");
         assert_eq!(room.last_command_ts, now);
-        // server_ts should be set to target_server_ts
-        assert!(parsed.server_ts.is_some());
-        assert!(parsed.server_ts.unwrap() > now);
+        let target_ts = parsed.server_ts.expect("scheduled server timestamp");
+        assert_eq!(target_ts, now + PLAY_SCHEDULE_MS);
+        let payload = parsed.payload.expect("play payload");
+        assert_eq!(payload["target_server_ts"], target_ts);
+        assert_eq!(payload["sample_server_ts"], target_ts);
+        assert!((payload["position"].as_f64().unwrap() - 11.0).abs() < f64::EPSILON);
+        // The room stores the position sampled now; only the outgoing command
+        // carries the predicted position at the scheduled start time.
+        assert!((room.state.position - 10.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn apply_state_changes_pause_is_immediate_and_unadvanced() {
+        let mut room = test_helpers::create_room("r1", "host");
+        let mut parsed = IncomingMessage {
+            msg_type: ClientMessageType::PlayerEvent,
+            room: Some("r1".to_string()),
+            client: None,
+            payload: Some(serde_json::json!({ "action": "pause", "position": 10.0 })),
+            ts: 0,
+            server_ts: None,
+        };
+        let now = now_ms();
+        apply_state_changes(&mut room, &mut parsed, Some("pause"), now);
+
+        assert_eq!(parsed.server_ts, Some(now));
+        assert_eq!(parsed.payload.unwrap()["position"], 10.0);
+        assert_eq!(room.state.play_state, "paused");
     }
 
     #[tokio::test]

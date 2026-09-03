@@ -126,22 +126,30 @@
     return copied;
   };
 
-  const createInviteLink = async (button) => {
-    // The room's media id is the authoritative currently playing title. The
-    // generic page detector can still point at the series page while the video
-    // player is open, which made TV invitations land one level too high.
+  const resetPreparedInvite = () => {
+    state.inviteRoomId = '';
+    state.inviteBaseUrl = '';
+    state.inviteShareItemId = '';
+    state.invitePromise = null;
+  };
+
+  const prepareInviteLink = () => {
     const itemId = state.roomMediaId || utils.getCurrentItemId();
     const roomId = state.roomId;
     const apiClient = window.ApiClient;
     if (!itemId || !roomId || !apiClient) {
-      ui.showToast('Could not identify this room or title.');
-      return;
+      return Promise.reject(new Error('Could not identify this room or title.'));
+    }
+    if (state.inviteRoomId === roomId && state.inviteBaseUrl) {
+      return Promise.resolve(state.inviteBaseUrl);
+    }
+    if (state.inviteRoomId === roomId && state.invitePromise) {
+      return state.invitePromise;
     }
 
-    const oldHtml = button.innerHTML;
-    button.disabled = true;
-    button.textContent = 'Creating link…';
-    try {
+    resetPreparedInvite();
+    state.inviteRoomId = roomId;
+    const pending = (async () => {
       const serverAddress = typeof apiClient.serverAddress === 'function'
         ? apiClient.serverAddress()
         : (apiClient._serverAddress || '');
@@ -157,9 +165,8 @@
         if (item?.Type === 'Series') {
           shareItemId = item.Id;
         } else if (item?.SeriesId) {
-          // Keep the whole series as the guest's permission scope so episode
-          // changes continue to work inside one room. The separate `media`
-          // parameter below controls only the initial landing page.
+          // The permission remains scoped to the whole series so the room can
+          // continue through episodes without issuing another guest account.
           shareItemId = item.SeriesId;
         }
       }
@@ -179,6 +186,43 @@
       const data = await response.json();
       const rawUrl = data.ShareUrl || data.shareUrl;
       if (!rawUrl) throw new Error('The server did not return an invite URL.');
+      if (state.roomId !== roomId || !state.isHost) {
+        throw new Error('The room changed while preparing its invitation.');
+      }
+      state.inviteBaseUrl = rawUrl;
+      state.inviteShareItemId = shareItemId;
+      return rawUrl;
+    })();
+
+    state.invitePromise = pending.then(
+      value => {
+        if (state.inviteRoomId === roomId) state.invitePromise = null;
+        return value;
+      },
+      err => {
+        if (state.inviteRoomId === roomId) state.invitePromise = null;
+        throw err;
+      }
+    );
+    return state.invitePromise;
+  };
+
+  const createInviteLink = async (button) => {
+    // Creation starts as soon as the room_state arrives. A click normally only
+    // decorates the prepared ShareLinks URL with the current episode and copies
+    // it; if the request is still in flight, the same promise is reused.
+    const itemId = state.roomMediaId || utils.getCurrentItemId();
+    const roomId = state.roomId;
+    if (!itemId || !roomId) {
+      ui.showToast('Could not identify this room or title.');
+      return;
+    }
+
+    const oldHtml = button.innerHTML;
+    button.disabled = true;
+    button.textContent = state.invitePromise ? 'Finishing link…' : 'Copying…';
+    try {
+      const rawUrl = await prepareInviteLink();
       const invite = new URL(rawUrl, window.location.origin);
       invite.searchParams.set('party', roomId);
       invite.searchParams.set('media', itemId);
@@ -456,5 +500,13 @@
     headerRight.prepend(btn);
   };
 
-  Object.assign(ui, { render, injectOsdButton, injectGlobalButton, applyNativeSyncButtonVisibility, updateDockedPlayerLayout });
+  Object.assign(ui, {
+    render,
+    injectOsdButton,
+    injectGlobalButton,
+    applyNativeSyncButtonVisibility,
+    updateDockedPlayerLayout,
+    prepareInviteLink,
+    resetPreparedInvite
+  });
 })();

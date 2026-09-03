@@ -16,10 +16,13 @@
     state.lastStateSentAt = now;
     const mediaId = utils.getCurrentItemId();
     if (mediaId) state.roomMediaId = mediaId;
+    const position = video.currentTime;
+    const sampleServerTs = utils.getServerNow();
     actions.send('state_update', {
-      position: video.currentTime,
+      position,
       play_state: video.paused ? 'paused' : 'playing',
-      media_id: mediaId
+      media_id: mediaId,
+      sample_server_ts: sampleServerTs
     });
   };
 
@@ -44,20 +47,24 @@
       state.lastSeekSentAt = now;
       state.lastSentPosition = video.currentTime;
     }
-    utils.log('HOST', { action, pos: video.currentTime, paused: video.paused });
+    const position = video.currentTime;
+    const sampleServerTs = utils.getServerNow();
+    utils.log('HOST', { action, pos: position, paused: video.paused });
     const mediaId = utils.getCurrentItemId();
     if (mediaId) state.roomMediaId = mediaId;
     actions.send('player_event', {
       action,
-      position: video.currentTime,
+      position,
       play_state: video.paused ? 'paused' : 'playing',
-      media_id: mediaId
+      media_id: mediaId,
+      sample_server_ts: sampleServerTs
     });
     if (action === 'play' || action === 'pause' || action === 'seek') {
       actions.send('state_update', {
-        position: video.currentTime,
+        position,
         play_state: video.paused ? 'paused' : 'playing',
-        media_id: mediaId
+        media_id: mediaId,
+        sample_server_ts: sampleServerTs
       });
       state.lastStateSentAt = utils.nowMs();
     }

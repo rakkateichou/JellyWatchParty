@@ -4,14 +4,24 @@
   const state = JWP.state;
   const utils = JWP.utils;
   const ui = JWP.ui;
-  const { SEEK_THRESHOLD } = JWP.constants;
+  const { SEEK_THRESHOLD, DRIFT_CORRECTION_ENTER_SEC } = JWP.constants;
+
+  const positionServerTs = (msg) => {
+    const sampleTs = Number(msg.payload?.sample_server_ts);
+    const envelopeTs = Number(msg.server_ts);
+    if (Number.isFinite(sampleTs)
+        && (!Number.isFinite(envelopeTs) || Math.abs(sampleTs - envelopeTs) < 5000)) {
+      return sampleTs;
+    }
+    return Number.isFinite(envelopeTs) ? envelopeTs : utils.getServerNow();
+  };
 
   const handlePlayerPlay = (msg, video) => {
+    const targetTs = msg.payload.target_server_ts || msg.server_ts || utils.getServerNow();
     state.lastSyncPlayState = 'playing';
-    state.lastSyncServerTs = msg.server_ts;
+    state.lastSyncServerTs = targetTs;
     state.lastSyncPosition = msg.payload.position;
     state.syncCooldownUntil = utils.nowMs() + 2000;
-    const targetTs = msg.payload.target_server_ts || msg.server_ts;
     if (targetTs && targetTs > utils.getServerNow()) {
       state.syncStatus = 'pending_play';
       state.pendingPlayUntil = targetTs;
@@ -47,13 +57,12 @@
     ui.showToast('Host paused playback');
   };
 
-  const handlePlayerSeek = (msg, video) => {
+  const handlePlayerSeek = (msg, video, sampleTs) => {
     const hostPlayState = msg.payload.play_state || 'paused';
     state.lastSyncPlayState = hostPlayState;
+    state.lastSyncServerTs = sampleTs;
+    state.lastSyncPosition = msg.payload.position;
     if (hostPlayState === 'playing') {
-      video.currentTime = msg.payload.position + (JWP.constants.SYNC_LEAD_MS / 1000);
-      state.lastSyncServerTs = utils.getServerNow();
-      state.lastSyncPosition = msg.payload.position;
       state.syncCooldownUntil = utils.nowMs() + 2000;
       video.play().catch(() => {});
     }
@@ -78,10 +87,11 @@
     utils.startSyncing();
     if (msg.payload && typeof msg.payload.position === 'number') {
       const action = msg.payload.action;
-      const targetPos = (action === 'seek' || action === 'buffering')
-        ? msg.payload.position
-        : utils.adjustedPosition(msg.payload.position, msg.server_ts);
-      const serverNow = utils.getServerNow();
+      const sampleTs = positionServerTs(msg);
+      const shouldAdvance = action === 'seek' && msg.payload.play_state === 'playing';
+      const targetPos = shouldAdvance
+        ? utils.adjustedPosition(msg.payload.position, sampleTs)
+        : msg.payload.position;
       const gap = targetPos - video.currentTime;
       utils.log('CLIENT', {
         action,
@@ -90,21 +100,21 @@
         video_pos: video.currentTime,
         gap
       });
-      if (Math.abs(gap) > SEEK_THRESHOLD) {
+      const alignThreshold = (action === 'play' || action === 'pause' || action === 'buffering')
+        ? DRIFT_CORRECTION_ENTER_SEC
+        : SEEK_THRESHOLD;
+      if (Math.abs(gap) > alignThreshold) {
         video.pause();
         video.currentTime = targetPos;
-        state.lastSyncServerTs = serverNow;
-        state.lastSyncPosition = targetPos;
-      } else {
-        state.lastSyncServerTs = serverNow;
-        state.lastSyncPosition = video.currentTime;
       }
+      state.lastSyncServerTs = sampleTs;
+      state.lastSyncPosition = msg.payload.position;
     }
     if (msg.payload) {
       switch (msg.payload.action) {
         case 'play': handlePlayerPlay(msg, video); break;
         case 'pause': handlePlayerPause(msg, video); break;
-        case 'seek': handlePlayerSeek(msg, video); break;
+        case 'seek': handlePlayerSeek(msg, video, positionServerTs(msg)); break;
         case 'buffering': handlePlayerBuffering(msg, video); break;
       }
     }

@@ -47,6 +47,17 @@ describe('host pause and resume events', () => {
     assert.equal(JWP.state.lastSyncPlayState, 'paused');
   });
 
+  it('aligns a paused guest to the exact host position without a lead offset', () => {
+    video.currentTime = 19.5;
+    JWP._wsHandlers.handlePlayerEvent({
+      server_ts: JWP.utils.getServerNow(),
+      payload: { action: 'pause', position: 20, play_state: 'paused' }
+    }, video);
+
+    assert.equal(video.currentTime, 20);
+    assert.equal(video.paused, true);
+  });
+
   it('resumes a guest when the host resumes', () => {
     video.paused = true;
     JWP._wsHandlers.handlePlayerEvent({
@@ -57,5 +68,16 @@ describe('host pause and resume events', () => {
     assert.equal(video.paused, false);
     assert.equal(video.playCalls, 1);
     assert.equal(JWP.state.lastSyncPlayState, 'playing');
+  });
+
+  it('uses the position paired with a scheduled resume timestamp', () => {
+    video.paused = true;
+    JWP._wsHandlers.handlePlayerEvent({
+      server_ts: JWP.utils.getServerNow(),
+      payload: { action: 'play', position: 21, play_state: 'playing' }
+    }, video);
+
+    assert.equal(video.currentTime, 21);
+    assert.equal(JWP.state.lastSyncPosition, 21);
   });
 });

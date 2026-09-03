@@ -45,6 +45,7 @@
 
   const leaveRoom = () => {
     if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
+    if (JWP.ui && JWP.ui.resetPreparedInvite) JWP.ui.resetPreparedInvite();
     send('leave_room');
     state.inRoom = false;
     state.roomId = '';

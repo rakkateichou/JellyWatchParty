@@ -15,18 +15,24 @@ pub(super) async fn broadcast_scheduled_play(
     position: f64,
     target_server_ts: u64,
 ) {
-    room.state.position = position;
+    let broadcasted_at = now_ms();
+    let sample_age_ms = broadcasted_at.saturating_sub(room.last_state_ts);
+    let current_position = position + sample_age_ms as f64 / 1000.0;
+    let target_position = current_position + PLAY_SCHEDULE_MS as f64 / 1000.0;
+    room.state.position = current_position;
     room.state.play_state = "playing".to_string();
+    room.last_state_ts = broadcasted_at;
     let msg = WsMessage {
         msg_type: "player_event".to_string(),
         room: Some(room.room_id.clone()),
         client: None,
         payload: Some(serde_json::json!({
             "action": "play",
-            "position": position,
-            "target_server_ts": target_server_ts
+            "position": target_position,
+            "target_server_ts": target_server_ts,
+            "sample_server_ts": target_server_ts
         })),
-        ts: now_ms(),
+        ts: broadcasted_at,
         server_ts: Some(target_server_ts),
     };
     let locked_clients = clients.read().await;
@@ -82,5 +88,29 @@ mod tests {
         room.clients.clear();
         room.ready_clients.clear();
         assert!(all_ready(&room));
+    }
+
+    #[tokio::test]
+    async fn scheduled_play_sends_the_position_at_the_future_start_time() {
+        let clients = test_helpers::create_clients();
+        let (guest, mut rx) = test_helpers::create_client_with_rx("guest-user", "Guest", true);
+        clients.write().await.insert("guest".to_string(), guest);
+
+        let mut room = test_helpers::create_room("r1", "host");
+        room.clients = vec!["guest".to_string()];
+        room.last_state_ts = now_ms().saturating_sub(250);
+        let target_ts = now_ms() + PLAY_SCHEDULE_MS;
+        broadcast_scheduled_play(&mut room, &clients, 10.0, target_ts).await;
+
+        let message = test_helpers::recv_msg(&mut rx).expect("scheduled play message");
+        let payload = message.payload.expect("scheduled play payload");
+        let target_position = payload["position"].as_f64().unwrap();
+        assert!(
+            target_position >= 11.20,
+            "target position was {target_position}"
+        );
+        assert_eq!(payload["sample_server_ts"], target_ts);
+        assert_eq!(message.server_ts, Some(target_ts));
+        assert!(room.state.position >= 10.20);
     }
 }

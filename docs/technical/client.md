@@ -48,11 +48,11 @@ no-op.
 |----------|-------|-------------|
 | `SUPPRESS_MS` | `2000` | Event suppression / anti-feedback lock duration (ms) |
 | `SEEK_THRESHOLD` | `1.0` | Position difference to trigger seek (s) |
-| `STATE_UPDATE_MS` | `1000` | State update send interval (ms) |
-| `SYNC_LEAD_MS` | `300` | Latency compensation advance (ms) |
-| `DRIFT_CORRECTION_ENTER_SEC` | `0.3` | Drift needed to start a correction burst (s) |
-| `DRIFT_CORRECTION_EXIT_SEC` | `0.1` | Drift must fall under this to stop correcting (s) |
-| `DRIFT_SOFT_MAX_SEC` | `2.0` | Forced-seek threshold (s) |
+| `STATE_UPDATE_MS` | `500` | State update send interval (ms) |
+| `SYNC_LEAD_MS` | `75` | Decode/start allowance after timestamp compensation (ms) |
+| `DRIFT_CORRECTION_ENTER_SEC` | `0.2` | Drift needed to start a correction burst (s) |
+| `DRIFT_CORRECTION_EXIT_SEC` | `0.06` | Drift must fall under this to stop correcting (s) |
+| `DRIFT_SOFT_MAX_SEC` | `0.75` | Forced-seek threshold (s) |
 | `PLAYBACK_RATE_MIN` / `MAX` | `0.85` / `2.0` | Catchup playback-rate clamp |
 | `DRIFT_GAIN` | `0.50` | Sqrt-curve proportional gain |
 | `UI_CHECK_MS` | `2000` | UI/video-binding check interval (ms) |
@@ -60,11 +60,11 @@ no-op.
 | `PING_STABLE_MS` | `30000` | Ping interval after stabilizing (ms) |
 | `PING_STABLE_AFTER` | `5` | Successful pongs before switching to the stable interval |
 | `HOME_REFRESH_MS` | `5000` | Home watch-parties refresh interval (ms) |
-| `SYNC_LOOP_MS` | `500` | Drift-correction loop interval (ms) |
+| `SYNC_LOOP_MS` | `250` | Drift-correction loop interval (ms) |
 | `RECONNECT_BASE_MS` / `MAX_MS` | `1000` / `30000` | Exponential-backoff reconnect delay bounds |
 | `INITIAL_SYNC_COOLDOWN_MS` | `8000` | Cooldown after join before allowing a hard seek |
 | `INITIAL_SYNC_MAX_MS` | `30000` | Max duration of the initial-sync phase |
-| `INITIAL_SYNC_DRIFT_THRESHOLD` | `0.5` | Drift under which initial sync ends early (s) |
+| `INITIAL_SYNC_DRIFT_THRESHOLD` | `0.25` | Drift under which initial sync ends early (s) |
 | `INITIAL_SYNC_MAX_DRIFT` | `10` | Drift that forces a hard seek during initial sync (s) |
 | `TIME_SYNC_MAX_SAMPLES` | `8` | Clock-sync sliding-window sample count |
 | `TIME_SYNC_EMA_ALPHA` | `0.4` | Clock-sync EMA smoothing coefficient |

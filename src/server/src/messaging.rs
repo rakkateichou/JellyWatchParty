@@ -24,6 +24,7 @@ pub fn build_room_state_payload(room: &Room, participant_count: usize) -> serde_
         "state": room.state,
         "participant_count": participant_count,
         "media_id": room.media_id,
+        "state_server_ts": room.last_state_ts,
         "chat_history": chat_history,
     })
 }
@@ -168,6 +169,7 @@ mod tests {
 
         let payload = build_room_state_payload(&room, 2);
         assert_eq!(payload.get("participant_count").unwrap(), 2);
+        assert_eq!(payload.get("state_server_ts").unwrap(), room.last_state_ts);
         let history = payload.get("chat_history").unwrap().as_array().unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].get("text").unwrap(), "hi");

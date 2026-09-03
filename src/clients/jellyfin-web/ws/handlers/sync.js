@@ -6,7 +6,18 @@
   const ui = JWP.ui;
   const { SEEK_THRESHOLD } = JWP.constants;
 
+  const positionServerTs = (msg) => {
+    const payloadTs = Number(msg.payload?.sample_server_ts ?? msg.payload?.state_server_ts);
+    const envelopeTs = Number(msg.server_ts);
+    if (Number.isFinite(payloadTs)
+        && (!Number.isFinite(envelopeTs) || Math.abs(payloadTs - envelopeTs) < 5000)) {
+      return payloadTs;
+    }
+    return Number.isFinite(envelopeTs) ? envelopeTs : utils.getServerNow();
+  };
+
   const applyRoomState = (msg) => {
+    const previousRoomId = state.roomId;
     state.inRoom = true;
     state.roomId = msg.room;
     state.roomName = msg.payload.name;
@@ -24,11 +35,14 @@
       state.hasTimeSync = true;
     }
     if (msg.payload && msg.payload.state) {
-      state.lastSyncServerTs = msg.server_ts || utils.getServerNow();
+      state.lastSyncServerTs = positionServerTs(msg);
       state.lastSyncPosition = typeof msg.payload.state.position === 'number'
         ? msg.payload.state.position
         : 0;
       state.lastSyncPlayState = msg.payload.state.play_state || 'paused';
+    }
+    if (previousRoomId !== state.roomId && ui.resetPreparedInvite) {
+      ui.resetPreparedInvite();
     }
 
     // Invitations open directly into the room and reveal the right-side chat;
@@ -44,7 +58,7 @@
   const rememberRemoteState = (msg) => {
     const payload = msg.payload || {};
     const playbackState = payload.state || payload;
-    state.lastSyncServerTs = msg.server_ts || utils.getServerNow();
+    state.lastSyncServerTs = positionServerTs(msg);
     state.lastSyncPosition = typeof playbackState.position === 'number'
       ? playbackState.position
       : 0;
@@ -79,7 +93,9 @@
         return;
       }
 
-      const target = utils.adjustedPosition(state.lastSyncPosition, state.lastSyncServerTs);
+      const target = state.lastSyncPlayState === 'playing'
+        ? utils.adjustedPosition(state.lastSyncPosition, state.lastSyncServerTs)
+        : state.lastSyncPosition;
       utils.startSyncing();
       if (Math.abs(video.currentTime - target) > 0.35) video.currentTime = target;
       if (state.lastSyncPlayState === 'playing') {
@@ -96,8 +112,10 @@
   const syncToRoom = (msg, video) => {
     if (!video || state.isHost || !msg.payload?.state) return;
     const basePos = msg.payload.state.position || 0;
-    const targetPos = utils.adjustedPosition(basePos, msg.server_ts);
     const hostPlaying = msg.payload.state.play_state === 'playing';
+    const targetPos = hostPlaying
+      ? utils.adjustedPosition(basePos, positionServerTs(msg))
+      : basePos;
     utils.log('CLIENT', {
       type: 'room_state',
       msg_pos: basePos,
@@ -129,6 +147,11 @@
   h.handleRoomState = (msg, video) => {
     applyRoomState(msg);
     ui.render();
+    if (state.isHost && ui.prepareInviteLink) {
+      ui.prepareInviteLink().catch(err => {
+        console.warn('[JellyWatchParty] Invite pre-generation failed:', err);
+      });
+    }
     if (!state.isHost && msg.payload?.media_id) {
       if (switchToMedia(msg)) return;
     }
@@ -162,7 +185,7 @@
       return;
     }
     if (msg.payload) {
-      state.lastSyncServerTs = msg.server_ts || utils.getServerNow();
+      state.lastSyncServerTs = positionServerTs(msg);
       state.lastSyncPosition = typeof msg.payload.position === 'number'
         ? msg.payload.position
         : state.lastSyncPosition;

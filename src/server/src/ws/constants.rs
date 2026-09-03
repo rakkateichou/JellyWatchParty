@@ -2,7 +2,6 @@
 pub(super) const CLIENT_CHANNEL_BUFFER: usize = 100;
 
 pub(super) const PLAY_SCHEDULE_MS: u64 = 1000; // Reduced from 1500ms for better UX (UX-P1)
-pub(super) const CONTROL_SCHEDULE_MS: u64 = 300;
 pub(super) const MAX_READY_WAIT_MS: u64 = 2000;
 pub(super) const MIN_STATE_UPDATE_INTERVAL_MS: u64 = 500;
 pub(super) const POSITION_JITTER_THRESHOLD: f64 = 0.5;

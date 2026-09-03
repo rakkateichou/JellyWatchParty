@@ -42,6 +42,7 @@
   };
 
   h.handleRoomClosed = (msg) => {
+    if (ui.resetPreparedInvite) ui.resetPreparedInvite();
     state.inRoom = false;
     state.roomId = '';
     state.chatSettingsOpen = false;
@@ -60,6 +61,11 @@
     }
     if (state.isHost && !wasHost) {
       ui.showToast('You are now the host');
+      if (ui.prepareInviteLink) {
+        ui.prepareInviteLink().catch(err => {
+          console.warn('[JellyWatchParty] Invite pre-generation failed after host change:', err);
+        });
+      }
     } else if (!state.isHost) {
       ui.showToast(`${msg.payload.host_name || 'Someone'} is now the host`);
     }

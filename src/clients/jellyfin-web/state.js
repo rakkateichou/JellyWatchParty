@@ -71,11 +71,11 @@
     SUPPRESS_MS: 2000,
     TRACK_SWITCH_SUPPRESS_MS: 8000, // Safety-net suppression window for host audio/subtitle track switches (collapses early via settle-shortcut, see playback/tracks.js)
     SEEK_THRESHOLD: 1.0,          // Reduced from 2.5s - smaller seeks now broadcast (UX-P2)
-    STATE_UPDATE_MS: 1000,        // Reduced from 2000ms - more responsive state updates (UX-P1)
-    SYNC_LEAD_MS: 300,            // Compensates processing + initial HLS buffer
-    DRIFT_CORRECTION_ENTER_SEC: 0.3, // Start a rate-correction burst once drift exceeds this
-    DRIFT_CORRECTION_EXIT_SEC: 0.1,  // Stop correcting (snap to 1x) once drift falls back under this
-    DRIFT_SOFT_MAX_SEC: 2.0,      // Seek to correct if drift > 2s
+    STATE_UPDATE_MS: 500,         // Fresh host position snapshots without excessive traffic
+    SYNC_LEAD_MS: 75,             // Small decode/start allowance; sample timestamps handle network transit
+    DRIFT_CORRECTION_ENTER_SEC: 0.2, // Start correcting once drift becomes perceptible
+    DRIFT_CORRECTION_EXIT_SEC: 0.06, // Return to 1x once the streams are visually aligned
+    DRIFT_SOFT_MAX_SEC: 0.75,     // Seek rather than audibly chasing a large offset
     PLAYBACK_RATE_MIN: 0.85,      // Allow slowdown if ahead
     PLAYBACK_RATE_MAX: 2.0,       // Aggressive catch-up (browser pitch correction preserves audio)
     DRIFT_GAIN: 0.50,             // For sqrt curve: 0.50 * sqrt(1s) = 0.50 → 1.50x at 1s drift
@@ -85,12 +85,12 @@
     PING_STABLE_MS: 30000,         // Stable ping interval (after convergence)
     PING_STABLE_AFTER: 5,          // Pongs before switching to stable interval
     HOME_REFRESH_MS: 5000,        // Home watch parties refresh (increased from 2s)
-    SYNC_LOOP_MS: 500,            // Sync loop for playback rate correction
+    SYNC_LOOP_MS: 250,            // Re-evaluate drift promptly between host snapshots
     RECONNECT_BASE_MS: 1000,      // Base reconnect delay (1s)
     RECONNECT_MAX_MS: 30000,      // Max reconnect delay (30s)
     INITIAL_SYNC_COOLDOWN_MS: 8000, // Cooldown after join to let playback rate catch up (not HARD_SEEK)
     INITIAL_SYNC_MAX_MS: 30000,   // Max time for initial sync before allowing HARD_SEEK
-    INITIAL_SYNC_DRIFT_THRESHOLD: 0.5, // Drift threshold to exit initial sync early
+    INITIAL_SYNC_DRIFT_THRESHOLD: 0.25, // Drift threshold to exit initial sync early
     INITIAL_SYNC_MAX_DRIFT: 10,  // Max drift (seconds) before forcing HARD_SEEK during initial sync
     // Time sync (hybrid min-delay + EMA)
     TIME_SYNC_MAX_SAMPLES: 8,    // Number of samples in circular buffer
@@ -135,6 +135,10 @@
     guestShareItemId: '',    // Root item granted by ShareLinks (room media remains stricter)
     roomName: '',
     roomMediaId: '',
+    inviteRoomId: '',
+    inviteBaseUrl: '',
+    inviteShareItemId: '',
+    invitePromise: null,
     mediaChangeToken: 0,
     participantCount: 0,
     lastSyncServerTs: 0,
