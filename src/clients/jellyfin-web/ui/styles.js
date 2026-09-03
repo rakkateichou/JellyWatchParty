@@ -4,13 +4,22 @@
   const { PANEL_ID, STYLE_ID } = JWP.constants;
 
   const CSS_STYLES = `
-    html.jwp-invite-launching body::before {
+    html.jwp-invite-launching {
+      background: #000 !important;
+      color-scheme: dark;
+    }
+    html.jwp-invite-launching body {
+      visibility: hidden !important;
+      background: #000 !important;
+    }
+    html.jwp-invite-launching::before {
       content: 'Joining watch party…';
       position: fixed;
       inset: 0;
-      z-index: 2147483000;
+      z-index: 2147483647;
       display: grid;
       place-items: center;
+      visibility: visible;
       background: #000;
       color: rgba(255, 255, 255, .78);
       font: 600 1rem/1.4 system-ui, sans-serif;

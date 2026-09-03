@@ -35,6 +35,24 @@
     document.head.appendChild(script);
   });
 
+  const primeInvitePlayback = () => {
+    const hash = window.location.hash || '';
+    const roomMatch = hash.match(/[?&]jwpRoom=([0-9a-f-]{36})(?:&|$)/i);
+    const mediaMatch = hash.match(/[?&]jwpMedia=([a-f0-9-]{32,36})(?:&|$)/i);
+    const roomId = roomMatch?.[1] || '';
+    const mediaId = JWP.utils?.normalizeItemId?.(mediaMatch?.[1]) || '';
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(roomId)
+        || !mediaId) return;
+
+    // Do not wait for chat, presence and WebSocket modules before asking
+    // Jellyfin to construct the player. The full lifecycle reconciles this
+    // media hint with live room state once it connects.
+    JWP.state.pendingJoinRoomId = roomId.toLowerCase();
+    JWP.state.inviteJoinActive = true;
+    JWP.state.roomMediaId = mediaId;
+    JWP.playback?.ensurePlayback?.(mediaId);
+  };
+
   const loadAll = async () => {
     await loadScript('state.js');
     await Promise.all([
@@ -65,6 +83,7 @@
       loadScript('playback/sync.js'),
       loadScript('playback/tracks.js'),
     ]);
+    primeInvitePlayback();
     await Promise.all([
       loadScript('chat/emotes.js'),
       loadScript('chat/messages.js'),

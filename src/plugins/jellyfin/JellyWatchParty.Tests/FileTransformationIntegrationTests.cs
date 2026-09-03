@@ -8,6 +8,7 @@ namespace JellyWatchParty.Plugin.Tests;
 public class FileTransformationIntegrationTests
 {
     private const string ScriptTag = "<script src=\"../JellyWatchParty/ClientScript\" defer></script>";
+    private const string BootstrapId = "id=\"jwp-invite-bootstrap\"";
 
     private class FakePayload
     {
@@ -26,6 +27,20 @@ public class FileTransformationIntegrationTests
 
         Assert.Contains(ScriptTag, result);
         Assert.True(result.IndexOf(ScriptTag) < result.LastIndexOf("</body>"));
+        Assert.Contains(BootstrapId, result);
+        Assert.True(result.IndexOf(BootstrapId) < result.IndexOf("</head>"));
+    }
+
+    [Fact]
+    public void InjectScript_PutsInviteCoverBeforeJellyfinDeferredScripts()
+    {
+        var html = "<html><head><meta charset=\"utf-8\"><script defer src=\"runtime.js\"></script></head><body></body></html>";
+
+        var result = FileTransformationIntegration.InjectScript(html);
+
+        Assert.True(result.IndexOf(BootstrapId) < result.IndexOf("runtime.js"));
+        Assert.Contains("Joining watch party…", result);
+        Assert.Contains("jwpRoom", result);
     }
 
     [Fact]
@@ -41,19 +56,20 @@ public class FileTransformationIntegrationTests
     [Fact]
     public void InjectScript_SkipsInjection_WhenAlreadyPresent()
     {
-        var html = $"<html><body>{ScriptTag}</body></html>";
+        var html = FileTransformationIntegration.InjectScript("<html><head></head><body></body></html>");
         var result = FileTransformationIntegration.InjectScript(html);
 
         Assert.Equal(html, result);
     }
 
     [Fact]
-    public void InjectScript_SkipsInjection_WhenAbsolutePathPresent()
+    public void InjectScript_AddsBootstrapWithoutDuplicatingAbsolutePathLoader()
     {
-        var html = "<html><body><script src=\"/JellyWatchParty/ClientScript\"></script></body></html>";
+        var html = "<html><head></head><body><script src=\"/JellyWatchParty/ClientScript\"></script></body></html>";
         var result = FileTransformationIntegration.InjectScript(html);
 
-        Assert.Equal(html, result);
+        Assert.Contains(BootstrapId, result);
+        Assert.Equal(1, result.Split("JellyWatchParty/ClientScript").Length - 1);
     }
 
     [Fact]
@@ -252,7 +268,9 @@ public class FileTransformationIntegrationTests
         var injected = FileTransformationIntegration.InjectScript(html);
 
         Assert.Contains(ScriptTag, injected);
-        Assert.DoesNotContain(ScriptTag, FileTransformationIntegration.RemoveScript(injected));
+        var removed = FileTransformationIntegration.RemoveScript(injected);
+        Assert.DoesNotContain(ScriptTag, removed);
+        Assert.DoesNotContain(BootstrapId, removed);
     }
 
     [Fact]

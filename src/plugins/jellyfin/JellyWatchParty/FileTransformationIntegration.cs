@@ -16,6 +16,13 @@ public class FileTransformationIntegration : IScheduledTask
 {
     private const string ClientScriptPath = "../JellyWatchParty/ClientScript";
     private const string ScriptTag = $"<script src=\"{ClientScriptPath}\" defer></script>";
+    private const string BootstrapMarker = "id=\"jwp-invite-bootstrap\"";
+    private const string BootstrapMarkup = """
+<!-- JellyWatchParty invite bootstrap -->
+<style id="jwp-invite-bootstrap">html.jwp-invite-launching{background:#000!important;color-scheme:dark}html.jwp-invite-launching body{visibility:hidden!important;background:#000!important}html.jwp-invite-launching::before{content:'Joining watch party…';position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;visibility:visible;background:#000;color:rgba(255,255,255,.78);font:600 1rem/1.4 system-ui,sans-serif;letter-spacing:.01em}</style>
+<script id="jwp-invite-bootstrap-script">(function(){if(/[?&]jwpRoom=[0-9a-f-]{36}(?:&|$)/i.test(location.hash||''))document.documentElement.classList.add('jwp-invite-launching')})()</script>
+<!-- /JellyWatchParty invite bootstrap -->
+""";
 
     /// <summary>
     /// File name pattern registered with the File Transformation plugin.
@@ -50,6 +57,9 @@ public class FileTransformationIntegration : IScheduledTask
     private static readonly Regex ScriptTagRegex = new(
         @"[ \t]*<script\b[^>]*JellyWatchParty/ClientScript[^>]*>\s*</script>[ \t]*\r?\n?",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex BootstrapRegex = new(
+        @"[ \t]*<!-- JellyWatchParty invite bootstrap -->.*?<!-- /JellyWatchParty invite bootstrap -->[ \t]*\r?\n?",
+        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
     private readonly ILogger<FileTransformationIntegration> _logger;
 
@@ -274,24 +284,52 @@ public class FileTransformationIntegration : IScheduledTask
     /// </summary>
     internal static string InjectScript(string contents)
     {
-        if (string.IsNullOrEmpty(contents) || contents.Contains("JellyWatchParty/ClientScript", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(contents))
         {
             return contents ?? string.Empty;
         }
 
-        var bodyEndIndex = contents.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+        var modified = contents;
+        var headStartIndex = modified.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
+        var headOpenEndIndex = headStartIndex >= 0
+            ? modified.IndexOf('>', headStartIndex)
+            : -1;
+        var bodyEndIndex = modified.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+        var headEndIndex = modified.LastIndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+
+        if (bodyEndIndex < 0 && headEndIndex < 0)
+        {
+            return contents;
+        }
+
+        // This tiny synchronous bootstrap is deliberately inserted immediately
+        // after <head>. It covers an invite before Jellyfin's deferred bundles
+        // can render their logo or details route. The normal client removes the
+        // class only after the real video element is ready.
+        if (!modified.Contains(BootstrapMarker, StringComparison.OrdinalIgnoreCase)
+            && headOpenEndIndex >= 0)
+        {
+            modified = modified.Insert(headOpenEndIndex + 1, $"{BootstrapMarkup}\n");
+        }
+
+        if (modified.Contains("JellyWatchParty/ClientScript", StringComparison.OrdinalIgnoreCase))
+        {
+            return modified;
+        }
+
+        bodyEndIndex = modified.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
         if (bodyEndIndex >= 0)
         {
-            return contents.Insert(bodyEndIndex, $"    {ScriptTag}\n");
+            return modified.Insert(bodyEndIndex, $"    {ScriptTag}\n");
         }
 
-        var headEndIndex = contents.LastIndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+        headEndIndex = modified.LastIndexOf("</head>", StringComparison.OrdinalIgnoreCase);
         if (headEndIndex >= 0)
         {
-            return contents.Insert(headEndIndex, $"    {ScriptTag}\n");
+            return modified.Insert(headEndIndex, $"    {ScriptTag}\n");
         }
 
-        return contents;
+        return modified;
     }
 
     /// <summary>
@@ -306,7 +344,8 @@ public class FileTransformationIntegration : IScheduledTask
             return contents ?? string.Empty;
         }
 
-        return ScriptTagRegex.Replace(contents, string.Empty);
+        var withoutScript = ScriptTagRegex.Replace(contents, string.Empty);
+        return BootstrapRegex.Replace(withoutScript, string.Empty);
     }
 
     /// <summary>
