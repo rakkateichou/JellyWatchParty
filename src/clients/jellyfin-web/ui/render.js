@@ -61,6 +61,9 @@
       <div class="jwp-settings-label">Theme</div>
       <div class="jwp-theme-options">${renderThemeOptions()}</div>
       <button class="jwp-btn jwp-settings-save" id="jwp-settings-save">Save settings</button>
+      <div class="jwp-settings-room-actions">
+        <button class="jwp-btn danger" id="jwp-settings-leave">Leave room</button>
+      </div>
     </div>
   `;
 
@@ -255,7 +258,6 @@
 
   const renderRoom = (panel) => {
     const participantCount = state.participantCount || 1;
-    const leaveLabel = state.isHost ? 'Close room' : 'Leave room';
     // Attaching a supported client (e.g. Android TV) as a receiver of this
     // room is an opt-in admin feature: only surface the picker when enabled.
     const bridgeSection = state.allowSupportedReceiver ? `
@@ -273,14 +275,14 @@
         <div class="jwp-room-actions">
           ${state.isHost ? '<button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>' : ''}
           <button class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-pressed="${state.chatSettingsOpen}"><span class="material-icons" aria-hidden="true">settings</span></button>
-          <button class="jwp-icon-btn danger" id="jwp-btn-leave" title="${leaveLabel}" aria-label="${leaveLabel}"><span class="material-icons" aria-hidden="true">close</span></button>
+          <button class="jwp-icon-btn" id="jwp-btn-hide" title="Hide panel" aria-label="Hide panel"><span class="material-icons" aria-hidden="true">chevron_right</span></button>
         </div>
       </div>
       ${roomContent}
       ${bridgeSection}
     `;
-    const leaveBtn = panel.querySelector('#jwp-btn-leave');
-    if (leaveBtn) leaveBtn.onclick = () => JWP.actions && JWP.actions.leaveRoom && JWP.actions.leaveRoom();
+    const hideBtn = panel.querySelector('#jwp-btn-hide');
+    if (hideBtn) hideBtn.onclick = togglePanel;
     const inviteBtn = panel.querySelector('#jwp-btn-invite');
     if (inviteBtn) inviteBtn.onclick = () => createInviteLink(inviteBtn);
     ui.updateBridgeListUI();
@@ -320,6 +322,9 @@
 
     bindNicknameSave('#jwp-nickname-input', '#jwp-nickname-save', false);
     bindNicknameSave('#jwp-settings-nickname', '#jwp-settings-save', true);
+
+    const leaveButton = panel.querySelector('#jwp-settings-leave');
+    if (leaveButton) leaveButton.onclick = () => JWP.actions?.leaveRoom?.();
 
     if (typeof panel.querySelectorAll === 'function') {
       panel.querySelectorAll('[data-jwp-theme]').forEach(button => {

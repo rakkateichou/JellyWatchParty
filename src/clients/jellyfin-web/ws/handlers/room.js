@@ -64,8 +64,8 @@
       ui.showToast(`${msg.payload.host_name || 'Someone'} is now the host`);
     }
     // Force a full re-render: the fast-render path only checks
-    // state.inRoom, not state.isHost, so host-only UI (the Close vs. Leave
-    // button) won't otherwise flip.
+    // state.inRoom, not state.isHost, so host-only UI such as Copy link
+    // won't otherwise flip.
     ui.render(true);
   };
 

@@ -142,7 +142,8 @@ describe('bridge picker opt-in gating', () => {
     assert.match(panel.innerHTML, />1 online</);
     assert.match(panel.innerHTML, /> Copy link</);
     assert.match(panel.innerHTML, /aria-label="Chat settings"/);
-    assert.match(panel.innerHTML, /aria-label="Close room"/);
+    assert.match(panel.innerHTML, /aria-label="Hide panel"/);
+    assert.doesNotMatch(panel.innerHTML, /aria-label="Close room"/);
     assert.doesNotMatch(panel.innerHTML, /Participants|>Chat|RTT:|ID:|Test Room|jwp-sync-indicator/);
   });
 
@@ -168,6 +169,7 @@ describe('bridge picker opt-in gating', () => {
     assert.match(panel.innerHTML, />Frost</);
     assert.match(panel.innerHTML, />Violet</);
     assert.match(panel.innerHTML, />Ember</);
+    assert.match(panel.innerHTML, /id="jwp-settings-leave">Leave room</);
     assert.doesNotMatch(panel.innerHTML, /id="jwp-chat-input"/);
   });
 

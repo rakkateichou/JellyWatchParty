@@ -358,6 +358,12 @@
       text-transform: uppercase;
     }
     .jwp-settings-save { width: 100%; margin-top: .15rem; }
+    .jwp-settings-room-actions {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--jwp-border);
+    }
+    .jwp-settings-room-actions .jwp-btn { width: 100%; }
     .jwp-input-error { border-color: var(--jwp-danger) !important; }
     .jwp-theme-options {
       margin-bottom: .85rem;

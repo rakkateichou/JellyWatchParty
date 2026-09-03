@@ -2,7 +2,6 @@ use super::super::dispatch::{is_authenticated, send_error};
 use super::super::validation::{is_valid_media_id, is_valid_position, sanitize_name};
 use crate::messaging::{broadcast_room_list, build_room_state_payload, send_to_client};
 use crate::password::hash_password;
-use crate::room::close_room;
 use crate::types::{Clients, IncomingMessage, PlaybackState, Room, Rooms, WsMessage};
 use crate::utils::now_ms;
 use log::info;
@@ -115,14 +114,21 @@ pub(in crate::ws) async fn handle_create_room(
     }
 
     let existing_room_id = {
-        let locked_rooms = rooms.read().await;
-        locked_rooms
-            .values()
-            .find(|r| r.host_id == client_id)
-            .map(|r| r.room_id.clone())
+        let locked_clients = clients.read().await;
+        locked_clients
+            .get(client_id)
+            .and_then(|client| client.room_id.clone())
     };
-    if let Some(room_id) = existing_room_id {
-        close_room(&room_id, clients, rooms).await;
+    if existing_room_id.is_some() {
+        // Rooms end only after their final participant leaves. Never destroy
+        // an occupied room just because one member sends Create again.
+        send_error(
+            client_id,
+            clients,
+            "Leave your current room before creating another",
+        )
+        .await;
+        return;
     }
 
     info!("create_room payload: {:?}", parsed.payload);
@@ -264,5 +270,43 @@ mod tests {
         let (name, payload_name) = resolve_host_name(Some(&serde_json::json!({})), &clients, "c1");
         assert_eq!(name, "FromClient");
         assert_eq!(payload_name, None);
+    }
+
+    #[tokio::test]
+    async fn creating_again_does_not_destroy_an_occupied_room() {
+        let clients = test_helpers::create_clients();
+        let rooms = test_helpers::create_rooms();
+        let mut client_map = std::collections::HashMap::new();
+        let mut room_map = std::collections::HashMap::new();
+        let mut rx = test_helpers::setup_room_with_host(&mut client_map, &mut room_map, "host-1");
+        *clients.write().await = client_map;
+        *rooms.write().await = room_map;
+
+        handle_create_room(
+            "host-1",
+            &IncomingMessage {
+                msg_type: crate::types::ClientMessageType::CreateRoom,
+                room: None,
+                client: Some("host-1".to_string()),
+                payload: Some(serde_json::json!({ "user_name": "Host" })),
+                ts: 0,
+                server_ts: None,
+            },
+            &clients,
+            &rooms,
+        )
+        .await;
+
+        let locked_rooms = rooms.read().await;
+        assert_eq!(locked_rooms.len(), 1);
+        assert!(locked_rooms.contains_key("room-1"));
+        drop(locked_rooms);
+
+        let response = test_helpers::recv_msg(&mut rx).expect("create rejection");
+        assert_eq!(response.msg_type, "error");
+        assert!(response.payload.unwrap()["message"]
+            .as_str()
+            .unwrap()
+            .contains("Leave your current room"));
     }
 }

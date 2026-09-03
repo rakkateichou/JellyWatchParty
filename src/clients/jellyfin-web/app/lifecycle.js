@@ -59,9 +59,9 @@
     const panel = document.getElementById(JWP.constants.PANEL_ID);
     if (panel) panel.classList.add('hide');
     if (ui.updateDockedPlayerLayout) ui.updateDockedPlayerLayout();
-    if (state.inRoom && JWP.actions && JWP.actions.leaveRoom) {
-      JWP.actions.leaveRoom();
-    }
+    // Leaving the video route is not the same as leaving the room. Keep the
+    // membership and chat alive across episode transitions and navigation;
+    // Leave room in Settings is the explicit exit.
     if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
     if (JWP.playback && JWP.playback.cleanupVideoListeners) {
       JWP.playback.cleanupVideoListeners();
@@ -163,7 +163,8 @@
     set panelStopPropagation(v) { panelStopPropagation = v; },
     get hadVideoElement() { return hadVideoElement; },
     set hadVideoElement(v) { hadVideoElement = v; },
-    clearAllIntervals
+    clearAllIntervals,
+    onVideoPlayerExit
   };
 
   JWP.app = JWP.app || {};
