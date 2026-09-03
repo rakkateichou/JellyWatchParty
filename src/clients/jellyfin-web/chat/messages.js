@@ -5,6 +5,16 @@
 
   const MAX_MESSAGES = 100;
 
+  const renderEmptyMessage = (container) => {
+    if (!JWP.state.inRoom) return;
+    const message = document.createElement('div');
+    message.className = 'jwp-chat-system';
+    message.textContent = JWP.state.isHost
+      ? 'Room ready — copy the link to invite someone.'
+      : 'You’re in — playback will follow the host.';
+    container.appendChild(message);
+  };
+
   const formatTime = (ts) => {
     const date = new Date(ts);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -13,6 +23,8 @@
   const renderMessage = (message) => {
     const container = document.getElementById('jwp-chat-messages');
     if (!container) return;
+    const emptyMessage = container.querySelector('.jwp-chat-system');
+    if (emptyMessage) emptyMessage.remove();
     const msgEl = document.createElement('div');
     msgEl.className = 'jwp-chat-message' + (message.isOwn ? ' jwp-chat-own' : '');
     msgEl.innerHTML = `
@@ -30,6 +42,10 @@
     const container = document.getElementById('jwp-chat-messages');
     if (!container) return;
     container.innerHTML = '';
+    if (chat.messages.length === 0) {
+      renderEmptyMessage(container);
+      return;
+    }
     chat.messages.forEach(msg => renderMessage(msg));
   };
 
@@ -60,8 +76,7 @@
     chat.messages = [];
     chat.unreadCount = 0;
     chat.updateBadge();
-    const container = document.getElementById('jwp-chat-messages');
-    if (container) container.innerHTML = '';
+    renderAllMessages();
   };
 
   // Replaces chat.messages with server-replayed history (on join/reattach).

@@ -127,6 +127,18 @@ describe('bridge picker opt-in gating', () => {
     assert.doesNotMatch(panel.innerHTML, /id="jwp-bridge-available"/);
   });
 
+  it('keeps the normal in-room chrome to the essential controls', () => {
+    JWP.state.inRoom = true;
+    JWP.state.isHost = true;
+    JWP.state.roomId = 'ROOM1';
+    JWP.ui.render(true);
+
+    assert.match(panel.innerHTML, />1 online</);
+    assert.match(panel.innerHTML, /> Copy link</);
+    assert.match(panel.innerHTML, /aria-label="Close room"/);
+    assert.doesNotMatch(panel.innerHTML, /Participants|>Chat|RTT:|ID:|Test Room|jwp-sync-indicator/);
+  });
+
   it('in-room shows the receiver picker only when supported receivers are enabled', () => {
     JWP.state.allowSupportedReceiver = true;
     JWP.state.inRoom = true;

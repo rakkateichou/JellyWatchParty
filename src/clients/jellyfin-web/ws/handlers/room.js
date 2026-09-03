@@ -21,7 +21,7 @@
     state.participantCount = msg.payload.participant_count;
     if (state.inRoom) {
       const el = document.getElementById('jwp-participants-list');
-      if (el) el.textContent = `Online: ${state.participantCount}`;
+      if (el) el.textContent = `${state.participantCount} online`;
     }
     if (state.lastParticipantCount && state.participantCount > state.lastParticipantCount) {
       ui.showToast('A participant joined the room');
@@ -34,7 +34,7 @@
       state.participantCount = msg.payload.participant_count;
       if (state.inRoom) {
         const el = document.getElementById('jwp-participants-list');
-        if (el) el.textContent = `Online: ${state.participantCount}`;
+        if (el) el.textContent = `${state.participantCount} online`;
         ui.showToast('A participant left the room');
       }
       state.lastParticipantCount = state.participantCount;

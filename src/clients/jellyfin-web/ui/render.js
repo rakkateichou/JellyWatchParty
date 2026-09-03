@@ -187,7 +187,8 @@
   };
 
   const renderRoom = (panel) => {
-    const syncIndicator = ui.buildSyncStatusIndicator();
+    const participantCount = state.participantCount || 1;
+    const leaveLabel = state.isHost ? 'Close room' : 'Leave room';
     // Attaching a supported client (e.g. Android TV) as a receiver of this
     // room is an opt-in admin feature: only surface the picker when enabled.
     const bridgeSection = state.allowSupportedReceiver ? `
@@ -197,19 +198,14 @@
         <div id="jwp-bridge-available"></div>
       </div>` : '';
     panel.innerHTML = `
-      <div class="jwp-header">
-        <span style="color:var(--jwp-success)">\u25CF</span>
-        <span style="flex-grow:1; margin-left:8px;">${utils.escapeHtml(state.roomName)}</span>
-        <button class="jwp-btn danger" id="jwp-btn-leave">${state.isHost ? 'Close' : 'Leave'}</button>
-      </div>
-      <div class="jwp-section" style="flex-shrink:0;">
-        <div class="jwp-label">Participants</div>
-        <div id="jwp-participants-list" class="jwp-participants-list">Online: ${state.participantCount || 1}</div>
-        ${syncIndicator}
-        ${state.isHost ? '<button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy guest invite</button>' : ''}
+      <div class="jwp-room-toolbar">
+        <div id="jwp-participants-list" class="jwp-participants-list">${participantCount} online</div>
+        <div class="jwp-room-actions">
+          ${state.isHost ? '<button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>' : ''}
+          <button class="jwp-icon-btn danger" id="jwp-btn-leave" title="${leaveLabel}" aria-label="${leaveLabel}"><span class="material-icons" aria-hidden="true">close</span></button>
+        </div>
       </div>
       <div id="jwp-chat-section">
-        <div class="jwp-label">Chat <span id="jwp-chat-badge" class="jwp-chat-badge"></span></div>
         <div id="jwp-chat-messages"></div>
         <div id="jwp-chat-input-container">
           <input type="text" id="jwp-chat-input" placeholder="Type a message..." maxlength="500">
@@ -217,10 +213,6 @@
         </div>
       </div>
       ${bridgeSection}
-      <div class="jwp-meta" style="display:flex; justify-content:space-between; flex-shrink:0; padding-top:8px;">
-          <span>RTT: <span class="jwp-latency">-</span></span>
-          <span>ID: ${state.clientId.split('-')[1] || '...'}</span>
-      </div>
     `;
     const leaveBtn = panel.querySelector('#jwp-btn-leave');
     if (leaveBtn) leaveBtn.onclick = () => JWP.actions && JWP.actions.leaveRoom && JWP.actions.leaveRoom();

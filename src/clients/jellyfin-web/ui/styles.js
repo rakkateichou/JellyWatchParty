@@ -77,7 +77,18 @@
       font-size: .78rem;
       text-align: center;
     }
-    .jwp-participants-list { color: var(--jwp-text); font-size: .82rem; }
+    .jwp-room-toolbar {
+      min-height: 2.8rem;
+      padding-bottom: .8rem;
+      border-bottom: 1px solid var(--jwp-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-shrink: 0;
+    }
+    .jwp-room-actions { display: flex; align-items: center; gap: .45rem; }
+    .jwp-participants-list { color: var(--jwp-muted); font-size: .78rem; font-weight: 650; }
     .jwp-room-item {
       min-height: 3.35rem;
       margin-bottom: .55rem;
@@ -117,6 +128,7 @@
     .jwp-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
     .jwp-btn:active { filter: brightness(.97); transform: translateY(0); }
     .jwp-btn:focus-visible,
+    .jwp-icon-btn:focus-visible,
     .jwp-input:focus-visible,
     .jwp-select:focus-visible,
     #jwp-chat-input:focus-visible,
@@ -138,9 +150,29 @@
       color: var(--jwp-danger);
     }
     .jwp-btn.danger:hover { background: rgba(205, 65, 76, .27); }
+    .jwp-icon-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      border: 1px solid var(--jwp-border);
+      border-radius: 50%;
+      background: var(--jwp-surface);
+      color: var(--jwp-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background .16s ease, border-color .16s ease, transform .16s ease;
+    }
+    .jwp-icon-btn:hover { border-color: var(--jwp-border-strong); background: var(--jwp-surface-hover); transform: translateY(-1px); }
+    .jwp-icon-btn:active { transform: translateY(0); }
+    .jwp-icon-btn.danger { color: var(--jwp-muted); }
+    .jwp-icon-btn.danger:hover { color: var(--jwp-danger); background: rgba(190, 57, 67, .16); }
+    .jwp-icon-btn .material-icons { font-size: 1.15rem; }
     .jwp-invite-btn {
-      width: 100%;
-      margin-top: .75rem;
+      min-height: 2.25rem;
+      margin: 0;
+      padding: .45rem .7rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -210,8 +242,20 @@
     .jwp-sync-spinner { width: .75rem; height: .75rem; border: 2px solid var(--jwp-border); border-top-color: #e3a75f; border-radius: 50%; animation: jwp-spin .8s linear infinite; }
     @keyframes jwp-spin { to { transform: rotate(360deg); } }
     /* Chat styles */
-    #jwp-chat-section { height: 180px; margin-top: .65rem; padding-top: .8rem; border-top: 1px solid var(--jwp-border); display: flex; flex-direction: column; }
-    #jwp-chat-messages { flex: 1; overflow-y: auto; padding: .25rem 0; font-size: .75rem; scrollbar-color: rgba(188, 208, 229, .28) transparent; }
+    #jwp-chat-section { height: 180px; display: flex; flex-direction: column; }
+    #jwp-chat-messages { flex: 1; overflow-y: auto; padding: .8rem 0 .25rem; font-size: .75rem; scrollbar-color: rgba(188, 208, 229, .28) transparent; }
+    .jwp-chat-system {
+      max-width: 90%;
+      margin: .1rem auto 1rem;
+      padding: .55rem .7rem;
+      border: 1px solid rgba(190, 207, 229, .1);
+      border-radius: .7rem;
+      background: rgba(255, 255, 255, .035);
+      color: var(--jwp-faint);
+      font-size: .7rem;
+      line-height: 1.45;
+      text-align: center;
+    }
     .jwp-chat-message { margin-bottom: .55rem; padding: .25rem 0; }
     .jwp-chat-message.jwp-chat-own .jwp-chat-username { color: var(--jwp-success); }
     .jwp-chat-meta { margin-bottom: .12rem; display: flex; align-items: baseline; gap: .5rem; }
