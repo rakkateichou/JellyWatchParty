@@ -2,6 +2,15 @@
   const JWP = window.JellyWatchParty = window.JellyWatchParty || {};
   const utils = JWP.utils = JWP.utils || {};
 
+  const normalizeItemId = (value) => {
+    const raw = String(value || '').trim();
+    if (/^[a-f0-9]{32}$/i.test(raw)) return raw.toLowerCase();
+    if (/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(raw)) {
+      return raw.replace(/-/g, '').toLowerCase();
+    }
+    return null;
+  };
+
   const getCurrentItem = () => {
     const pm = utils.getPlaybackManager();
     if (!pm) return null;
@@ -10,57 +19,69 @@
     return pm.currentItem || pm._currentItem || null;
   };
 
-  const getItemIdFromGlobals = () => {
+  const getPlaybackItemId = () => {
     try {
-      if (window.NowPlayingItem?.Id) return window.NowPlayingItem.Id;
-      if (window.Emby?.Page?.currentItem?.Id) return window.Emby.Page.currentItem.Id;
-      if (window.appRouter?.currentRouteInfo?.options?.item?.Id) {
-        return window.appRouter.currentRouteInfo.options.item.Id;
-      }
+      const nowPlayingId = normalizeItemId(window.NowPlayingItem?.Id);
+      if (nowPlayingId) return nowPlayingId;
       const playbackInfo = sessionStorage.getItem('playbackInfo');
       if (playbackInfo) {
         const info = JSON.parse(playbackInfo);
-        if (info?.ItemId && /^[a-f0-9]{32}$/i.test(info.ItemId)) return info.ItemId;
+        const playbackId = normalizeItemId(info?.ItemId);
+        if (playbackId) return playbackId;
       }
     } catch (e) { /* ignore */ }
     const pm = utils.getPlaybackManager();
     if (pm) {
       const item = getCurrentItem();
-      if (item?.Id) return item.Id;
+      const currentId = normalizeItemId(item?.Id);
+      if (currentId) return currentId;
     }
     return null;
   };
 
+  const getPageItemId = () => {
+    const routeId = normalizeItemId(window.appRouter?.currentRouteInfo?.options?.item?.Id);
+    if (routeId) return routeId;
+    return normalizeItemId(window.Emby?.Page?.currentItem?.Id);
+  };
+
   const getItemIdFromDom = () => {
     const titleEl = document.querySelector('.osdTitle[data-id], .videoOsdTitle[data-id], [class*="osd"] [data-id]');
-    if (titleEl?.dataset?.id && /^[a-f0-9]{32}$/i.test(titleEl.dataset.id)) {
-      return titleEl.dataset.id;
-    }
+    const titleId = normalizeItemId(titleEl?.dataset?.id);
+    if (titleId) return titleId;
     const itemIdEl = document.querySelector('.videoOsd [data-itemid], .videoOsdBottom [data-itemid]');
-    if (itemIdEl?.dataset?.itemid && /^[a-f0-9]{32}$/i.test(itemIdEl.dataset.itemid)) {
-      return itemIdEl.dataset.itemid;
-    }
+    const itemId = normalizeItemId(itemIdEl?.dataset?.itemid);
+    if (itemId) return itemId;
     return null;
   };
 
   const getItemIdFromUrl = () => {
     const hash = window.location.hash || '';
     const patterns = [
-      /[?&]id=([a-f0-9]{32})/i,
-      /\/items\/([a-f0-9]{32})/i,
-      /\/videos\/([a-f0-9]{32})/i,
-      /id=([a-f0-9]{32})/i
+      /[?&]id=([a-f0-9-]{32,36})/i,
+      /\/items\/([a-f0-9-]{32,36})/i,
+      /\/videos\/([a-f0-9-]{32,36})/i,
+      /id=([a-f0-9-]{32,36})/i
     ];
     for (const pattern of patterns) {
       const match = hash.match(pattern);
-      if (match) return match[1];
+      const itemId = normalizeItemId(match?.[1]);
+      if (itemId) return itemId;
     }
     return null;
   };
 
   const getCurrentItemId = () => {
-    return getItemIdFromGlobals() || getItemIdFromDom() || getItemIdFromUrl() || null;
+    const isVideoPage = /^#\/video(?:[/?]|$)/i.test(window.location.hash || '');
+    if (isVideoPage) {
+      return getPlaybackItemId() || getItemIdFromDom() || getItemIdFromUrl() || getPageItemId() || null;
+    }
+    // On details pages the playback manager can still describe the previous
+    // video, while ShareLinks puts the actual selected item in a UUID-style
+    // route. Prefer the page route there so a room is never born with stale
+    // or missing media.
+    return getItemIdFromUrl() || getPageItemId() || getPlaybackItemId() || getItemIdFromDom() || null;
   };
 
-  Object.assign(utils, { getCurrentItem, getCurrentItemId });
+  Object.assign(utils, { normalizeItemId, getCurrentItem, getCurrentItemId });
 })();

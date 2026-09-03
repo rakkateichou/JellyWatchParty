@@ -180,15 +180,23 @@ pub(in crate::ws) async fn handle_playback(
         // advances to another episode, the media id travels with the normal
         // playback update. Store it for current followers and late joiners,
         // and require followers to report ready for the new item again.
-        let media_changed = parsed
+        let incoming_media_id = parsed
             .payload
             .as_ref()
             .and_then(|p| p.get("media_id"))
             .and_then(|v| v.as_str())
             .filter(|id| is_valid_media_id(id))
+            .map(str::to_string);
+        let media_changed = incoming_media_id
+            .as_deref()
             .map(|id| room.media_id.as_deref() != Some(id))
             .unwrap_or(false);
         if media_changed {
+            // Record the new item before the ready gate below. Previously a
+            // first Play event could be held while the room still had no
+            // media id, leaving guests in an indefinitely loading player.
+            room.media_id = incoming_media_id.clone();
+            room.state.play_state = "paused".to_string();
             room.pending_play = None;
             room.ready_clients.clear();
             room.ready_clients.insert(client_id.to_string());
@@ -207,6 +215,36 @@ pub(in crate::ws) async fn handle_playback(
                 .filter(|pos| is_valid_position(*pos))
                 .unwrap_or(room.state.position);
             pending_schedule = handle_play_not_ready(room, position, current_ts);
+            if media_changed {
+                // Tell followers what to load while Play waits for their
+                // `ready` acknowledgement. The eventual scheduled Play is
+                // broadcast once everyone can actually render the item.
+                let media_update = IncomingMessage {
+                    msg_type: ClientMessageType::StateUpdate,
+                    room: parsed.room.clone(),
+                    client: parsed.client.clone(),
+                    payload: Some(serde_json::json!({
+                        "position": position,
+                        "play_state": "paused",
+                        "media_id": incoming_media_id,
+                    })),
+                    ts: parsed.ts,
+                    server_ts: Some(current_ts),
+                };
+                let senders: Vec<_> = room
+                    .clients
+                    .iter()
+                    .filter(|id| *id != client_id)
+                    .filter_map(|id| locked_clients.get(id).map(|c| c.sender.clone()))
+                    .collect();
+                match serde_json::to_string(&media_update) {
+                    Ok(json) => break 'broadcast Some((senders, json)),
+                    Err(e) => {
+                        log::error!("Failed to serialize media change: {}", e);
+                        break 'broadcast None;
+                    }
+                }
+            }
             break 'broadcast None;
         }
 
@@ -433,5 +471,61 @@ mod tests {
         // server_ts should be set to target_server_ts
         assert!(parsed.server_ts.is_some());
         assert!(parsed.server_ts.unwrap() > now);
+    }
+
+    #[tokio::test]
+    async fn first_play_announces_media_before_waiting_for_guest() {
+        let clients = test_helpers::create_clients();
+        let rooms = test_helpers::create_rooms();
+        let (host, mut host_rx) = test_helpers::create_client_with_rx("uh", "Host", true);
+        let (guest, mut guest_rx) = test_helpers::create_client_with_rx("ug", "Guest", true);
+
+        {
+            let mut locked_clients = clients.write().await;
+            locked_clients.insert("host".to_string(), host);
+            locked_clients.insert("guest".to_string(), guest);
+        }
+        {
+            let mut locked_rooms = rooms.write().await;
+            let mut room = test_helpers::create_room("room-1", "host");
+            room.clients.push("guest".to_string());
+            locked_rooms.insert("room-1".to_string(), room);
+        }
+
+        handle_playback(
+            "host",
+            IncomingMessage {
+                msg_type: ClientMessageType::PlayerEvent,
+                room: Some("room-1".to_string()),
+                client: Some("host".to_string()),
+                payload: Some(serde_json::json!({
+                    "action": "play",
+                    "position": 0.0,
+                    "play_state": "playing",
+                    "media_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                })),
+                ts: 1,
+                server_ts: None,
+            },
+            &clients,
+            &rooms,
+        )
+        .await;
+
+        assert!(test_helpers::recv_msg(&mut host_rx).is_none());
+        let update = test_helpers::recv_msg(&mut guest_rx).expect("guest media update");
+        assert_eq!(update.msg_type, "state_update");
+        let payload = update.payload.expect("media update payload");
+        assert_eq!(payload["media_id"], "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+        assert_eq!(payload["play_state"], "paused");
+
+        let locked_rooms = rooms.read().await;
+        let room = locked_rooms.get("room-1").unwrap();
+        assert_eq!(
+            room.media_id.as_deref(),
+            Some("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+        );
+        assert_eq!(room.state.play_state, "paused");
+        assert!(room.pending_play.is_some());
     }
 }

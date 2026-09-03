@@ -410,7 +410,7 @@
     @keyframes jwp-spin { to { transform: rotate(360deg); } }
     /* Chat styles */
     #jwp-chat-section { height: 180px; display: flex; flex-direction: column; }
-    #jwp-chat-messages { flex: 1; overflow-y: auto; padding: .8rem 0 .25rem; font-size: .75rem; scrollbar-color: rgba(188, 208, 229, .28) transparent; }
+    #jwp-chat-messages { flex: 1; overflow-y: auto; padding: .8rem 0 .25rem; font-size: 1rem; scrollbar-color: rgba(188, 208, 229, .28) transparent; }
     .jwp-chat-system {
       max-width: 90%;
       margin: .1rem auto 1rem;
@@ -419,18 +419,18 @@
       border-radius: .7rem;
       background: rgba(255, 255, 255, .035);
       color: var(--jwp-faint);
-      font-size: .7rem;
+      font-size: .85rem;
       line-height: 1.45;
       text-align: center;
     }
     .jwp-chat-message { margin-bottom: .55rem; padding: .25rem 0; }
     .jwp-chat-message.jwp-chat-own .jwp-chat-username { font-weight: 800; }
     .jwp-chat-meta { margin-bottom: .12rem; display: flex; align-items: baseline; gap: .5rem; }
-    .jwp-chat-username { color: var(--jwp-user-color, var(--jwp-accent)); font-size: .7rem; font-weight: 700; }
-    .jwp-chat-time { color: var(--jwp-faint); font-size: .64rem; }
+    .jwp-chat-username { color: var(--jwp-user-color, var(--jwp-accent)); font-size: .9rem; font-weight: 700; }
+    .jwp-chat-time { color: var(--jwp-faint); font-size: .75rem; }
     .jwp-chat-text { color: var(--jwp-text); line-height: 1.4; word-wrap: break-word; }
     #jwp-chat-input-container { padding-top: .65rem; border-top: 1px solid var(--jwp-border); display: flex; gap: .5rem; }
-    #jwp-chat-input { min-width: 0; flex: 1; padding: .58rem .7rem; font-size: .75rem; }
+    #jwp-chat-input { min-width: 0; flex: 1; min-height: 2.75rem; padding: .65rem .8rem; font-size: 1rem; }
     #jwp-chat-send {
       padding: .55rem .8rem;
       border: 1px solid var(--jwp-border);
@@ -439,7 +439,7 @@
       color: var(--jwp-text);
       cursor: pointer;
       font: inherit;
-      font-size: .75rem;
+      font-size: .9rem;
       font-weight: 700;
     }
     #jwp-chat-send:hover { background: var(--jwp-action-hover); }
