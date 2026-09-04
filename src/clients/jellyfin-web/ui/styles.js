@@ -744,6 +744,13 @@
         right: var(--jwp-dock-width) !important;
         width: auto !important;
       }
+      /* Jellyfin appends every media-segment prompt (intro, recap, outro,
+         commercial, etc.) directly to <body>, outside the resized player.
+         Constrain that fixed overlay to the video side of the dock as well. */
+      html.jwp-player-docked .skip-button-container {
+        right: var(--jwp-dock-width) !important;
+        width: auto !important;
+      }
     }
     @media (max-width: 799px) {
       #${PANEL_ID} {
