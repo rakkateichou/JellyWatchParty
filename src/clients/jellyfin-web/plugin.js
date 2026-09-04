@@ -49,7 +49,9 @@
     // media hint with live room state once it connects.
     JWP.state.pendingJoinRoomId = roomId.toLowerCase();
     JWP.state.inviteJoinActive = true;
+    JWP.state.roomJoinActive = true;
     JWP.state.roomMediaId = mediaId;
+    JWP.playback?.holdJoinPlayback?.();
     JWP.playback?.ensurePlayback?.(mediaId);
   };
 

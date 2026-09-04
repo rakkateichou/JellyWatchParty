@@ -20,7 +20,7 @@ public class FileTransformationIntegration : IScheduledTask
     private const string BootstrapMarkup = """
 <!-- JellyWatchParty invite bootstrap -->
 <style id="jwp-invite-bootstrap">html.jwp-invite-launching{background:#000!important;color-scheme:dark}html.jwp-invite-launching body{visibility:hidden!important;background:#000!important}html.jwp-invite-launching::before{content:'Joining watch party…';position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;visibility:visible;background:#000;color:rgba(255,255,255,.78);font:600 1rem/1.4 system-ui,sans-serif;letter-spacing:.01em}</style>
-<script id="jwp-invite-bootstrap-script">(function(){if(/[?&]jwpRoom=[0-9a-f-]{36}(?:&|$)/i.test(location.hash||''))document.documentElement.classList.add('jwp-invite-launching')})()</script>
+<script id="jwp-invite-bootstrap-script">(function(){if(!/[?&]jwpRoom=[0-9a-f-]{36}(?:&|$)/i.test(location.hash||''))return;var r=document.documentElement;r.classList.add('jwp-invite-launching');document.addEventListener('play',function(e){var v=e.target;if(r.classList.contains('jwp-invite-launching')&&v&&v.tagName==='VIDEO'&&!v.paused){try{v.pause()}catch(_){}}},true)})()</script>
 <!-- /JellyWatchParty invite bootstrap -->
 """;
 

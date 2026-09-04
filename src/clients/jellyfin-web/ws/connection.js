@@ -53,6 +53,13 @@
       state.ws.send(JSON.stringify({ type: 'auth', payload: authPayload, ts: utils.nowMs() }));
     }
     actions.send('ping', { client_ts: utils.nowMs() });
+    // Invite joins do not depend on the player being mounted. Joining here
+    // gets the host's paused/playing position while Jellyfin constructs the
+    // native player instead of adding another UI polling interval to startup.
+    if (state.pendingJoinRoomId && actions.joinRoom) {
+      const roomId = state.pendingJoinRoomId;
+      if (actions.joinRoom(roomId)) state.pendingJoinRoomId = '';
+    }
     schedulePing();
     ui.render();
   };

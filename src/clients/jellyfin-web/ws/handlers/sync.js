@@ -37,13 +37,17 @@
       state.clientId = msg.client;
     }
     state.isHost = (msg.payload.host_id === state.clientId);
-    const joiningAsFollower = state.roomJoinPending && !state.isHost && !!msg.payload.media_id;
+    const joiningAsFollower = !state.isHost
+      && !!msg.payload.media_id
+      && (state.roomJoinPending || state.roomJoinActive || state.inviteJoinActive);
     state.roomJoinPending = false;
     if (joiningAsFollower) {
       state.roomJoinActive = true;
+      JWP.playback?.holdJoinPlayback?.();
       JWP.app?.setJoinLaunchScreen?.(true);
     } else if (state.isHost) {
       state.roomJoinActive = false;
+      JWP.playback?.releaseJoinPlayback?.();
       JWP.app?.setJoinLaunchScreen?.(false);
     }
     if (JWP.chat && Array.isArray(msg.payload.chat_history)) {
@@ -87,6 +91,34 @@
   const applyInitialTracks = (payload, mediaId) => {
     if (!JWP.playback?.applyInitialTracks) return Promise.resolve(false);
     return Promise.resolve(JWP.playback.applyInitialTracks(payload, mediaId));
+  };
+
+  const finishRoomJoin = () => {
+    if (!state.roomJoinActive) return;
+    state.roomJoinActive = false;
+    state.inviteJoinActive = false;
+    JWP.playback?.releaseJoinPlayback?.();
+    JWP.app?.setJoinLaunchScreen?.(false);
+  };
+
+  const applyAuthoritativePlayback = (video, targetPos, hostPlaying) => {
+    const joining = state.roomJoinActive;
+    utils.startSyncing();
+
+    // During entry, stop first and seek second. This prevents a guest from
+    // consuming the beginning of the episode while the seek is loading, and
+    // makes a paused host land on the same still frame immediately.
+    if (joining && !video.paused) video.pause();
+    if (Math.abs(video.currentTime - targetPos) > 0.35) video.currentTime = targetPos;
+
+    // Release the bootstrap pause gate only after both the seek and the host's
+    // play/pause decision have been written to the native player.
+    if (joining) finishRoomJoin();
+    if (hostPlaying) {
+      video.play().catch(() => ui.showToast?.('Tap Play to continue the watch party.'));
+    } else if (!video.paused) {
+      video.pause();
+    }
   };
 
   const switchToMedia = (msg) => {
@@ -136,13 +168,7 @@
       const target = state.lastSyncPlayState === 'playing'
         ? utils.adjustedPosition(state.lastSyncPosition, state.lastSyncServerTs)
         : state.lastSyncPosition;
-      utils.startSyncing();
-      if (Math.abs(video.currentTime - target) > 0.35) video.currentTime = target;
-      if (state.lastSyncPlayState === 'playing') {
-        video.play().catch(() => ui.showToast('Tap Play to continue the watch party.'));
-      } else if (!video.paused) {
-        video.pause();
-      }
+      applyAuthoritativePlayback(video, target, state.lastSyncPlayState === 'playing');
       if (JWP.playback?.watchReady) JWP.playback.watchReady();
     };
     setTimeout(settle, 150);
@@ -164,7 +190,6 @@
       gap: targetPos - video.currentTime,
       play_state: msg.payload.state.play_state
     });
-    utils.startSyncing();
     if (hostPlaying) {
       const { INITIAL_SYNC_COOLDOWN_MS, INITIAL_SYNC_MAX_MS } = JWP.constants;
       const now = utils.nowMs();
@@ -174,14 +199,15 @@
       state.initialSyncTargetPos = targetPos;
       utils.log('CLIENT', { type: 'initial_sync_started', cooldown: INITIAL_SYNC_COOLDOWN_MS, max: INITIAL_SYNC_MAX_MS, targetPos });
     }
-    if (Math.abs(video.currentTime - targetPos) > SEEK_THRESHOLD) {
-      video.currentTime = targetPos;
+    if (Math.abs(video.currentTime - targetPos) <= SEEK_THRESHOLD && !state.roomJoinActive) {
+      // Preserve steady-state playback when the room snapshot is already close;
+      // entry uses the tighter threshold in applyAuthoritativePlayback.
+      utils.startSyncing();
+      if (hostPlaying && video.paused) video.play().catch(() => {});
+      else if (!hostPlaying && !video.paused) video.pause();
+      return;
     }
-    if (hostPlaying) {
-      video.play().catch(() => {});
-    } else if (msg.payload.state.play_state === 'paused') {
-      video.pause();
-    }
+    applyAuthoritativePlayback(video, targetPos, hostPlaying);
   };
 
   h.handleRoomState = (msg, video) => {

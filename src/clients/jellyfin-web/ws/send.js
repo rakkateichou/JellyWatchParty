@@ -81,6 +81,7 @@
     state.roomMediaId = '';
     state.roomJoinPending = false;
     state.roomJoinActive = false;
+    JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
     state.chatSettingsOpen = false;
     state.mediaChangeToken += 1;

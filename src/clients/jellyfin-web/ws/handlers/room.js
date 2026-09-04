@@ -66,6 +66,7 @@
     state.roomMediaId = '';
     state.roomJoinPending = false;
     state.roomJoinActive = false;
+    JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
     state.chatSettingsOpen = false;
     state.participantCount = 0;
@@ -120,6 +121,7 @@
     console.error('[JellyWatchParty] Server error:', message);
     state.roomJoinPending = false;
     state.roomJoinActive = false;
+    JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
     ui.showToast(message);
   };

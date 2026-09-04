@@ -11,6 +11,33 @@
 
   const NATIVE_BUTTON_SETTLE_MS = 750;
   const NATIVE_LAUNCH_COOLDOWN_MS = 8000;
+  const JOIN_HOLD_POLL_MS = 50;
+
+  let joinHoldTimer = null;
+
+  // Jellyfin's native Play action always begins at 0:00. Invitations invoke
+  // that action before room_state arrives, so keep the newly-created player
+  // paused until the host's authoritative position and play state are applied.
+  // The index.html bootstrap also catches the very first play event, before
+  // this module has loaded; this poll covers player replacement and retries.
+  const pauseJoinPlayback = () => {
+    if (!JWP.state?.roomJoinActive || JWP.state.isHost) return;
+    const video = utils.getVideo?.() || document.querySelector('video');
+    if (!video || video.paused !== false) return;
+    utils.startSyncing?.(500);
+    try { video.pause(); } catch (err) {}
+  };
+
+  const holdJoinPlayback = () => {
+    pauseJoinPlayback();
+    if (!joinHoldTimer) joinHoldTimer = setInterval(pauseJoinPlayback, JOIN_HOLD_POLL_MS);
+  };
+
+  const releaseJoinPlayback = () => {
+    if (!joinHoldTimer) return;
+    clearInterval(joinHoldTimer);
+    joinHoldTimer = null;
+  };
 
   const isVideoPage = () => {
     // Jellyfin keeps an old <video> element mounted while its SPA is showing an
@@ -132,6 +159,7 @@
     const state = JWP.state;
     const normalizedItemId = utils.normalizeItemId?.(itemId) || itemId;
     if (!normalizedItemId) return;
+    if (state.roomJoinActive) holdJoinPlayback();
     // The same item id can mean either "already playing" or merely "open on
     // its details page". Jellyfin's SPA can retain a hidden <video> element
     // on details pages, so the player route is the authoritative distinction.
@@ -175,5 +203,11 @@
     });
   };
 
-  Object.assign(playback, { isVideoPage, playItem, ensurePlayback });
+  Object.assign(playback, {
+    isVideoPage,
+    playItem,
+    ensurePlayback,
+    holdJoinPlayback,
+    releaseJoinPlayback
+  });
 })();

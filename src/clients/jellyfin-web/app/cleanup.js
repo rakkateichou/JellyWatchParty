@@ -42,6 +42,7 @@
     if (lc) lc.hadVideoElement = false;
     state.roomJoinPending = false;
     state.roomJoinActive = false;
+    JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
     if (state.ws) {
       state.ws.close();

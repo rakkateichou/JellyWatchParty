@@ -24,6 +24,8 @@
   };
 
   const setJoinLaunchScreen = (visible) => {
+    const alreadyVisible = document.documentElement?.classList?.contains?.('jwp-invite-launching');
+    if (visible && alreadyVisible && joinLaunchTimer) return;
     if (joinLaunchTimer) {
       clearTimeout(joinLaunchTimer);
       joinLaunchTimer = null;
@@ -32,10 +34,12 @@
     if (visible) {
       joinLaunchTimer = setTimeout(() => {
         joinLaunchTimer = null;
-        state.roomJoinActive = false;
         document.documentElement?.classList?.toggle('jwp-invite-launching', false);
-        ui.showToast?.('Tap Play to continue the watch party.');
-      }, 25000);
+        // Keep playback held even after the cover's time limit. The native
+        // player can show its own loading UI, but must not run from 0:00 while
+        // room state is still being reconciled.
+        ui.showToast?.('Still syncing with the host…');
+      }, 7000);
     }
   };
 
@@ -51,6 +55,8 @@
     const inviteMediaId = getInviteMediaId();
     state.pendingJoinRoomId = roomId;
     state.inviteJoinActive = true;
+    state.roomJoinActive = true;
+    playback?.holdJoinPlayback?.();
     setJoinLaunchScreen(true);
 
     // The signed invite already contains the validated episode id. Launch it
@@ -79,7 +85,7 @@
       if (attempts >= 80) {
         clearInterval(timer);
         setJoinLaunchScreen(false);
-        ui.showToast('Tap Play to join the watch party.');
+        ui.showToast('Still connecting to the watch party…');
       }
     }, 125);
   };
@@ -128,6 +134,11 @@
       if (document.visibilityState !== 'visible') return;
       const video = utils.getVideo();
       const activeVideo = hasActiveVideo(video);
+      if (state.pendingJoinRoomId && state.ws?.readyState === 1 && JWP.actions?.joinRoom) {
+        const roomId = state.pendingJoinRoomId;
+        console.log('[JellyWatchParty] Auto-joining room:', roomId);
+        if (JWP.actions.joinRoom(roomId)) state.pendingJoinRoomId = '';
+      }
       if (hadVideoElement && !activeVideo) {
         hadVideoElement = false;
         onVideoPlayerExit();
@@ -135,24 +146,11 @@
       }
       if (activeVideo) {
         hadVideoElement = true;
-        const expectedMediaId = utils.normalizeItemId?.(state.roomMediaId) || '';
-        const activeMediaId = utils.normalizeItemId?.(utils.getCurrentItemId?.()) || '';
-        const joinedMediaReady = !state.roomJoinActive || !expectedMediaId || activeMediaId === expectedMediaId;
-        if (joinedMediaReady) {
-          state.roomJoinActive = false;
-          setJoinLaunchScreen(false);
-        }
+        if (state.roomJoinActive) playback?.holdJoinPlayback?.();
+        else setJoinLaunchScreen(false);
         ui.injectOsdButton();
         playback.bindVideo();
         if (playback.patchTrackSwitching) playback.patchTrackSwitching();
-        if (state.pendingJoinRoomId) {
-          console.log('[JellyWatchParty] Video detected, pendingJoinRoomId:', state.pendingJoinRoomId);
-          if (state.ws?.readyState === 1 && JWP.actions && JWP.actions.joinRoom) {
-            const roomId = state.pendingJoinRoomId;
-            console.log('[JellyWatchParty] Auto-joining room:', roomId);
-            if (JWP.actions.joinRoom(roomId)) state.pendingJoinRoomId = '';
-          }
-        }
       }
 
       // Jellyfin is an SPA; header DOM is frequently replaced during navigation.

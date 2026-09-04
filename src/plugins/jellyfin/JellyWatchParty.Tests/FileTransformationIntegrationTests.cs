@@ -41,6 +41,8 @@ public class FileTransformationIntegrationTests
         Assert.True(result.IndexOf(BootstrapId) < result.IndexOf("runtime.js"));
         Assert.Contains("Joining watch party…", result);
         Assert.Contains("jwpRoom", result);
+        Assert.Contains("document.addEventListener('play'", result);
+        Assert.Contains("v.pause()", result);
     }
 
     [Fact]

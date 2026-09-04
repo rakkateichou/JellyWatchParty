@@ -32,6 +32,8 @@ describe('room episode transitions', () => {
     JWP.utils.startSyncing = () => {};
     JWP.utils.log = () => {};
     JWP.playback.isVideoPage = () => true;
+    JWP.playback.holdJoinPlayback = () => {};
+    JWP.playback.releaseJoinPlayback = () => {};
     JWP.app = {};
     globalThis.document.getElementById = () => null;
     JWP.ui.prepareInviteLink = undefined;
@@ -278,5 +280,89 @@ describe('room episode transitions', () => {
 
     assert.equal(video.currentTime, 10);
     assert.equal(video.paused, true);
+  });
+
+  it('holds invite playback at startup, then applies the paused host frame before revealing it', () => {
+    let held = 0;
+    let released = 0;
+    let launchScreen = true;
+    JWP.state.clientId = 'guest-client';
+    JWP.state.inRoom = false;
+    JWP.state.inviteJoinActive = true;
+    JWP.state.roomJoinActive = true;
+    JWP.utils.getCurrentItemId = () => oldMediaId;
+    JWP.playback.holdJoinPlayback = () => { held += 1; };
+    JWP.playback.releaseJoinPlayback = () => { released += 1; };
+    JWP.app = { setJoinLaunchScreen: (visible) => { launchScreen = visible; } };
+    const video = {
+      currentTime: 0,
+      paused: false,
+      readyState: 4,
+      networkState: 1,
+      play: () => Promise.resolve(),
+      pause() { this.paused = true; }
+    };
+    JWP.utils.getVideo = () => video;
+
+    JWP._wsHandlers.handleRoomState({
+      room: 'room-1',
+      client: 'guest-client',
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        name: "Host's room",
+        host_id: 'host-client',
+        media_id: oldMediaId,
+        participant_count: 2,
+        state: { position: 47.25, play_state: 'paused' },
+        chat_history: []
+      }
+    }, video);
+
+    assert.equal(video.paused, true);
+    assert.equal(video.currentTime, 47.25);
+    assert.equal(JWP.state.roomJoinActive, false);
+    assert.equal(launchScreen, false);
+    assert.equal(held, 1);
+    assert.equal(released, 1);
+  });
+
+  it('seeks a held invite to a playing host before resuming it', () => {
+    let playCalls = 0;
+    let released = 0;
+    JWP.state.clientId = 'guest-client';
+    JWP.state.inRoom = false;
+    JWP.state.inviteJoinActive = true;
+    JWP.state.roomJoinActive = true;
+    JWP.utils.getCurrentItemId = () => oldMediaId;
+    JWP.playback.releaseJoinPlayback = () => { released += 1; };
+    JWP.app = { setJoinLaunchScreen: () => {} };
+    const video = {
+      currentTime: 0,
+      paused: true,
+      readyState: 4,
+      networkState: 1,
+      play() { playCalls += 1; this.paused = false; return Promise.resolve(); },
+      pause() { this.paused = true; }
+    };
+    JWP.utils.getVideo = () => video;
+
+    JWP._wsHandlers.handleRoomState({
+      room: 'room-1',
+      client: 'guest-client',
+      server_ts: JWP.utils.getServerNow(),
+      payload: {
+        name: "Host's room",
+        host_id: 'host-client',
+        media_id: oldMediaId,
+        participant_count: 2,
+        state: { position: 31, play_state: 'playing' },
+        chat_history: []
+      }
+    }, video);
+
+    assert.ok(video.currentTime >= 31 && video.currentTime < 31.1);
+    assert.equal(video.paused, false);
+    assert.equal(playCalls, 1);
+    assert.equal(released, 1);
   });
 });
