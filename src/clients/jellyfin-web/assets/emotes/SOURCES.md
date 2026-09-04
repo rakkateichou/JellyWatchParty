@@ -22,6 +22,7 @@ The local filenames are stable JellyWatchParty tokens; the source names and
 | `salute.webp` | peepoSalute | `01F6Q8CVB000015Y8FNQBA5VBR` |
 | `chef.webp` | ChefKiss | `01FFR5Q96R0007P57XYW0BJAXG` |
 | `party.webp` | PartyParrot | `01F6Q93YK8000EQZ7QARQERNWC` |
+| `partyparrot.webp` | PartyParrot | `01FKSDK14G0008TM5NY9QEG0QV` |
 | `heart.webp` | peepoLove | `01F6NPP6YG00013ACMMJP3W06V` |
 | `raintime.webp` | RainTime | `01FCY771D800007PQ2DF3GDTN6` |
 | `petpet.webp` | PETPET | `01FE3XY508000AA32JP519W2EW` |
@@ -31,6 +32,7 @@ The local filenames are stable JellyWatchParty tokens; the source names and
 | `peepohappy.webp` | peepoHappy | `01GAZ199Z8000FEWHS6AT5QZV0` |
 | `peeposad.webp` | peepoSad | `01GAZ4SBX80007YCE2RXBT44B2` |
 | `feelsdankman.webp` | FeelsDankMan | `01GB9W8JN80004CKF2H1TWA99H` |
+| `waytoodank.webp` | WAYTOODANK | `01G98W833R0000BRQD106P0ZNT` |
 | `billyapprove.webp` | BillyApprove | `01GB2S7H7000018VJGJ4A9BMFS` |
 | `forsenpls.webp` | forsenPls | `01GB8EQNJ8000497KFBZWNSDFZ` |
 | `aliendance.webp` | AlienDance | `01GB2ZJFBG000DTBJYANG8XYFP` |
@@ -39,7 +41,7 @@ The local filenames are stable JellyWatchParty tokens; the source names and
 | `teatime.webp` | TeaTime | `01HM4P26CR000449DZBT4FVMA5` |
 | `pianotime.webp` | PianoTime | `01G98V81Q80000BRQD106P0ZEK` |
 | `nymncorn.webp` | nymnCorn | `01HM6NJ2X000035ZKVAPWBNW26` |
-| `seventv.webp` | sevenTV | `01J107C3E8000DX4MZBQSYGRXS` |
+| `winetime.webp` | WineTime | `01HM4PGHC80007635TAZG67FT5` |
 | `nanaayaya.webp` | nanaAYAYA | `01FTEZEE900001E12995B12GR4` |
 | `biblethump.webp` | BibleThump | `01J8NMZ2HG0005G1FWF2H9Y615` |
 | `glorp.webp` | glorp | `01H16FA16G0005EZED5J0EY7KN` |
