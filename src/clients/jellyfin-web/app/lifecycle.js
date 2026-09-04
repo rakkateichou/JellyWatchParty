@@ -126,6 +126,11 @@
     panel.addEventListener('keydown', panelStopPropagation);
     panel.addEventListener('keyup', panelStopPropagation);
     panel.addEventListener('keypress', panelStopPropagation);
+    // Jellyfin binds the mouse wheel globally to player volume. Keep wheel
+    // events inside the docked panel local so scrollable chat/picker content
+    // moves without also changing playback volume.
+    panel.addEventListener('wheel', panelStopPropagation, { passive: true });
+    panel.addEventListener('mousewheel', panelStopPropagation, { passive: true });
   };
 
   const startIntervals = () => {

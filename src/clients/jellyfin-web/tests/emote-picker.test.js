@@ -60,9 +60,12 @@ describe('emote picker interaction', () => {
     JWP.state.panelTheme = 'monochrome';
 
     JWP.ui.render(true);
+    let wheelStopped = false;
+    emotePicker.onwheel({ stopPropagation() { wheelStopped = true; } });
     emoteButton.onclick();
 
     assert.equal(inserted, ':pog:');
     assert.equal(emotePicker.hidden, false);
+    assert.equal(wheelStopped, true);
   });
 });

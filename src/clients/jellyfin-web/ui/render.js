@@ -441,6 +441,9 @@
       emoteToggle.setAttribute('aria-expanded', 'false');
     };
     if (emoteToggle && emotePicker) {
+      const keepWheelInPicker = (event) => event.stopPropagation();
+      emotePicker.onwheel = keepWheelInPicker;
+      emotePicker.onmousewheel = keepWheelInPicker;
       emoteToggle.onclick = (event) => {
         event.stopPropagation();
         const willOpen = emotePicker.hidden;
