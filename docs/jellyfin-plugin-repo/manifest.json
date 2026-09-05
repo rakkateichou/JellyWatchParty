@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.11.2.0",
+        "changelog": "Fix shared cursors and drawing trails being invisible to watch-party guests. The guest player visibility rules now include the body-mounted cursor, nickname and SVG trail overlays while playback is open. They remain hidden when the room closes, and library navigation stays restricted.\r\n\r\nValidation: reproduced the missing drawings in a local browser fixture before the fix and verified visible host/guest trails afterward; closed-room and library-isolation checks passed. All 16 focused client tests and 128 plugin tests passed. Live cursor delivery and release events passed between three clients in an empty disposable room, with no media playback or watch-history changes.\r\n\r\nNo session-server changes are required. Refresh host and guest tabs after updating the plugin.\r\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.11.2.0/JellyWatchParty-v1.11.2.0.zip",
+        "checksum": "6c5f13bc5a20a2aa86fa163ba69a9c7e",
+        "timestamp": "2026-09-05T13:44:15Z"
+      },
+      {
         "version": "1.11.1.0",
         "changelog": "Fix the clipped chain icon on the Copy link button by keeping the SVG artwork inside its 24-unit frame. Verified in a local browser preview; all 128 plugin tests passed. No session-server changes.\r\n",
         "targetAbi": "10.11.11.0",
