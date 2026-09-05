@@ -2,9 +2,10 @@ const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const JWP = require('./setup.js');
 
-let received = 0;
 JWP.ui = { render: () => {} };
-JWP.chat = { receive: () => { received += 1; } };
+JWP.chat = { messages: [], isChatVisible: () => true };
+document.getElementById = () => null;
+require('../chat/messages.js');
 JWP.cursor = { receive: () => {} };
 JWP._wsHandlers = new Proxy({}, { get: () => () => {} });
 JWP.actions = {};
@@ -12,7 +13,8 @@ JWP.utils.getVideo = () => null;
 require('../ws/connection.js');
 
 describe('fast-path message deduplication', () => {
-  it('handles the first copy and ignores the later fallback copy', () => {
+  it('reconciles direct and server copies without duplicate messages', () => {
+    JWP.state.roomId = 'room-1';
     const message = {
       type: 'chat_message',
       room: 'room-1',
@@ -21,8 +23,17 @@ describe('fast-path message deduplication', () => {
     };
 
     JWP.actions.handleIncomingMessage(message, 'p2p');
-    JWP.actions.handleIncomingMessage(message, 'ws');
+    assert.equal(JWP.chat.messages.length, 1);
+    assert.equal(JWP.chat.messages[0].id, null);
+    const confirmed = { ...message, payload: { ...message.payload, message_id: 'server-id' } };
+    JWP.actions.handleIncomingMessage(confirmed, 'ws');
+    JWP.actions.handleIncomingMessage(confirmed, 'ws');
+    JWP.actions.handleIncomingMessage(message, 'p2p');
 
-    assert.equal(received, 1);
+    assert.equal(JWP.chat.messages.length, 1);
+    assert.equal(JWP.chat.messages[0].id, 'server-id');
+    JWP.chat.hydrate([{ message_id: 'server-id', _jwp_message_id: 'same-message', text: 'hi' }]);
+    JWP.actions.handleIncomingMessage(message, 'p2p');
+    assert.equal(JWP.chat.messages.length, 1);
   });
 });

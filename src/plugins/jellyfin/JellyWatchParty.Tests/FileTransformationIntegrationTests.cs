@@ -7,7 +7,7 @@ namespace JellyWatchParty.Plugin.Tests;
 [Collection(InjectionStateCollection.Name)]
 public class FileTransformationIntegrationTests
 {
-    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.10.2\" defer></script>";
+    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.11.0\" defer></script>";
     private const string BootstrapId = "id=\"jwp-invite-bootstrap\"";
 
     private class FakePayload

@@ -82,6 +82,10 @@
   const renderChatArea = () => `
     <div id="jwp-chat-section">
       <div id="jwp-chat-messages"></div>
+      <div id="jwp-chat-reply-preview" hidden>
+        <div class="jwp-chat-reply-summary" role="status"><strong id="jwp-chat-reply-label"></strong><span id="jwp-chat-reply-text"></span></div>
+        <button type="button" id="jwp-chat-reply-cancel" aria-label="Cancel reply" title="Cancel reply">×</button>
+      </div>
       <div id="jwp-chat-input-container">
         <button type="button" id="jwp-emote-toggle" title="Emotes" aria-label="Emotes" aria-expanded="false">${icon('smile')}</button>
         <div id="jwp-emote-picker" role="dialog" aria-label="Emotes" hidden>
@@ -469,6 +473,11 @@
     const chatInput = panel.querySelector('#jwp-chat-input');
     const chatSend = panel.querySelector('#jwp-chat-send');
     if (!chatInput || !chatSend) return;
+    chatInput.value = JWP.chat?.draftText || '';
+    chatInput.addEventListener('input', () => { if (JWP.chat) JWP.chat.draftText = chatInput.value; });
+    const replyCancel = panel.querySelector('#jwp-chat-reply-cancel');
+    if (replyCancel) replyCancel.onclick = () => { JWP.chat?.cancelReply(); chatInput.focus(); };
+    JWP.chat?.updateReplyPreview?.();
     const emoteToggle = panel.querySelector('#jwp-emote-toggle');
     const emotePicker = panel.querySelector('#jwp-emote-picker');
     const closeEmotePicker = () => {
@@ -499,7 +508,12 @@
         closeEmotePicker();
         return;
       }
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Escape' && JWP.chat?.replyTo) {
+        e.preventDefault();
+        JWP.chat.cancelReply();
+        return;
+      }
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
         e.preventDefault();
         if (JWP.chat && JWP.chat.send(chatInput.value)) {
           chatInput.value = '';

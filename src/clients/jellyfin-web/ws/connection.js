@@ -115,6 +115,11 @@
   };
 
   const handleIncomingMessage = (msg, source = 'ws') => {
+    // Chat merges the direct copy with server-assigned IDs and reply snapshots.
+    if (msg.type === 'chat_message') {
+      if (msg.payload) JWP.chat?.receive(msg, source);
+      return;
+    }
     if (isDuplicate(msg)) return;
     const video = utils.getVideo();
     console.log(`[JellyWatchParty] Received (${source}):`, msg.type, msg);
@@ -130,7 +135,6 @@
       case 'player_event': h.handlePlayerEvent(msg, video); break;
       case 'state_update': h.handleStateUpdate(msg, video); break;
       case 'pong': h.handlePong(msg); break;
-      case 'chat_message': if (JWP.chat && msg.payload) JWP.chat.receive(msg); break;
       case 'cursor_update': if (JWP.cursor && msg.payload) JWP.cursor.receive(msg); break;
       case 'rtc_signal': if (JWP.p2p?.handleSignal) JWP.p2p.handleSignal(msg); break;
       case 'invite_update': h.handleInviteUpdate(msg); break;

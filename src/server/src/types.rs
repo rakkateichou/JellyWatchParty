@@ -53,10 +53,24 @@ pub struct Room {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ChatHistoryEntry {
+    pub message_id: String,
+    #[serde(rename = "_jwp_message_id", skip_serializing_if = "Option::is_none")]
+    pub transport_id: Option<String>,
     pub client_id: String,
     pub username: String,
     pub text: String,
     pub server_ts: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply_to: Option<ChatReply>,
+}
+
+/// A single-level snapshot keeps a reply readable after its parent is evicted.
+#[derive(Debug, Clone, Serialize)]
+pub struct ChatReply {
+    pub message_id: String,
+    pub username: String,
+    pub text: String,
+    pub unavailable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

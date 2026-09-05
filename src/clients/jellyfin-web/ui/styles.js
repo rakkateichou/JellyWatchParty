@@ -564,6 +564,16 @@
     .jwp-chat-username { color: var(--jwp-user-color, var(--jwp-accent)); font-size: .9rem; font-weight: 700; }
     .jwp-chat-time { color: var(--jwp-faint); font-size: .75rem; }
     .jwp-chat-text { color: var(--jwp-text); line-height: 1.4; word-wrap: break-word; }
+    .jwp-chat-reply { margin-left: auto; padding: .3rem .5rem; min-height: 2rem; border: 0; border-radius: .4rem; background: transparent; color: var(--jwp-muted); font: inherit; font-size: .75rem; cursor: pointer; }
+    .jwp-chat-reply:hover, .jwp-chat-reply:focus-visible { background: var(--jwp-action-hover); color: var(--jwp-text); }
+    .jwp-chat-quote, #jwp-chat-reply-preview { margin: .2rem 0 .4rem; padding: .45rem .6rem; border: 0; border-left: 2px solid var(--jwp-accent); border-radius: .3rem; background: var(--jwp-action-bg); color: var(--jwp-muted); font-size: .8rem; line-height: 1.35; }
+    .jwp-chat-quote strong, .jwp-chat-reply-summary strong { display: block; color: var(--jwp-text); font-size: .78rem; overflow-wrap: anywhere; }
+    .jwp-chat-quote span, #jwp-chat-reply-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+    #jwp-chat-reply-preview { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; margin-top: .5rem; }
+    #jwp-chat-reply-preview[hidden] { display: none; }
+    .jwp-chat-reply-summary { flex: 1; min-width: 0; }
+    #jwp-chat-reply-cancel { flex: 0 0 2.5rem; min-height: 2.5rem; border: 0; border-radius: .4rem; background: transparent; color: var(--jwp-muted); font: inherit; font-size: 1.35rem; cursor: pointer; }
+    #jwp-chat-reply-cancel:hover, #jwp-chat-reply-cancel:focus-visible { color: var(--jwp-text); background: var(--jwp-action-hover); }
     #jwp-chat-input-container { position: relative; padding-top: .65rem; border-top: 1px solid var(--jwp-border); display: flex; align-items: center; gap: .5rem; }
     #jwp-chat-input { min-width: 0; flex: 1; min-height: 2.75rem; padding: .65rem .8rem; font-size: 1rem; }
     #jwp-emote-toggle {

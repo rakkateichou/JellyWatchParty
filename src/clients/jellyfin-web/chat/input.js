@@ -28,7 +28,16 @@
       return false;
     }
     console.log('[JellyWatchParty] Chat: Sending message to room', JWP.state.roomId);
-    JWP.actions.send('chat_message', { text: trimmed, username: nickname });
+    const payload = { text: trimmed, username: nickname };
+    if (chat.replyTo?.roomId === JWP.state.roomId) payload.reply_to_id = chat.replyTo.id;
+    try {
+      if (!JWP.actions.send('chat_message', payload)) return false;
+    } catch (err) {
+      JWP.ui.showToast('Could not send. Your message is still here; try again.');
+      return false;
+    }
+    chat.cancelReply?.();
+    chat.draftText = '';
     return true;
   };
 

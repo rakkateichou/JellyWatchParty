@@ -5,7 +5,8 @@
   const utils = JWP.utils;
 
   const p2pEligible = (type, payload) => {
-    if (type === 'chat_message' || type === 'cursor_update') return true;
+    if (type === 'chat_message') return !payload?.reply_to_id;
+    if (type === 'cursor_update') return true;
     return type === 'player_event' && payload?.action !== 'play';
   };
 
@@ -18,7 +19,7 @@
 
   const send = (type, payload = {}, roomOverride = null) => {
     if (!state.ws || state.ws.readyState !== 1) return false;
-    const directPayload = p2pEligible(type, payload)
+    const directPayload = type === 'chat_message' || p2pEligible(type, payload)
       ? { ...payload, _jwp_message_id: payload._jwp_message_id || messageId() }
       : payload;
     const message = {
@@ -31,10 +32,10 @@
     // WebRTC is only an optimistic low-latency copy. The WebSocket send is
     // always retained so the server can validate, persist and fan out every
     // event when a direct route is unavailable.
+    state.ws.send(JSON.stringify(message));
     if (p2pEligible(type, directPayload) && JWP.p2p?.broadcast) {
       JWP.p2p.broadcast(message);
     }
-    state.ws.send(JSON.stringify(message));
     return true;
   };
 

@@ -77,4 +77,15 @@ describe('WebRTC fast path with WebSocket fallback', () => {
     assert.equal(JWP.state.ws.sent.at(-2).type, 'player_event');
     assert.equal(JWP.state.ws.sent.at(-1).type, 'state_update');
   });
+
+  it('routes replies through the server to resolve the quote before display', () => {
+    const pc = FakePeerConnection.instances[0];
+    JWP.actions.send('chat_message', { text: 'Agreed', reply_to_id: 'parent' });
+    assert.equal(pc.channel.sent.length, 0);
+    assert.equal(JWP.state.ws.sent.at(-1).payload.reply_to_id, 'parent');
+    assert.ok(JWP.state.ws.sent.at(-1).payload._jwp_message_id);
+    assert.equal(JWP.p2p.broadcast({ type: 'chat_message', payload: {
+      text: 'Hi', reply_to: { text: 'Unverified' }
+    } }), false);
+  });
 });

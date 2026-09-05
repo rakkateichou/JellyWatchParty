@@ -24,6 +24,7 @@
     if (!message || !message.payload || typeof message.payload !== 'object') return false;
     if (message.type === 'chat_message') {
       return typeof message.payload.text === 'string'
+        && !message.payload.reply_to_id && !message.payload.reply_to
         && message.payload.text.length > 0
         && message.payload.text.length <= 500;
     }

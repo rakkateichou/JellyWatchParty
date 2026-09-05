@@ -185,6 +185,9 @@ mod tests {
             room.owner_user_id = "owner-user".to_string();
             room.clients = vec!["owner-client".to_string(), "guest-client".to_string()];
             room.chat_history.push_back(crate::types::ChatHistoryEntry {
+                message_id: "message-1".to_string(),
+                transport_id: None,
+                reply_to: None,
                 client_id: "owner-client".to_string(),
                 username: "Owner".to_string(),
                 text: "old chat".to_string(),

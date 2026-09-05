@@ -70,7 +70,7 @@ def main():
         passed.append('updated waiting-room client served')
         injected = request('/web/index.html', admin, raw=True)
         assert 'id="jwp-invite-bootstrap"' in injected
-        assert '/JellyWatchParty/ClientScript?v=1.10.2' in injected
+        assert '/JellyWatchParty/ClientScript?v=1.11.0' in injected
         assert injected.count('JellyWatchParty/ClientScript') == 1
         assert injected.index('JellyWatchParty/ClientScript') < injected.index('runtime.bundle.js')
         bundle = request('/JellyWatchParty/ClientScript', raw=True)
@@ -107,7 +107,16 @@ def main():
         joined = guest.receive_type('room_state')
         assert not joined['payload']['media_id'] and joined['payload']['invite_url'] == share_url
         guest.send(message('chat_message', room, {'text': 'Waiting-room verification'}))
-        assert host.receive_type('chat_message')['payload']['text'] == 'Waiting-room verification'
+        original = host.receive_type('chat_message')['payload']
+        assert original['text'] == 'Waiting-room verification' and original['message_id']
+        assert guest.receive_type('chat_message')['payload']['message_id'] == original['message_id']
+        host.send(message('chat_message', room, {'text': 'Reply verification', 'username': 'Test owner',
+                     'reply_to_id': original['message_id'], 'reply_to': {'username': 'Fake', 'text': 'Fake'}}))
+        reply = guest.receive_type('chat_message')['payload']
+        assert reply['reply_to']['message_id'] == original['message_id']
+        assert reply['reply_to']['text'] == original['text'] and not reply['reply_to']['unavailable']
+        assert host.receive_type('chat_message')['payload'] == reply
+        passed.append('message replies deliver the same server-verified quote to both clients')
         passed.append('guest joins the empty room and chat works')
 
         title = items(admin, admin_id, Recursive='true', IncludeItemTypes='Movie', IsVirtualItem='false', Limit=1)[0]
@@ -146,6 +155,9 @@ def main():
         assert restored['payload']['state']['position'] == 72
         assert restored['payload']['state']['play_state'] == 'paused'
         assert restored['payload']['participant_count'] == 2
+        replay = restored['payload']['chat_history']
+        assert replay[-1]['message_id'] == reply['message_id'] and replay[-1]['reply_to'] == reply['reply_to']
+        passed.append('reply IDs and quoted text survive authenticated reconnect')
         guest.send(message('ready', room, {'media_id': media_id}))
         second_guest = connect_and_auth(container_ip('jwp-session'), 3000, guest_jwt)
         second_guest.send(message('join_room', room, {'user_name': 'Second verification guest'}))

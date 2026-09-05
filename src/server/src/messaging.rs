@@ -13,14 +13,7 @@ pub fn build_room_state_payload(
     let chat_history: Vec<serde_json::Value> = room
         .chat_history
         .iter()
-        .map(|entry| {
-            serde_json::json!({
-                "client_id": entry.client_id,
-                "username": entry.username,
-                "text": entry.text,
-                "server_ts": entry.server_ts,
-            })
-        })
+        .map(|entry| serde_json::json!(entry))
         .collect();
     serde_json::json!({
         "name": room.name,
@@ -177,10 +170,18 @@ mod tests {
         room.state.audio_stream_index = Some(2);
         room.state.subtitle_stream_index = Some(-1);
         room.chat_history.push_back(crate::types::ChatHistoryEntry {
+            message_id: "message-1".to_string(),
+            transport_id: Some("transport-1".to_string()),
             client_id: "host1".to_string(),
             username: "Host".to_string(),
             text: "hi".to_string(),
             server_ts: 123,
+            reply_to: Some(crate::types::ChatReply {
+                message_id: "earlier-message".to_string(),
+                username: "Guest".to_string(),
+                text: "hello".to_string(),
+                unavailable: false,
+            }),
         });
 
         let payload = build_room_state_payload(&room, 2, true);
@@ -194,6 +195,9 @@ mod tests {
         let history = payload.get("chat_history").unwrap().as_array().unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].get("text").unwrap(), "hi");
+        assert_eq!(history[0]["message_id"], "message-1");
+        assert_eq!(history[0]["_jwp_message_id"], "transport-1");
+        assert_eq!(history[0]["reply_to"]["text"], "hello");
         assert_eq!(payload["state"]["audio_stream_index"], 2);
         assert_eq!(payload["state"]["subtitle_stream_index"], -1);
     }
