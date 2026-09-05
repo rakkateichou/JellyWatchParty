@@ -70,7 +70,7 @@ def main():
         passed.append('updated waiting-room client served')
         injected = request('/web/index.html', admin, raw=True)
         assert 'id="jwp-invite-bootstrap"' in injected
-        assert '/JellyWatchParty/ClientScript?v=1.12.0' in injected
+        assert '/JellyWatchParty/ClientScript?v=1.12.1' in injected
         assert injected.count('JellyWatchParty/ClientScript') == 1
         assert injected.index('JellyWatchParty/ClientScript') < injected.index('runtime.bundle.js')
         bundle = request('/JellyWatchParty/ClientScript', raw=True)

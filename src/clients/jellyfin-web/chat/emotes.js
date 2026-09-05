@@ -25,7 +25,7 @@
     { token: ':salute:', label: 'Salute', src: image('salute') },
     { token: ':chef:', label: 'Chef', src: image('chef') },
     { token: ':party:', label: 'Party', src: image('party') },
-    { token: ':partyparrot:', label: 'PartyParrot', src: image('partyparrot') },
+    { token: ':prayge:', label: 'Prayge', src: image('prayge') },
     { token: ':heart:', label: 'Heart', src: image('heart') },
     { token: ':raintime:', label: 'RainTime', src: image('raintime') },
     { token: ':petpet:', label: 'PETPET', src: image('petpet') },
@@ -61,6 +61,7 @@
 
   // Retired picker entries remain supported in existing chat history.
   const LEGACY_EMOTES = [
+    { token: ':partyparrot:', label: 'PartyParrot', src: image('partyparrot') },
     { token: ':feelsdankman:', label: 'FeelsDankMan', src: image('feelsdankman') },
     { token: ':billyapprove:', label: 'BillyApprove', src: image('billyapprove') },
     { token: ':forsenpls:', label: 'forsenPls', src: image('forsenpls') },
