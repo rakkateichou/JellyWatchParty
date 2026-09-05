@@ -87,10 +87,10 @@
       letter-spacing: .01em;
     }
     #${PANEL_ID} {
-      --jwp-panel-top: rgba(13, 13, 14, .85);
-      --jwp-panel-bottom: rgba(0, 0, 0, .85);
-      --jwp-glow: rgba(255, 255, 255, .035);
-      --jwp-panel-background: rgba(0, 0, 0, .85);
+      --jwp-panel-top: rgba(13, 13, 14, var(--jwp-panel-opacity, .8));
+      --jwp-panel-bottom: rgba(0, 0, 0, var(--jwp-panel-opacity, .8));
+      --jwp-glow: rgba(255, 255, 255, calc(.035 * var(--jwp-panel-opacity, .8)));
+      --jwp-panel-background: rgba(0, 0, 0, var(--jwp-panel-opacity, .8));
       --jwp-surface: rgba(255, 255, 255, .055);
       --jwp-surface-hover: rgba(255, 255, 255, .105);
       --jwp-border: rgba(255, 255, 255, .14);
@@ -134,9 +134,9 @@
       --jwp-panel-background:
         radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
-      --jwp-panel-top: rgba(30, 40, 54, .85);
-      --jwp-panel-bottom: rgba(13, 20, 30, .85);
-      --jwp-glow: rgba(105, 153, 188, .13);
+      --jwp-panel-top: rgba(30, 40, 54, var(--jwp-panel-opacity, .8));
+      --jwp-panel-bottom: rgba(13, 20, 30, var(--jwp-panel-opacity, .8));
+      --jwp-glow: rgba(105, 153, 188, calc(.13 * var(--jwp-panel-opacity, .8)));
       --jwp-border: rgba(190, 207, 229, .16);
       --jwp-border-strong: rgba(190, 207, 229, .26);
       --jwp-text: #e6ebf2;
@@ -159,9 +159,9 @@
       --jwp-panel-background:
         radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
-      --jwp-panel-top: rgba(30, 24, 43, .85);
-      --jwp-panel-bottom: rgba(11, 7, 18, .85);
-      --jwp-glow: rgba(151, 108, 226, .17);
+      --jwp-panel-top: rgba(30, 24, 43, var(--jwp-panel-opacity, .8));
+      --jwp-panel-bottom: rgba(11, 7, 18, var(--jwp-panel-opacity, .8));
+      --jwp-glow: rgba(151, 108, 226, calc(.17 * var(--jwp-panel-opacity, .8)));
       --jwp-border: rgba(208, 184, 242, .17);
       --jwp-border-strong: rgba(216, 193, 248, .3);
       --jwp-text: #f2ecf9;
@@ -184,9 +184,9 @@
       --jwp-panel-background:
         radial-gradient(circle at 90% 0%, var(--jwp-glow), transparent 38%),
         linear-gradient(180deg, var(--jwp-panel-top), var(--jwp-panel-bottom));
-      --jwp-panel-top: rgba(43, 28, 22, .85);
-      --jwp-panel-bottom: rgba(18, 9, 6, .85);
-      --jwp-glow: rgba(224, 122, 65, .16);
+      --jwp-panel-top: rgba(43, 28, 22, var(--jwp-panel-opacity, .8));
+      --jwp-panel-bottom: rgba(18, 9, 6, var(--jwp-panel-opacity, .8));
+      --jwp-glow: rgba(224, 122, 65, calc(.16 * var(--jwp-panel-opacity, .8)));
       --jwp-border: rgba(235, 195, 168, .17);
       --jwp-border-strong: rgba(241, 203, 177, .3);
       --jwp-text: #f8eee7;
@@ -473,6 +473,14 @@
       font-weight: 650;
       letter-spacing: .055em;
       text-transform: uppercase;
+    }
+    .jwp-opacity-label { display: flex; justify-content: space-between; gap: .5rem; }
+    #jwp-panel-opacity {
+      display: block;
+      width: 100%;
+      margin: 0 0 1rem;
+      accent-color: var(--jwp-accent);
+      cursor: pointer;
     }
     .jwp-settings-save { width: 100%; margin-top: .15rem; }
     .jwp-settings-room-actions {

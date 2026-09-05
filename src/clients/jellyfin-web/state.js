@@ -6,6 +6,7 @@
   const host = window.location.hostname;
   const CHAT_NICKNAME_STORAGE_KEY = 'jwp_chat_nickname';
   const PANEL_THEME_STORAGE_KEY = 'jwp_panel_theme';
+  const PANEL_OPACITY_STORAGE_KEY = 'jwp_panel_opacity';
   const PANEL_THEMES = ['monochrome', 'frost', 'violet', 'ember'];
 
   const readPreference = (key) => {
@@ -19,6 +20,11 @@
 
   const savedNickname = cleanNickname(readPreference(CHAT_NICKNAME_STORAGE_KEY));
   const savedTheme = readPreference(PANEL_THEME_STORAGE_KEY);
+  const savedOpacity = readPreference(PANEL_OPACITY_STORAGE_KEY).trim();
+  const normalizePanelOpacity = (value) => {
+    const number = value === '' || value == null ? NaN : Number(value);
+    return Number.isFinite(number) && number >= 0 && number <= 100 ? Math.round(number) : 80;
+  };
 
   // LRU Cache implementation for image URLs
   class LRUCache {
@@ -64,6 +70,8 @@
     HOME_SECTION_ID: 'jwp-home-section',
     CHAT_NICKNAME_STORAGE_KEY,
     PANEL_THEME_STORAGE_KEY,
+    PANEL_OPACITY_STORAGE_KEY,
+    normalizePanelOpacity,
     PANEL_THEMES,
     protocol,
     host,
@@ -182,6 +190,7 @@
     userName: '',
     chatNickname: savedNickname,
     panelTheme: PANEL_THEMES.includes(savedTheme) ? savedTheme : 'monochrome',
+    panelOpacity: normalizePanelOpacity(savedOpacity),
     chatSettingsOpen: false,
     tokenExpiresAt: 0,           // Timestamp when token expires
     tokenRefreshTimer: null,     // Timer for token refresh

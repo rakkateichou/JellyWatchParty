@@ -23,7 +23,7 @@ This is the **Rakkate edition**, a feature-focused fork of
 - account-free guest invitations that open directly into the active player;
 - invitations before selecting a title, with an empty player and chat while guests wait for the owner;
 - persistent whole-series rooms with synchronized episode changes, play, pause and seeking;
-- docked chat with saved nicknames, themes, per-user colours, bundled custom emotes and message replies;
+- docked chat with saved nicknames, themes, adjustable background opacity, per-user colours, bundled custom emotes and message replies;
 - shared cursors and fading drawing trails while holding <kbd>X</kbd>;
 - a WebRTC fast path with automatic WebSocket fallback and tighter clock correction;
 - guest playback confinement, room revival/deletion rules and a simplified Jellyfin-native UI.
@@ -36,6 +36,8 @@ and temporary guest account gain access when the owner starts a title. Update bo
 plugins together; the session server does not need a change for this feature.
 
 Chat replies require the 1.11.0 plugin and its matching session server. Use **Reply** beside a message, type your response and send. The quoted preview can be cancelled with the × button or Escape; replies remain in room history across reconnects.
+
+Chat backgrounds start at 80% opacity. Open **Chat settings → Panel opacity** to adjust it; the slider previews immediately and saves on this device.
 
 ## Quick Start with the File transformation Plugin
 

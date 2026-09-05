@@ -37,6 +37,16 @@
     if (persist) storePreference(JWP.constants.PANEL_THEME_STORAGE_KEY, normalized);
   };
 
+  const setPanelOpacity = (value, persist = false) => {
+    const opacity = JWP.constants.normalizePanelOpacity(value);
+    state.panelOpacity = opacity;
+    const panel = document.getElementById(PANEL_ID);
+    panel?.style?.setProperty('--jwp-panel-opacity', String(opacity / 100));
+    const output = panel?.querySelector('#jwp-panel-opacity-value');
+    if (output) output.textContent = `${opacity}%`;
+    if (persist) storePreference(JWP.constants.PANEL_OPACITY_STORAGE_KEY, String(opacity));
+  };
+
   const saveNickname = (value) => {
     const nickname = String(value || '')
       .replace(/[\u0000-\u001f\u007f]/g, '')
@@ -71,6 +81,8 @@
       <input type="text" id="jwp-settings-nickname" class="jwp-input" maxlength="100" autocomplete="nickname" value="${utils.escapeHtml(state.chatNickname)}" placeholder="Nickname">
       <div class="jwp-settings-label">Theme</div>
       <div class="jwp-theme-options">${renderThemeOptions()}</div>
+      <label class="jwp-settings-label jwp-opacity-label" for="jwp-panel-opacity">Panel opacity <output id="jwp-panel-opacity-value" for="jwp-panel-opacity">${state.panelOpacity}%</output></label>
+      <input type="range" id="jwp-panel-opacity" min="0" max="100" step="1" value="${state.panelOpacity}" aria-label="Panel opacity">
       <button class="jwp-btn jwp-settings-save" id="jwp-settings-save">Save settings</button>
       <div class="jwp-settings-room-actions">
         <button class="jwp-btn danger" id="jwp-settings-leave">Leave room</button>
@@ -439,6 +451,12 @@
     bindNicknameSave('#jwp-nickname-input', '#jwp-nickname-save', false);
     bindNicknameSave('#jwp-settings-nickname', '#jwp-settings-save', true);
 
+    const opacityInput = panel.querySelector('#jwp-panel-opacity');
+    if (opacityInput) {
+      ui.stopPlayerCapture(opacityInput);
+      opacityInput.addEventListener('input', () => setPanelOpacity(opacityInput.value, true));
+    }
+
     const leaveButton = panel.querySelector('#jwp-settings-leave');
     if (leaveButton) leaveButton.onclick = () => JWP.actions?.leaveRoom?.();
 
@@ -539,6 +557,7 @@
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return;
     setPanelTheme(state.panelTheme);
+    setPanelOpacity(state.panelOpacity);
     const view = state.guestClosedMessage ? 'closed' : state.inRoom ? 'room'
       : (state.inviteJoinActive || state.pendingJoinRoomId || state.roomJoinPending || state.guestRoomId ? 'joining' : 'lobby');
     if (!forceFullRender && panel.dataset.view === view && panel.children.length > 0) {

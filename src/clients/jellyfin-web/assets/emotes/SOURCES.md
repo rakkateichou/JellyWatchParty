@@ -61,3 +61,16 @@ The source URL for each file is:
 ```text
 https://cdn.7tv.app/emote/{7TV emote ID}/2x.webp
 ```
+
+## Picker replacements — 2026-09-05
+
+Matched to the requested 7TV creators. Retired images are retained for existing chat history. The two peepoRun replacements share one picker entry.
+
+| File | Emote | Creator | 7TV source |
+| --- | --- | --- | --- |
+| `peeporun.webp` | peepoRun | Maximus6216 | https://7tv.app/emotes/01F6Q045KR0005589X3BDQHRAY |
+| `hi.webp` | hi | kamilexior | https://7tv.app/emotes/01GX6M9TRR000DJJ63WGMEA4Z8 |
+| `noooo.webp` | NOOOO | JustRogan | https://7tv.app/emotes/01F6MKTFTG0009C9ZSNZTFV2ZF |
+| `caught.webp` | CAUGHT | AndreiMonty | https://7tv.app/emotes/01H0SQNM9R0005HNCSM10SYJEQ |
+| `catjam.webp` | catJAM | pascii_ | https://7tv.app/emotes/01F6MQ33FG000FFJ97ZB8MWV52 |
+| `trolldespair.webp` | TrollDespair | swyfty_ | https://7tv.app/emotes/01EZPGMA6G00047EF100A1SBTF |

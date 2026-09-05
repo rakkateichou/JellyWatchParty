@@ -34,22 +34,21 @@
     { token: ':pepepls:', label: 'PepePls', src: image('pepepls') },
     { token: ':peepohappy:', label: 'peepoHappy', src: image('peepohappy') },
     { token: ':peeposad:', label: 'peepoSad', src: image('peeposad') },
-    { token: ':feelsdankman:', label: 'FeelsDankMan', src: image('feelsdankman') },
+    { token: ':peeporun:', label: 'peepoRun', src: image('peeporun') },
     { token: ':waytoodank:', label: 'WAYTOODANK', src: image('waytoodank') },
-    { token: ':billyapprove:', label: 'BillyApprove', src: image('billyapprove') },
-    { token: ':forsenpls:', label: 'forsenPls', src: image('forsenpls') },
-    { token: ':aliendance:', label: 'AlienDance', src: image('aliendance') },
-    { token: ':basedgod:', label: 'BasedGod', src: image('basedgod') },
+    { token: ':hi:', label: 'hi', src: image('hi') },
+    { token: ':noooo:', label: 'NOOOO', src: image('noooo') },
+    { token: ':caught:', label: 'CAUGHT', src: image('caught') },
+    { token: ':catjam:', label: 'catJAM', src: image('catjam') },
     { token: ':peepopls:', label: 'peepoPls', src: image('peepopls') },
     { token: ':teatime:', label: 'TeaTime', src: image('teatime') },
     { token: ':pianotime:', label: 'PianoTime', src: image('pianotime') },
-    { token: ':nymncorn:', label: 'nymnCorn', src: image('nymncorn') },
     { token: ':winetime:', label: 'WineTime', src: image('winetime') },
     { token: ':nanaayaya:', label: 'nanaAYAYA', src: image('nanaayaya') },
     { token: ':biblethump:', label: 'BibleThump', src: image('biblethump') },
     { token: ':glorp:', label: 'glorp', src: image('glorp') },
     { token: ':stare:', label: 'Stare', src: image('stare') },
-    { token: ':acestare:', label: 'aceStare', src: image('acestare') },
+    { token: ':trolldespair:', label: 'TrollDespair', src: image('trolldespair') },
     { token: ':ayaya:', label: 'AYAYA', src: image('ayaya') },
     { token: ':rareparrot:', label: 'RareParrot', src: image('rareparrot') },
     { token: ':feelsweirdman:', label: 'FeelsWeirdMan', src: image('feelsweirdman') },
@@ -60,8 +59,20 @@
     { token: ':xdx:', label: 'xdx', src: image('xdx') }
   ]);
 
-  const emoteByToken = Object.fromEntries(EMOTES.map(emote => [emote.token, emote]));
-  const escapedTokens = EMOTES.map(emote => emote.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  // Retired picker entries remain supported in existing chat history.
+  const LEGACY_EMOTES = [
+    { token: ':feelsdankman:', label: 'FeelsDankMan', src: image('feelsdankman') },
+    { token: ':billyapprove:', label: 'BillyApprove', src: image('billyapprove') },
+    { token: ':forsenpls:', label: 'forsenPls', src: image('forsenpls') },
+    { token: ':aliendance:', label: 'AlienDance', src: image('aliendance') },
+    { token: ':basedgod:', label: 'BasedGod', src: image('basedgod') },
+    { token: ':acestare:', label: 'aceStare', src: image('acestare') },
+    { token: ':nymncorn:', label: 'nymnCorn', src: image('nymncorn') },
+  ];
+  const RENDERABLE_EMOTES = [...EMOTES, ...LEGACY_EMOTES];
+
+  const emoteByToken = Object.fromEntries(RENDERABLE_EMOTES.map(emote => [emote.token, emote]));
+  const escapedTokens = RENDERABLE_EMOTES.map(emote => emote.token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const tokenPattern = () => new RegExp(`(${escapedTokens.join('|')})`, 'gi');
 
   const renderEmotes = (text) => utils.escapeHtml(String(text || '')).replace(tokenPattern(), match => {

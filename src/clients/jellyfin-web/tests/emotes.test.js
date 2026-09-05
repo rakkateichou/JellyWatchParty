@@ -49,15 +49,26 @@ describe('Twitch-style chat emotes', () => {
     assert.equal(JWP.chat.plainEmotes('that ending :dead:'), 'that ending [Dead]');
   });
 
-  it('includes 32 additional 7TV emotes with unique tokens and bundled images', () => {
-    assert.equal(JWP.chat.emotes.length, 48);
-    assert.equal(new Set(JWP.chat.emotes.map(emote => emote.token)).size, 48);
+  it('includes the current catalogue with unique tokens and bundled images', () => {
+    assert.equal(JWP.chat.emotes.length, 47);
+    assert.equal(new Set(JWP.chat.emotes.map(emote => emote.token)).size, 47);
     assert.equal(JWP.chat.renderEmotes(':partyparrot: :waytoodank: :winetime:').match(/jwp-chat-emote/g)?.length, 3);
 
     for (const emote of JWP.chat.emotes) {
       const filename = path.basename(new URL(emote.src, 'https://jellyfin.test').pathname);
       const asset = path.join(__dirname, '..', 'assets', 'emotes', filename);
       assert.equal(fs.existsSync(asset), true, `missing bundled emote: ${filename}`);
+    }
+  });
+
+  it('offers the replacement emotes once and still renders retired chat tokens', () => {
+    for (const name of ['hi', 'noooo', 'catjam', 'caught', 'peeporun', 'trolldespair']) {
+      assert.equal(JWP.chat.emotes.filter(emote => emote.token === `:${name}:`).length, 1);
+      assert.match(JWP.chat.renderEmotes(`:${name}:`), /<img /);
+    }
+    for (const name of ['billyapprove', 'forsenpls', 'basedgod', 'aliendance', 'nymncorn', 'feelsdankman', 'acestare']) {
+      assert.equal(JWP.chat.emotes.some(emote => emote.token === `:${name}:`), false);
+      assert.match(JWP.chat.renderEmotes(`:${name}:`), /<img /);
     }
   });
 });
