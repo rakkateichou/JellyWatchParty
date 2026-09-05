@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.2.0",
+        "changelog": "Replaces WAYTOODANK in the chat picker with RAGEY by KAETNN. Existing WAYTOODANK messages remain readable. Refresh Jellyfin to load the updated picker.\n\nValidation: 9 emote/bootstrap tests and 128 plugin tests passed. Compatible with the existing session server; no server update is required.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.2.0/JellyWatchParty-v1.12.2.0.zip",
+        "checksum": "306ea55d877651789a79467594ada54f",
+        "timestamp": "2026-09-05T14:37:05Z"
+      },
+      {
         "version": "1.12.1.0",
         "changelog": "Replaces PartyParrot in the chat picker with Prayge by Neowav. Existing PartyParrot messages remain readable. Refresh Jellyfin to load the updated picker.\n\nValidation: 9 emote/bootstrap tests and 128 plugin tests passed. Compatible with the existing session server; no server update is required.\n",
         "targetAbi": "10.11.11.0",
