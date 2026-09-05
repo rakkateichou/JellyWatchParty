@@ -137,7 +137,7 @@
 
     const hidden = !!panel?.classList.contains('hide');
     const fullScreenChat = !!(JWP.guestLockdown?.isRestricted?.() || state.waitingForTitle || state.inviteJoinActive || state.roomJoinActive);
-    const canReopen = hidden && (fullScreenChat || isVideoPage) && !state.guestClosedMessage;
+    const canReopen = state.inRoom && hidden && (fullScreenChat || isVideoPage) && !state.guestClosedMessage;
     root.classList.toggle('jwp-chat-collapsed', canReopen);
     let reopen = document.getElementById(CHAT_REOPEN_ID);
     if (canReopen && !reopen) {
@@ -150,9 +150,16 @@
       reopen.innerHTML = icon('chevron');
       reopen.onclick = togglePanel;
       ui.stopPlayerCapture(reopen);
-      document.body.appendChild(reopen);
     }
-    if (reopen) reopen.hidden = !canReopen;
+    if (reopen) {
+      // Give the arrow its own place after the native player buttons. Waiting
+      // and joining screens need it outside the hidden Jellyfin header.
+      const playerHeader = isVideoPage && !state.waitingForTitle && !state.inviteJoinActive && !state.roomJoinActive
+        ? document.querySelector('.skinHeader.osdHeader .headerRight') : null;
+      const target = playerHeader || document.body;
+      if (canReopen && reopen.parentElement !== target) target.appendChild(reopen);
+      reopen.hidden = !canReopen;
+    }
   };
 
   const updateWaitingRoom = () => {

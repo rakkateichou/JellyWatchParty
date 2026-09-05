@@ -7,11 +7,15 @@
   <style>
     body { margin: 0; background: #152029; color: white; font: 16px system-ui; }
     .videoPlayerContainer { position: fixed; inset: 0; width: 100vw; background: linear-gradient(130deg,#344854,#263843); }
-    .videoPlayerContainer p { padding: 100px 24px; }
+    .videoPlayerContainer p { padding: 210px 24px; }
     #checks { position: fixed; top: 12px; left: 12px; z-index: 30000; max-width: 230px; }
     html body #checks, html body #checks * { visibility: visible !important; }
     #checks button { margin: 3px; padding: 5px; }
     .osdHeader, .videoOsdBottom { transition: opacity .3s ease-out; }
+    .skinHeader { position: fixed; top: 0; right: 0; left: 0; z-index: 1000; }
+    .headerTop { display: flex; justify-content: flex-end; padding: 16px; }
+    .headerRight { display: flex; align-items: center; }
+    .native-header-button { flex: 0 0 36px; width: 36px; height: 36px; border: 0; background: transparent; color: white; }
     .osdHeader-hidden, .videoOsdBottom-hidden { opacity: 0; pointer-events: none; }
     .videoOsdBottom { position: fixed; bottom: 10px; left: 20px; }
   </style>
@@ -21,12 +25,17 @@
     <button id="waiting">Waiting</button><button id="playing">Playing</button>
     <button id="refresh-room">Room refresh</button><button id="close-room">Close room</button>
     <button id="idle">Hide player controls</button><button id="activity">Show player controls</button>
+    <button id="leave-room">Leave room</button>
     <output id="result"></output>
   </div>
   <nav class="mainDrawer"><a href="#/home">Library navigation must stay hidden</a></nav>
   <div class="home-library">Library content must stay hidden</div>
   <div class="videoPlayerContainer"><p>Local player preview — no media or server connection</p></div>
-  <header class="skinHeader"></header>
+  <header class="skinHeader"><div class="headerTop"><div class="headerRight">
+    <button class="native-header-button" aria-label="SyncPlay">♟</button>
+    <button class="native-header-button" aria-label="Cast">▣</button>
+    <button class="native-header-button" aria-label="Remote control">◎</button>
+  </div></div></header>
   <div class="videoOsdBottom videoOsdBottom-maincontrols"><div class="buttons">Native player controls <button id="jwp-osd-btn">Old watch-party button</button></div></div>
   <div id="jwp-panel" class="hide"></div>
   <script src="../state.js"></script>
@@ -43,6 +52,7 @@
     const JWP = window.JellyWatchParty;
     const mediaId = 'a'.repeat(32);
     const hostPreview = new URLSearchParams(location.search).has('host');
+    const outsideRoom = new URLSearchParams(location.search).has('outside-room');
     let playing = hostPreview;
     let reads = 0;
     let lastHideBounds = null;
@@ -50,7 +60,7 @@
     const controls = document.querySelector('.videoOsdBottom');
     header.classList.toggle('osdHeader', playing);
     location.hash = playing ? '#/video' : '#/home';
-    Object.assign(JWP.state, { guestMode: !hostPreview, guestRoomId: hostPreview ? '' : 'test-room', roomId: 'test-room', inRoom: true, isHost: hostPreview, waitingForTitle: !playing, chatNickname: hostPreview ? 'Owner' : 'Guest', participantCount: 2, clientId: hostPreview ? 'owner' : 'guest' });
+    Object.assign(JWP.state, { guestMode: !hostPreview, guestRoomId: hostPreview ? '' : 'test-room', roomId: outsideRoom ? '' : 'test-room', inRoom: !outsideRoom, isHost: hostPreview, waitingForTitle: !playing, chatNickname: hostPreview ? 'Owner' : 'Guest', participantCount: 2, clientId: hostPreview ? 'owner' : 'guest' });
     JWP.playback = { isVideoPage: () => playing, ensurePlayback() {}, holdJoinPlayback() {}, releaseJoinPlayback() {} };
     JWP.utils.getVideo = () => null;
     JWP.utils.getCurrentItemId = () => playing ? mediaId : '';
@@ -80,13 +90,17 @@
         // Jellyfin 10.11 toggles these classes on idle and pointer/touch activity.
         header.classList.toggle('osdHeader-hidden', id === 'idle');
         controls.classList.toggle('videoOsdBottom-hidden', id === 'idle');
+      } else if (id === 'leave-room') {
+        JWP.state.inRoom = false;
+        JWP.state.roomId = '';
+        JWP.ui.render(true);
       }
     }, true);
     JWP.ui.injectStyles();
     JWP.guestLockdown.setGuestState({ IsGuest: !hostPreview, WatchPartyRoomId: 'test-room' });
     JWP.guestLockdown.init();
     JWP.ui.render(true);
-    if (hostPreview) document.getElementById('jwp-panel').classList.remove('hide');
+    if (hostPreview && !outsideRoom) document.getElementById('jwp-panel').classList.remove('hide');
     const inspect = () => {
       JWP.guestLockdown.updateGuestView();
       JWP.ui.render();
@@ -98,12 +112,27 @@
       const rect = element => { const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height }; };
       if (!hidden && hideButton) lastHideBounds = rect(hideButton);
       const surface = document.getElementById('jwp-waiting-player') || document.querySelector('.videoPlayerContainer');
+      const effectiveOpacity = element => {
+        let opacity = 1;
+        for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+          const style = getComputedStyle(ancestor);
+          if (style.display === 'none') return 0;
+          opacity *= Number(style.opacity);
+        }
+        return opacity;
+      };
+      const nativeButtons = [...document.querySelectorAll('.native-header-button')];
       const checks = {
         collapsed: JWP.state.panelCollapsed,
         panelHidden: hidden,
         hideButtonVisible: !closed && !hidden && getComputedStyle(document.getElementById('jwp-btn-hide')).display !== 'none',
-        reopenVisible: !!reopen && getComputedStyle(reopen).display !== 'none' && getComputedStyle(reopen).visibility === 'visible' && Number(getComputedStyle(reopen).opacity) > 0,
-        reopenOpacity: reopen ? getComputedStyle(reopen).opacity : '',
+        reopenVisible: !!reopen && getComputedStyle(reopen).visibility === 'visible' && effectiveOpacity(reopen) > 0,
+        reopenOpacity: reopen ? effectiveOpacity(reopen) : 0,
+        reopenInHeader: !!reopen?.closest('.headerRight'),
+        nativeButtonsUncovered: !!reopen && nativeButtons.every(button => {
+          const a = button.getBoundingClientRect(), b = reopen.getBoundingClientRect();
+          return a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom;
+        }),
         reopenPointerEvents: reopen ? getComputedStyle(reopen).pointerEvents : '',
         reopenKeyboardFocused: !!reopen?.matches(':focus-visible'),
         controlsOpacity: getComputedStyle(controls).opacity,

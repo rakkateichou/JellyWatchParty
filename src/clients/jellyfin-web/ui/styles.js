@@ -230,12 +230,20 @@
       opacity: 1;
       transition: opacity .3s ease-out;
     }
+    .skinHeader.osdHeader .headerRight #jwp-chat-reopen {
+      position: static;
+      flex: 0 0 2.25rem;
+      order: 99;
+      margin-inline-start: .6rem;
+      /* The header supplies the fade for its children. */
+      transition: none;
+    }
     /* Follow the native player's idle/touch/keyboard state, including its fade
        timing. Waiting rooms keep their only way back to chat visible. */
     html:not(.jwp-room-waiting):not(.jwp-join-chat):not(.pause-screen-active):has(.skinHeader.osdHeader.osdHeader-hidden) #jwp-chat-reopen:not(:focus-visible) {
-      opacity: 0;
       pointer-events: none;
     }
+    html:not(.jwp-room-waiting):not(.jwp-join-chat):not(.pause-screen-active):has(.skinHeader.osdHeader.osdHeader-hidden) body > #jwp-chat-reopen:not(:focus-visible) { opacity: 0; }
     #jwp-chat-reopen .jwp-icon { transform: rotate(180deg); }
     #jwp-chat-reopen:hover { background: rgba(37, 37, 37, .8); }
     #jwp-chat-reopen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
