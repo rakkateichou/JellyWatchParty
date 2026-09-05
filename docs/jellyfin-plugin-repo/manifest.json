@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.4.0",
+        "changelog": "Adds Aloo by benASTRO to the chat emote picker. Select it in the picker or type `:aloo:`. The image is bundled for guests, and all existing emotes remain available.\n\nValidation: 9 emote/bootstrap tests and 128 plugin tests passed. Compatible with the existing session server; no server update is required. Refresh Jellyfin to load the updated picker.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.4.0/JellyWatchParty-v1.12.4.0.zip",
+        "checksum": "2a08c7902b3edd496c1c630c9ac1e79f",
+        "timestamp": "2026-09-05T14:59:34Z"
+      },
+      {
         "version": "1.12.3.0",
         "changelog": "Guests now have the same Hide panel arrow as the host. A small Chat button reopens the panel from the player, including while waiting for a title. The player expands into the freed space on desktop and phone layouts.\n\nGuest restrictions, routine room refreshes, and title transitions respect the collapsed panel. Drafts remain intact, hidden chat is not marked read during rerenders, and room-closure messages still appear. Guests remain confined to the player view.\n\nValidation: 177 client/helper tests and 128 plugin tests passed. The included local browser fixture verifies desktop and phone collapse/reopen, draft retention, room refreshes, title transitions, closure, and library isolation without media playback. The existing session server remains compatible.\n",
         "targetAbi": "10.11.11.0",
