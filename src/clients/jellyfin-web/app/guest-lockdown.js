@@ -40,18 +40,18 @@
 
   const serverAddress = () => {
     const apiClient = window.ApiClient;
-    if (!apiClient) return '';
-    return typeof apiClient.serverAddress === 'function'
+    if (!apiClient) return JWP.actions?.getApiAccessToken?.()?.serverAddress || '';
+    return (typeof apiClient.serverAddress === 'function'
       ? apiClient.serverAddress()
-      : (apiClient._serverAddress || '');
+      : apiClient._serverAddress) || JWP.actions?.getApiAccessToken?.()?.serverAddress || '';
   };
 
   const accessToken = () => {
     const apiClient = window.ApiClient;
-    if (!apiClient) return '';
-    return typeof apiClient.accessToken === 'function'
+    if (!apiClient) return JWP.actions?.getApiAccessToken?.()?.accessToken || '';
+    return (typeof apiClient.accessToken === 'function'
       ? apiClient.accessToken()
-      : (apiClient._accessToken || '');
+      : apiClient._accessToken) || JWP.actions?.getApiAccessToken?.()?.accessToken || '';
   };
 
   const currentUserName = () => String(
@@ -65,11 +65,21 @@
     const isGuest = !!(payload && (payload.IsGuest === true || payload.isGuest === true));
     // The username check lets the UI lock immediately during the short window
     // before ShareLinks/GuestState is ready after redemption.
-    state.guestMode = isGuest || /^share-/i.test(currentUserName());
+    state.guestMode = isGuest || /^share-/i.test(currentUserName()) || (!payload && state.guestMode);
+    if (state.guestMode) {
+      state.guestRoomId = payload?.WatchPartyRoomId || payload?.watchPartyRoomId
+        || state.guestRoomId || state.roomId || state.pendingJoinRoomId || '';
+    } else if (payload) {
+      state.guestRoomId = '';
+      state.guestClosedMessage = '';
+    }
     state.guestShareItemId = utils.normalizeItemId?.(
       payload?.AllowedItemId || payload?.allowedItemId || ''
     ) || '';
     applyGuestClass();
+    if (state.guestRoomId && !state.guestClosedMessage && !state.inRoom && !state.pendingJoinRoomId && !state.inviteJoinActive) {
+      JWP.app?.beginInviteJoin?.(state.guestRoomId, payload?.WatchPartyMediaId || payload?.watchPartyMediaId || '');
+    }
     return state.guestMode;
   };
 
@@ -103,16 +113,36 @@
 
   const isRestricted = () => !!(
     state.guestMode
-    && (state.inRoom || state.pendingJoinRoomId || state.inviteJoinActive)
+    && (state.guestRoomId || state.inRoom || state.pendingJoinRoomId || state.inviteJoinActive)
   );
 
   const isVideoRoute = () => /^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '');
 
   const expectedMediaId = () => utils.normalizeItemId?.(state.roomMediaId) || '';
 
+  const hasMediaAccess = async (mediaId) => {
+    if (!state.guestMode) return true;
+    try {
+      const response = await fetch(`${serverAddress()}/ShareLinks/GuestState`, {
+        headers: { 'X-Emby-Token': accessToken() }, cache: 'no-store'
+      });
+      if (!response.ok) return false;
+      const payload = await response.json();
+      const roomId = payload.WatchPartyRoomId || payload.watchPartyRoomId;
+      // Older ShareLinks versions do not expose live room media.
+      if (!roomId) return true;
+      return roomId === (state.roomId || state.pendingJoinRoomId)
+        && utils.normalizeItemId?.(payload.WatchPartyMediaId || payload.watchPartyMediaId) === mediaId;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const enforce = () => {
     applyGuestClass();
     if (!isRestricted()) return false;
+    updateGuestView();
+    if (state.guestClosedMessage) return false;
     const expected = expectedMediaId();
     if (!expected || state.joiningItemId === expected) return false;
     const current = utils.normalizeItemId?.(utils.getCurrentItemId?.()) || '';
@@ -122,6 +152,36 @@
     redirectAt = now;
     JWP.playback?.ensurePlayback?.(expected);
     return true;
+  };
+
+  const endGuestSession = (message) => {
+    if (!state.guestMode) return;
+    state.guestRoomId ||= state.roomId || state.pendingJoinRoomId || '';
+    state.guestClosedMessage = message || 'This room is closed. Ask the owner for a new invitation.';
+    state.mediaChangeToken += 1;
+    try { window.sessionStorage?.setItem('jwp_guest_closed', state.guestRoomId); } catch (_) {}
+    const video = utils.getVideo?.();
+    if (video && !video.paused) video.pause();
+    updateGuestView();
+  };
+
+  const updateGuestView = () => {
+    if (!isRestricted()) return;
+    const playing = !state.guestClosedMessage && !!JWP.playback?.isVideoPage?.();
+    document.documentElement?.classList?.toggle('jwp-guest-playing', playing);
+    document.getElementById(JWP.constants.PANEL_ID)?.classList.remove('hide');
+    let screen = document.getElementById('jwp-guest-screen');
+    if (playing || (state.inRoom && state.waitingForTitle && !state.guestClosedMessage)) {
+      screen?.remove();
+      return;
+    }
+    if (!screen) {
+      screen = document.createElement('section');
+      screen.id = 'jwp-guest-screen';
+      screen.setAttribute('role', 'status');
+      document.body.appendChild(screen);
+    }
+    screen.textContent = state.guestClosedMessage || (state.inRoom ? 'Syncing with the host…' : 'Joining watch party…');
   };
 
   const enforceSoon = (delay = 0) => {
@@ -155,6 +215,13 @@
     document.addEventListener?.('click', handleClick, true);
     window.addEventListener?.('hashchange', () => enforceSoon(50));
     window.addEventListener?.('popstate', () => enforceSoon(50));
+    document.addEventListener?.('play', event => {
+      if (event.target?.tagName !== 'VIDEO') return;
+      if (state.guestClosedMessage || (state.guestMode && state.inRoom && !state.isHost && state.lastSyncPlayState === 'paused')) {
+        utils.startSyncing?.(500);
+        event.target.pause();
+      }
+    }, true);
     detect();
   };
 
@@ -165,6 +232,9 @@
     enforceSoon,
     isRestricted,
     isAllowedControl,
-    setGuestState
+    setGuestState,
+    endGuestSession,
+    updateGuestView,
+    hasMediaAccess
   });
 })();

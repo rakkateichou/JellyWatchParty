@@ -6,7 +6,9 @@
   const ui = JWP.ui;
   const { DEFAULT_WS_URL, RECONNECT_BASE_MS, RECONNECT_MAX_MS, PING_INIT_MS, PING_STABLE_MS, PING_STABLE_AFTER } = JWP.constants;
 
-  const CLIENT_ID_STORAGE_KEY = 'owp_persistent_client_id';
+  const CLIENT_ID_STORAGE_KEY = 'jwp_tab_client_id';
+  let reconnectTimer = null;
+  let connectionGeneration = 0;
   const recentMessageIds = new Map();
   const MESSAGE_ID_TTL_MS = 30000;
 
@@ -23,10 +25,10 @@
 
   const getPersistentClientId = () => {
     try {
-      let id = window.localStorage.getItem(CLIENT_ID_STORAGE_KEY);
+      let id = window.sessionStorage.getItem(CLIENT_ID_STORAGE_KEY);
       if (!id) {
         id = generateUuid();
-        window.localStorage.setItem(CLIENT_ID_STORAGE_KEY, id);
+        window.sessionStorage.setItem(CLIENT_ID_STORAGE_KEY, id);
       }
       return id;
     } catch (err) {
@@ -69,6 +71,24 @@
     state.isConnecting = false;
     state.successfulPings = 0;
     state.timeSyncSamples = [];
+    state.hasTimeSync = false;
+    state.serverOffsetMs = 0;
+    state.authToken = null;
+    state.readyRoomId = '';
+    if (state.pendingActionTimer) clearTimeout(state.pendingActionTimer);
+    state.pendingActionTimer = null;
+    state.coordinatedPlayPending = false;
+    state.coordinatedPlayStarting = false;
+    if (state.inRoom && state.roomId && !state.guestClosedMessage) {
+      state.reconnecting = true;
+      state.pendingJoinRoomId = state.roomId;
+      state.roomJoinPending = true;
+      if (!state.isHost) {
+        state.roomJoinActive = true;
+        JWP.playback?.holdJoinPlayback?.();
+      }
+    }
+    JWP.p2p?.reset?.();
     ui.render();
     if (state.autoReconnect && !state.isConnecting) {
       const delay = Math.min(
@@ -77,7 +97,8 @@
       );
       state.reconnectAttempts++;
       console.log(`[JellyWatchParty] Reconnecting in ${delay}ms (attempt ${state.reconnectAttempts})`);
-      setTimeout(connect, delay);
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => { reconnectTimer = null; connect(); }, delay);
     }
   };
 
@@ -127,17 +148,19 @@
       return;
     }
     state.isConnecting = true;
+    const generation = ++connectionGeneration;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = null;
     if (state.ws) {
-      const wasAutoReconnect = state.autoReconnect;
-      state.autoReconnect = false;
+      state.ws.onclose = state.ws.onopen = state.ws.onmessage = state.ws.onerror = null;
       state.ws.close();
       state.ws = null;
-      state.autoReconnect = wasAutoReconnect;
     }
     let token = state.authToken;
     if (!token) {
       token = await actions.fetchAuthToken();
     }
+    if (generation !== connectionGeneration) return;
     const wsUrl = state.wsUrl || DEFAULT_WS_URL;
     const fullWsUrl = withClientId(wsUrl, getPersistentClientId());
     console.log('[JellyWatchParty] Connecting to WebSocket:', fullWsUrl);
@@ -155,13 +178,14 @@
       state.isConnecting = false;
       return;
     }
-    state.ws.onopen = () => onWsOpen(token);
+    const socket = state.ws;
+    state.ws.onopen = () => { if (state.ws === socket) onWsOpen(token); };
     state.ws.onerror = (err) => {
       console.error('[JellyWatchParty] WebSocket error:', err);
-      state.isConnecting = false;
     };
-    state.ws.onclose = onWsClose;
+    state.ws.onclose = e => { if (state.ws === socket) onWsClose(e); };
     state.ws.onmessage = (e) => {
+      if (state.ws !== socket) return;
       try {
         const msg = JSON.parse(e.data);
         if (!state.inRoom || msg.room === state.roomId || !msg.room || msg.type === 'room_state') {
@@ -185,5 +209,16 @@
     }, interval);
   };
 
-  Object.assign(actions, { connect, schedulePing, handleIncomingMessage });
+  const disconnect = () => {
+    connectionGeneration++;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+    if (state.ws) {
+      state.ws.onclose = state.ws.onopen = state.ws.onmessage = state.ws.onerror = null;
+      state.ws.close();
+      state.ws = null;
+    }
+    state.isConnecting = false;
+  };
+  Object.assign(actions, { connect, disconnect, schedulePing, handleIncomingMessage });
 })();

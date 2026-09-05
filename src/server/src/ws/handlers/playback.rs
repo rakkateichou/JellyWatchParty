@@ -308,7 +308,7 @@ pub(in crate::ws) async fn handle_playback(
             break 'broadcast None;
         }
 
-        if parsed.msg_type == ClientMessageType::StateUpdate {
+        if parsed.msg_type == ClientMessageType::StateUpdate && !media_changed {
             let should_process = parsed
                 .payload
                 .as_ref()
@@ -690,5 +690,31 @@ mod tests {
         );
         assert_eq!(room.state.play_state, "paused");
         assert!(room.pending_play.is_some());
+    }
+
+    #[tokio::test]
+    async fn changing_paused_title_at_zero_bypasses_the_same_position_filter() {
+        let clients = test_helpers::create_clients();
+        let rooms = test_helpers::create_rooms();
+        let (host, _host_rx) = test_helpers::create_client_with_rx("owner", "Owner", true);
+        let (guest, mut guest_rx) = test_helpers::create_client_with_rx("guest", "Guest", true);
+        clients.write().await.insert("host".into(), host);
+        clients.write().await.insert("guest".into(), guest);
+        let mut room = test_helpers::create_room("room-1", "host");
+        room.clients.push("guest".into());
+        room.media_id = Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into());
+        room.last_command_ts = now_ms();
+        rooms.write().await.insert("room-1".into(), room);
+        handle_playback("host", IncomingMessage {
+            msg_type: ClientMessageType::StateUpdate, room: Some("room-1".into()), client: None,
+            payload: Some(serde_json::json!({"position":0,"play_state":"paused","media_id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"})),
+            ts: now_ms(), server_ts: None,
+        }, &clients, &rooms).await;
+        let update = test_helpers::recv_msg(&mut guest_rx)
+            .expect("new title must reach guest even at the same timestamp");
+        assert_eq!(
+            update.payload.unwrap()["media_id"],
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        );
     }
 }

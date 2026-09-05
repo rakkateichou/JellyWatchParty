@@ -63,7 +63,12 @@ pub async fn send_room_list(client_id: &str, clients: &Clients, rooms: &Rooms) {
     let locked_rooms = rooms.read().await;
     let msg = build_room_list_msg(&locked_rooms);
     let locked_clients = clients.read().await;
-    send_to_client(client_id, &locked_clients, &msg);
+    if locked_clients
+        .get(client_id)
+        .is_some_and(|client| client.authenticated)
+    {
+        send_to_client(client_id, &locked_clients, &msg);
+    }
 }
 
 pub async fn broadcast_room_list(clients: &Clients, rooms: &Rooms) {
@@ -81,6 +86,9 @@ pub async fn broadcast_room_list(clients: &Clients, rooms: &Rooms) {
     let locked_clients = clients.read().await;
     let warp_msg = warp::ws::Message::text(json);
     for client in locked_clients.values() {
+        if !client.authenticated {
+            continue;
+        }
         if let Err(e) = client.sender.try_send(Ok(warp_msg.clone())) {
             log::warn!("Failed to send room list (buffer full or closed): {}", e);
         }
@@ -154,10 +162,7 @@ mod tests {
     #[test]
     fn room_list_omits_password_metadata() {
         let mut rooms = HashMap::new();
-        rooms.insert(
-            "r1".to_string(),
-            test_helpers::create_room("r1", "host1"),
-        );
+        rooms.insert("r1".to_string(), test_helpers::create_room("r1", "host1"));
 
         let msg = build_room_list_msg(&rooms);
         let list = msg.payload.unwrap();

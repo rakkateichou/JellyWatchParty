@@ -71,6 +71,7 @@
   };
 
   const leaveRoom = () => {
+    JWP.guestLockdown?.endGuestSession?.('You left this room. Open an invitation to join again.');
     if (JWP.cursor && JWP.cursor.reset) JWP.cursor.reset();
     if (JWP.ui && JWP.ui.resetPreparedInvite) JWP.ui.resetPreparedInvite();
     send('leave_room');
@@ -79,6 +80,10 @@
     state.roomHostId = '';
     state.isRoomOwner = false;
     state.roomMediaId = '';
+    state.waitingForTitle = false;
+    state.pendingJoinRoomId = '';
+    state.inviteJoinActive = false;
+    JWP.ui?.updateWaitingRoom?.();
     state.roomJoinPending = false;
     state.roomJoinActive = false;
     JWP.playback?.releaseJoinPlayback?.();
@@ -104,6 +109,7 @@
     if (JWP.p2p?.reset) JWP.p2p.reset();
     const panel = document.getElementById(JWP.constants.PANEL_ID);
     if (panel) panel.classList.add('hide');
+    JWP.ui?.render?.(true);
   };
 
   const deleteRoom = () => {

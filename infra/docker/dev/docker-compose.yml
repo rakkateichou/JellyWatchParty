@@ -52,16 +52,16 @@ services:
 
   plugin-builder:
     image: mcr.microsoft.com/dotnet/sdk:9.0
-    working_dir: /src
+    working_dir: /workspace/src/plugins/jellyfin/JellyWatchParty
     network_mode: host
     profiles:
       - tools
     volumes:
-      - ../../../src/plugins/jellyfin/JellyWatchParty:/src
+      - ../../..:/workspace
     environment:
       - HOME=/tmp
       - DOTNET_CLI_HOME=/tmp/.dotnet
-    command: dotnet publish -c Release -o /src/dist JellyWatchPartyPlugin.csproj
+    command: dotnet publish -c Release -o dist JellyWatchPartyPlugin.csproj
 
 volumes:
   jellyfin-cache:

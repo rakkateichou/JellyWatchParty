@@ -4,6 +4,67 @@
   const { PANEL_ID, STYLE_ID } = JWP.constants;
 
   const CSS_STYLES = `
+    html.jwp-party-guest { background: #000 !important; overflow: hidden !important; }
+    html.jwp-party-guest body, html.jwp-party-guest body * { visibility: hidden !important; }
+    html.jwp-party-guest #${PANEL_ID}, html.jwp-party-guest #${PANEL_ID} *,
+    html.jwp-party-guest #jwp-guest-screen, html.jwp-party-guest #jwp-waiting-player,
+    html.jwp-party-guest .jwp-toast-system,
+    html.jwp-party-guest #jwp-waiting-player *,
+    html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet),
+    html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet) * { visibility: visible !important; }
+    html.jwp-party-guest :is(.mainDrawer, .mainDrawerButton, .headerBackButton, .headerHomeButton, .headerSearchButton, .headerUserButton) { display: none !important; }
+    html.jwp-party-guest #${PANEL_ID} { top: 0; right: 0; bottom: 0; width: min(360px, 35vw); max-height: none; border-radius: 0; display: flex; }
+    html.jwp-party-guest #jwp-btn-hide { display: none; }
+    html.jwp-party-guest #jwp-chat-section { flex: 1; min-height: 0; height: auto; }
+    #jwp-guest-screen { position: fixed; inset: 0 min(360px, 35vw) 0 0; z-index: 20000; display: grid; place-items: center; background: #000; color: #eee; padding: 2rem; text-align: center; font: 500 1rem/1.5 system-ui, sans-serif; }
+    @media (max-width: 799px) {
+      html.jwp-party-guest #${PANEL_ID} { top: 40dvh; left: 0; width: 100%; }
+      #jwp-guest-screen { right: 0; bottom: 60dvh; }
+    }
+    #jwp-waiting-player {
+      position: fixed;
+      inset: 0;
+      z-index: 19999;
+      display: grid;
+      place-items: center;
+      background: #000;
+      color: #f5f5f5;
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    .jwp-waiting-message { max-width: 32rem; }
+    .jwp-waiting-message > .material-icons { font-size: 3rem; color: #777; }
+    .jwp-waiting-message h1 { font-size: 1.4rem; margin: 1rem 0; }
+    .jwp-waiting-message p { color: #b5b5b8; line-height: 1.5; }
+    .jwp-waiting-message .jwp-waiting-hint { font-size: .85rem; color: #77777c; }
+    html.jwp-room-waiting { overflow: hidden !important; }
+    html.jwp-room-waiting #${PANEL_ID},
+    html.jwp-join-chat #${PANEL_ID} {
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(360px, 35vw);
+      max-height: none;
+      border-radius: 0;
+      display: flex;
+      visibility: visible !important;
+    }
+    html.jwp-room-waiting #jwp-btn-hide, html.jwp-join-chat #jwp-btn-hide { display: none; }
+    html.jwp-room-waiting #jwp-chat-section, html.jwp-join-chat #jwp-chat-section { flex: 1; min-height: 0; height: auto; }
+    html.jwp-join-chat::before { right: min(360px, 35vw) !important; }
+    .jwp-connecting-note { color: var(--jwp-muted); font-size: .9rem; }
+    html.jwp-room-waiting #jwp-waiting-player { right: min(360px, 35vw); }
+    @media (max-width: 799px) {
+      html.jwp-room-waiting #jwp-waiting-player { right: 0; bottom: 60dvh; padding: 1rem; }
+      html.jwp-room-waiting #${PANEL_ID}, html.jwp-join-chat #${PANEL_ID} {
+        top: 40dvh; left: 0; width: 100%;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      }
+      html.jwp-join-chat::before { right: 0 !important; bottom: 60dvh !important; }
+      .jwp-waiting-message > .material-icons { font-size: 2rem; }
+      .jwp-waiting-message h1 { font-size: 1.1rem; margin: .5rem 0; }
+    }
     html.jwp-invite-launching {
       background: #000 !important;
       color-scheme: dark;
@@ -16,7 +77,7 @@
       content: 'Joining watch party…';
       position: fixed;
       inset: 0;
-      z-index: 2147483647;
+      z-index: 19999;
       display: grid;
       place-items: center;
       visibility: visible;
@@ -63,7 +124,7 @@
       box-shadow: 0 18px 60px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .035);
       box-sizing: border-box;
       color: var(--jwp-text);
-      font-family: inherit;
+      font-family: system-ui, sans-serif;
       line-height: 1.4;
       z-index: 20000;
       display: flex;
@@ -726,6 +787,7 @@
       #${PANEL_ID} { top: 72px; right: 20px; bottom: 20px; width: 340px; max-height: none; }
       #jwp-chat-section { flex: 1; min-height: 220px; height: auto; }
       html.jwp-player-docked { --jwp-dock-width: clamp(340px, 24vw, 420px); }
+      html.jwp-party-guest.jwp-player-docked { --jwp-dock-width: min(360px, 35vw); }
       html.jwp-player-docked #${PANEL_ID} {
         top: 0; right: 0; bottom: 0;
         width: var(--jwp-dock-width); max-height: none;

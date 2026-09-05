@@ -93,6 +93,14 @@ pub(in crate::ws) async fn handle_join_room(
         .unwrap_or_default();
 
     let Some(room) = locked_rooms.get_mut(room_id) else {
+        drop(locked_clients);
+        drop(locked_rooms);
+        send_error(
+            client_id,
+            clients,
+            "This room is no longer available. Ask the owner for a new invitation.",
+        )
+        .await;
         return;
     };
 
@@ -115,6 +123,14 @@ pub(in crate::ws) async fn handle_join_room(
     }
 
     info!("Client {} joining room {}", client_id, room_id);
+    if locked_clients
+        .get(client_id)
+        .and_then(|client| client.room_id.as_ref())
+        .is_some_and(|previous| previous != room_id)
+    {
+        crate::room::handle_leave(client_id, &mut locked_clients, &mut locked_rooms);
+    }
+    let room = locked_rooms.get_mut(room_id).unwrap();
     let is_owner = !joining_user_id.is_empty() && joining_user_id == room.owner_user_id;
     if is_owner {
         // The creator always regains host control, even if a guest kept the

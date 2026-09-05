@@ -135,8 +135,13 @@
     inviteJoinActive: false, // True while handling an accountless ShareLinks invitation
     roomJoinPending: false, // A signed-in user selected an existing room; await its authoritative room_state
     roomJoinActive: false,  // A non-host room join is opening the host's active video
-    guestMode: false,        // Verified ShareLinks temporary guest session
+    waitingForTitle: false,
+    guestMode: !!window.__jwpGuestRoom,
+    guestRoomId: window.__jwpGuestRoom || '',
+    guestClosedMessage: window.__jwpGuestClosed ? 'You left this room. Open an invitation to join again.' : '',
     guestShareItemId: '',    // Root item granted by ShareLinks (room media remains stricter)
+    guestReadyMediaId: '',
+    guestAccessCheckingId: '',
     roomName: '',
     roomHostId: '',
     isRoomOwner: false,
@@ -144,6 +149,7 @@
     inviteRoomId: '',
     inviteBaseUrl: '',
     inviteShareItemId: '',
+    inviteMediaId: null,
     invitePromise: null,
     mediaChangeToken: 0,
     participantCount: 0,

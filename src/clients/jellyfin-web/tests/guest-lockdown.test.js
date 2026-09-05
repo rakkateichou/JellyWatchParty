@@ -9,7 +9,9 @@ const makeClassList = (key) => ({
 
 globalThis.document = {
   documentElement: { classList: makeClassList('html') },
-  body: { classList: makeClassList('body') },
+  body: { classList: makeClassList('body'), appendChild() {} },
+  getElementById() { return null; },
+  createElement() { return { setAttribute() {}, remove() {} }; },
   addEventListener() {}
 };
 globalThis.window.addEventListener = () => {};
@@ -25,6 +27,8 @@ describe('ShareLinks watch-party guest lockdown', () => {
     toggledClasses.clear();
     requestedMedia = '';
     JWP.state.guestMode = true;
+    JWP.state.guestRoomId = '';
+    JWP.state.guestClosedMessage = '';
     JWP.state.inRoom = true;
     JWP.state.pendingJoinRoomId = '';
     JWP.state.inviteJoinActive = false;
@@ -74,4 +78,42 @@ describe('ShareLinks watch-party guest lockdown', () => {
 
     assert.equal(JWP.guestLockdown.isAllowedControl(target), false);
   });
+
+  it('waits for the owner to grant access to the exact live title', async () => {
+    JWP.state.roomId = 'room-1';
+    globalThis.window.ApiClient = { serverAddress: () => 'https://jellyfin.example', accessToken: () => 'guest-token' };
+    let grantedMedia = null;
+    globalThis.fetch = async () => ({ ok: true, json: async () => ({
+      IsGuest: true, WatchPartyRoomId: 'room-1', WatchPartyMediaId: grantedMedia
+    }) });
+    assert.equal(await JWP.guestLockdown.hasMediaAccess(mediaId), false);
+    grantedMedia = 'b'.repeat(32);
+    assert.equal(await JWP.guestLockdown.hasMediaAccess(mediaId), false);
+    grantedMedia = mediaId;
+    assert.equal(await JWP.guestLockdown.hasMediaAccess(mediaId), true);
+    JWP.state.roomId = 'another-room';
+    assert.equal(await JWP.guestLockdown.hasMediaAccess(mediaId), false);
+  });
+});
+
+it('keeps a departed guest isolated and prevents navigation relaunch', () => {
+  JWP.state.guestMode = true;
+  JWP.state.roomId = 'room-closed';
+  let paused = false;
+  JWP.utils.getVideo = () => ({ paused: false, pause() { paused = true; } });
+  JWP.guestLockdown.endGuestSession('This room is closed.');
+  JWP.state.inRoom = false;
+  JWP.state.roomId = JWP.state.pendingJoinRoomId = '';
+  JWP.state.inviteJoinActive = false;
+  assert.equal(JWP.guestLockdown.isRestricted(), true);
+  assert.equal(JWP.guestLockdown.enforce(), false);
+  assert.equal(JWP.state.guestRoomId, 'room-closed');
+  assert.equal(paused, true);
+});
+
+it('retains the guest restriction when GuestState is temporarily unavailable', () => {
+  JWP.state.guestMode = true;
+  JWP.state.guestRoomId = 'room-1';
+  JWP.guestLockdown.setGuestState(null);
+  assert.equal(JWP.guestLockdown.isRestricted(), true);
 });

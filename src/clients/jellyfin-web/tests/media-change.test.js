@@ -24,6 +24,7 @@ describe('room episode transitions', () => {
     JWP.state.roomMediaId = oldMediaId;
     JWP.state.roomJoinPending = false;
     JWP.state.roomJoinActive = false;
+    JWP.state.waitingForTitle = false;
     JWP.state.readyRoomId = 'room-1';
     JWP.state.mediaChangeToken = 0;
     JWP.utils.getCurrentItemId = () => oldMediaId;
@@ -66,6 +67,41 @@ describe('room episode transitions', () => {
     assert.equal(JWP.state.readyRoomId, '');
     assert.equal(JWP.state.lastSyncPosition, 12.5);
     assert.equal(JWP.state.lastSyncPlayState, 'playing');
+  });
+
+  it('opens an empty room with chat, then launches the first host title', () => {
+    let launchScreen = true;
+    let panelShown = false;
+    let openedMediaId = '';
+    JWP.state.clientId = 'guest-client';
+    JWP.state.inviteJoinActive = true;
+    JWP.state.roomJoinActive = true;
+    JWP.playback.ensurePlayback = id => { openedMediaId = id; };
+    JWP.app = { setJoinLaunchScreen: visible => { launchScreen = visible; } };
+    globalThis.document.getElementById = () => ({ classList: { remove() { panelShown = true; } } });
+
+    JWP._wsHandlers.handleRoomState({
+      room: 'room-1', client: 'guest-client', payload: {
+        name: 'Waiting room', host_id: 'host-client', media_id: null,
+        participant_count: 2, state: { position: 0, play_state: 'paused' }
+      }
+    }, null);
+
+    assert.equal(JWP.state.roomMediaId, '');
+    assert.equal(JWP.state.waitingForTitle, true);
+    assert.equal(JWP.state.roomJoinActive, false);
+    assert.equal(launchScreen, false);
+    assert.equal(panelShown, true);
+    assert.equal(openedMediaId, '');
+
+    JWP._wsHandlers.handleStateUpdate({ payload: {
+      media_id: newMediaId, position: 0, play_state: 'paused'
+    } }, null);
+
+    assert.equal(openedMediaId, newMediaId);
+    assert.equal(JWP.state.waitingForTitle, false);
+    assert.equal(JWP.state.roomJoinActive, true);
+    assert.equal(launchScreen, true);
   });
 
   it('moves a signed-in follower join into the host playback flow', () => {
@@ -302,6 +338,10 @@ describe('room episode transitions', () => {
       play: () => Promise.resolve(),
       pause() { this.paused = true; }
     };
+    let position = 0;
+    let openedBeforeSeek = false;
+    Object.defineProperty(video, 'currentTime', { get: () => position, set: value => { position = value; video.readyState = 1; } });
+    JWP.playback.openReadyPlayer = current => { openedBeforeSeek = current.readyState >= 2; };
     JWP.utils.getVideo = () => video;
 
     JWP._wsHandlers.handleRoomState({
@@ -320,6 +360,8 @@ describe('room episode transitions', () => {
 
     assert.equal(video.paused, true);
     assert.equal(video.currentTime, 47.25);
+    assert.equal(openedBeforeSeek, true);
+    delete JWP.playback.openReadyPlayer;
     assert.equal(JWP.state.roomJoinActive, false);
     assert.equal(launchScreen, false);
     assert.equal(held, 1);

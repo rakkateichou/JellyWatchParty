@@ -6,6 +6,7 @@
   const showToast = (message) => {
     const toast = document.createElement('div');
     toast.className = 'jwp-toast-system';
+    toast.setAttribute('role', 'status');
     toast.textContent = message;
     toast.onclick = () => {
       toast.classList.add('jwp-toast-out');

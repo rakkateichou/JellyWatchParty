@@ -40,20 +40,38 @@
   };
 
   const isVideoPage = () => {
-    // Jellyfin keeps an old <video> element mounted while its SPA is showing an
-    // episode details page. Conversely, an invite can briefly be on #/video
-    // before Jellyfin has created the real player. Both the player route and a
-    // live media element are therefore required.
-    if (!/^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '')) return false;
+    const onVideoRoute = /^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '');
     const video = utils.getVideo?.() || document.querySelector('video');
     if (!video) return false;
-    if (video.__owpNativeAdapter) return true;
+    if (video.__owpNativeAdapter) return onVideoRoute;
     const container = video.closest?.('.videoPlayerContainer');
+    // Before the first `playing` event, Jellyfin prepares a fullscreen player
+    // over the details route. A paused-room join must recognize that player
+    // without mistaking an old retained video for a newly launched session.
+    const openingPlayer = JWP.state.roomJoinActive
+      && container?.classList?.contains('videoPlayerContainer-onTop');
+    if (!onVideoRoute && !openingPlayer) return false;
     if (!container) return true;
     if (container.hidden) return false;
     if (typeof window.getComputedStyle !== 'function') return true;
     const style = window.getComputedStyle(container);
-    return style.display !== 'none' && style.visibility !== 'hidden';
+    // The invite cover hides body content until this very player is ready.
+    // Its inherited visibility must not keep readiness waiting for the cover
+    // timeout; an actually removed/hidden player still does not qualify.
+    const covered = document.documentElement?.classList?.contains('jwp-invite-launching')
+      || document.documentElement?.classList?.contains('jwp-party-guest');
+    return style.display !== 'none' && (style.visibility !== 'hidden' || covered);
+  };
+
+  const openReadyPlayer = (video) => {
+    if (!JWP.state.roomJoinActive || !video || video.readyState < 2) return;
+    if (/^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '')) return;
+    if (!video.closest?.('.videoPlayerContainer')?.classList?.contains('videoPlayerContainer-onTop')) return;
+    // Jellyfin normally opens this route on `playing`. We already have a
+    // native session, but deliberately held it paused to follow the host.
+    const room = JWP.state.roomId || JWP.state.pendingJoinRoomId;
+    const media = JWP.state.roomMediaId;
+    window.location.hash = `#/video?jwpRoom=${encodeURIComponent(room)}&jwpMedia=${encodeURIComponent(media)}`;
   };
 
   const clickNativePlayButton = (itemId) => {
@@ -62,6 +80,11 @@
     const state = JWP.state;
     const button = document.querySelector(PLAY_BUTTON_SELECTOR);
     if (!button || button.disabled) return false;
+    // Jellyfin binds this handler before the item request completes. It keeps
+    // the control hidden until its item model exists; clicking earlier throws
+    // and wastes a full launch cooldown before retrying.
+    if (button.classList?.contains('hide') || button.closest?.('.hide')) return false;
+    if (button.getClientRects && button.getClientRects().length === 0) return false;
     const now = Date.now();
     if (state.nativeButtonItemId !== normalizedItemId) {
       state.nativeButtonItemId = normalizedItemId;
@@ -156,9 +179,13 @@
   };
 
   const ensurePlayback = (itemId, attempt = 0) => {
+    if (JWP.state.guestClosedMessage) return;
     const state = JWP.state;
     const normalizedItemId = utils.normalizeItemId?.(itemId) || itemId;
     if (!normalizedItemId) return;
+    if (state.waitingForTitle) return;
+    if ((state.inRoom || state.inviteJoinActive) && state.roomMediaId
+        && state.roomMediaId !== normalizedItemId) return;
     if (state.roomJoinActive) holdJoinPlayback();
     // The same item id can mean either "already playing" or merely "open on
     // its details page". Jellyfin's SPA can retain a hidden <video> element
@@ -171,6 +198,18 @@
       if (attempt < 80) setTimeout(() => ensurePlayback(normalizedItemId, attempt + 1), 250);
       else JWP.ui?.showToast?.('Tap Play to continue the watch party.');
     };
+
+    if (state.guestMode && JWP.guestLockdown?.hasMediaAccess && state.guestReadyMediaId !== normalizedItemId) {
+      if (state.guestAccessCheckingId === normalizedItemId) return;
+      state.guestAccessCheckingId = normalizedItemId;
+      JWP.guestLockdown.hasMediaAccess(normalizedItemId).then(allowed => {
+        if (allowed) state.guestReadyMediaId = normalizedItemId;
+      }).finally(() => {
+        if (state.guestAccessCheckingId === normalizedItemId) state.guestAccessCheckingId = '';
+        retry();
+      });
+      return;
+    }
 
     // Jellyfin Web keeps PlaybackManager inside its module bundle on current
     // releases, so it is often unavailable on window. Its own Play button is
@@ -207,6 +246,7 @@
     isVideoPage,
     playItem,
     ensurePlayback,
+    openReadyPlayer,
     holdJoinPlayback,
     releaseJoinPlayback
   });

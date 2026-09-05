@@ -27,11 +27,27 @@
 
   const getApiAccessToken = () => {
     const apiClient = window.ApiClient;
-    if (!apiClient || typeof apiClient.accessToken !== 'function') return null;
-    const accessToken = apiClient.accessToken();
-    if (!accessToken) return null;
-    const serverAddress = typeof apiClient.serverAddress === 'function' ? apiClient.serverAddress() : '';
-    return { apiClient, accessToken, serverAddress };
+    if (typeof apiClient?.accessToken === 'function' && apiClient.accessToken()) {
+      const serverAddress = typeof apiClient.serverAddress === 'function' ? apiClient.serverAddress() : '';
+      return { apiClient, accessToken: apiClient.accessToken(), serverAddress };
+    }
+    // ShareLinks has already saved a session before opening the invite. Use
+    // that same-origin session to connect chat while Jellyfin boots its SPA.
+    if (!state.inviteJoinActive && !state.pendingJoinRoomId && !state.inRoom) return null;
+    try {
+      const expected = new URL(JWP.serverAddress);
+      if (expected.origin !== window.location.origin) return null;
+      const params = new URLSearchParams((window.location.hash || '').split('?')[1] || '');
+      const serverId = params.get('serverId');
+      const servers = JSON.parse(localStorage.getItem('jellyfin_credentials') || '{}').Servers || [];
+      const server = servers.find(candidate => {
+        if (!candidate.AccessToken || (serverId && candidate.Id !== serverId)) return false;
+        const address = new URL(candidate.ManualAddress);
+        return address.origin === expected.origin
+          && address.pathname.replace(/\/$/, '') === expected.pathname.replace(/\/$/, '');
+      });
+      return server ? { apiClient: null, accessToken: server.AccessToken, serverAddress: JWP.serverAddress } : null;
+    } catch (_) { return null; }
   };
 
   const waitForApiClient = (maxWaitMs = 10000, intervalMs = 250) => {
@@ -125,5 +141,5 @@
     }
   };
 
-  Object.assign(actions, { fetchAuthToken });
+  Object.assign(actions, { fetchAuthToken, getApiAccessToken });
 })();

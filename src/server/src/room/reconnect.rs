@@ -29,6 +29,15 @@ pub async fn schedule_disconnect(client_id: String, clients: Clients, rooms: Roo
         }
     };
 
+    schedule_transport_disconnect(client_id, stale_sender, clients, rooms);
+}
+
+pub fn schedule_transport_disconnect(
+    client_id: String,
+    stale_sender: tokio::sync::mpsc::Sender<Result<warp::ws::Message, warp::Error>>,
+    clients: Clients,
+    rooms: Rooms,
+) {
     tokio::spawn(async move {
         tokio::time::sleep(Duration::from_secs(RECONNECT_GRACE_SECS)).await;
 

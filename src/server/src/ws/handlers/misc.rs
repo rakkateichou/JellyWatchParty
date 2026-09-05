@@ -74,8 +74,8 @@ pub(in crate::ws) async fn handle_ready(
 pub(in crate::ws) async fn handle_leave_room(client_id: &str, clients: &Clients, rooms: &Rooms) {
     info!("Client {} leaving room", client_id);
     {
-        let mut locked_clients = clients.write().await;
         let mut locked_rooms = rooms.write().await;
+        let mut locked_clients = clients.write().await;
         handle_leave(client_id, &mut locked_clients, &mut locked_rooms);
     }
     broadcast_room_list(clients, rooms).await;

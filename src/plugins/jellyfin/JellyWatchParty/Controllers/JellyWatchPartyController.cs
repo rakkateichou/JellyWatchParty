@@ -46,7 +46,7 @@ public class JellyWatchPartyController : ControllerBase
     /// <summary>
     /// Loads the client script from embedded resources (thread-safe, called once via Lazy).
     /// </summary>
-    private static (string Content, string ETag) LoadScriptFromResource()
+    internal static (string Content, string ETag) LoadScriptFromResource()
     {
         var assembly = typeof(JellyWatchPartyController).Assembly;
         var resourceName = "JellyWatchParty.Plugin.Web.plugin.js";
@@ -57,6 +57,21 @@ public class JellyWatchPartyController : ControllerBase
         }
         using var reader = new StreamReader(stream);
         var content = reader.ReadToEnd();
+        using var manifest = assembly.GetManifestResourceStream("JellyWatchParty.Plugin.Web.client-modules.json")
+            ?? throw new InvalidOperationException("Client module manifest not found");
+        var paths = System.Text.Json.JsonSerializer.Deserialize<string[]>(manifest)
+            ?? throw new InvalidOperationException("Invalid client module manifest");
+        var modules = new StringBuilder();
+        foreach (var path in paths)
+        {
+            modules.AppendLine($"// Client module: {path}");
+            modules.AppendLine(LoadClientModuleFromResource(path).Content);
+            modules.AppendLine(";");
+        }
+        const string marker = "/* JWP_BUNDLED_MODULES */";
+        if (!content.Contains(marker, StringComparison.Ordinal))
+            throw new InvalidOperationException("Client bundle insertion marker not found");
+        content = content.Replace(marker, modules.ToString(), StringComparison.Ordinal);
         var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(content));
         var etag = $"\"{Convert.ToBase64String(hash)[..16]}\"";
         return (content, etag);

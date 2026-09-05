@@ -14,15 +14,16 @@ namespace JellyWatchParty.Plugin;
 /// </summary>
 public class FileTransformationIntegration : IScheduledTask
 {
-    private const string ClientScriptPath = "../JellyWatchParty/ClientScript";
-    private const string ScriptTag = $"<script src=\"{ClientScriptPath}\" defer></script>";
-    private const string BootstrapMarker = "id=\"jwp-invite-bootstrap\"";
-    private const string BootstrapMarkup = """
-<!-- JellyWatchParty invite bootstrap -->
-<style id="jwp-invite-bootstrap">html.jwp-invite-launching{background:#000!important;color-scheme:dark}html.jwp-invite-launching body{visibility:hidden!important;background:#000!important}html.jwp-invite-launching::before{content:'Joining watch party…';position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;visibility:visible;background:#000;color:rgba(255,255,255,.78);font:600 1rem/1.4 system-ui,sans-serif;letter-spacing:.01em}</style>
-<script id="jwp-invite-bootstrap-script">(function(){if(!/[?&]jwpRoom=[0-9a-f-]{36}(?:&|$)/i.test(location.hash||''))return;var r=document.documentElement;r.classList.add('jwp-invite-launching');document.addEventListener('play',function(e){var v=e.target;if(r.classList.contains('jwp-invite-launching')&&v&&v.tagName==='VIDEO'&&!v.paused){try{v.pause()}catch(_){}}},true)})()</script>
-<!-- /JellyWatchParty invite bootstrap -->
-""";
+    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.10.2\" defer></script>";
+    private static readonly string BootstrapMarkup = LoadBootstrap();
+
+    private static string LoadBootstrap()
+    {
+        using var stream = typeof(FileTransformationIntegration).Assembly.GetManifestResourceStream("JellyWatchParty.Plugin.Web.invite-bootstrap.html")
+            ?? throw new InvalidOperationException("Missing invitation bootstrap resource");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd().TrimEnd();
+    }
 
     /// <summary>
     /// File name pattern registered with the File Transformation plugin.
@@ -289,47 +290,18 @@ public class FileTransformationIntegration : IScheduledTask
             return contents ?? string.Empty;
         }
 
-        var modified = contents;
-        var headStartIndex = modified.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
-        var headOpenEndIndex = headStartIndex >= 0
-            ? modified.IndexOf('>', headStartIndex)
-            : -1;
-        var bodyEndIndex = modified.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
-        var headEndIndex = modified.LastIndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-
-        if (bodyEndIndex < 0 && headEndIndex < 0)
+        var headStart = contents.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
+        if (headStart < 0)
         {
-            return contents;
+            if (contents.Contains("JellyWatchParty/ClientScript", StringComparison.OrdinalIgnoreCase)) return contents;
+            var end = contents.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+            return end < 0 ? contents : contents.Insert(end, $"    {ScriptTag}\n");
         }
-
-        // This tiny synchronous bootstrap is deliberately inserted immediately
-        // after <head>. It covers an invite before Jellyfin's deferred bundles
-        // can render their logo or details route. The normal client removes the
-        // class only after the real video element is ready.
-        if (!modified.Contains(BootstrapMarker, StringComparison.OrdinalIgnoreCase)
-            && headOpenEndIndex >= 0)
-        {
-            modified = modified.Insert(headOpenEndIndex + 1, $"{BootstrapMarkup}\n");
-        }
-
-        if (modified.Contains("JellyWatchParty/ClientScript", StringComparison.OrdinalIgnoreCase))
-        {
-            return modified;
-        }
-
-        bodyEndIndex = modified.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
-        if (bodyEndIndex >= 0)
-        {
-            return modified.Insert(bodyEndIndex, $"    {ScriptTag}\n");
-        }
-
-        headEndIndex = modified.LastIndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-        if (headEndIndex >= 0)
-        {
-            return modified.Insert(headEndIndex, $"    {ScriptTag}\n");
-        }
-
-        return modified;
+        var modified = RemoveScript(contents);
+        headStart = modified.IndexOf("<head", StringComparison.OrdinalIgnoreCase);
+        var headEnd = modified.IndexOf('>', headStart);
+        if (headEnd < 0 || !modified.Contains("</head>", StringComparison.OrdinalIgnoreCase)) return contents;
+        return modified.Insert(headEnd + 1, BootstrapMarkup + "\n");
     }
 
     /// <summary>
@@ -345,7 +317,9 @@ public class FileTransformationIntegration : IScheduledTask
         }
 
         var withoutScript = ScriptTagRegex.Replace(contents, string.Empty);
-        return BootstrapRegex.Replace(withoutScript, string.Empty);
+        var cleaned = BootstrapRegex.Replace(withoutScript, string.Empty);
+        return Regex.Replace(cleaned, @"<(style|script)\b[^>]*id=[""']jwp-invite-bootstrap(?:-script)?[""'][^>]*>.*?</\1>[ \t]*\r?\n?", string.Empty,
+            RegexOptions.IgnoreCase | RegexOptions.Singleline);
     }
 
     /// <summary>

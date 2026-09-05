@@ -9,6 +9,7 @@
   let panelStopPropagation = null;
   let hadVideoElement = false;
   let joinLaunchTimer = null;
+  let inviteRefreshAt = 0;
 
   const getInviteRoomId = () => {
     const match = (window.location.hash || '').match(/[?&]jwpRoom=([0-9a-f-]{36})(?:&|$)/i);
@@ -31,10 +32,16 @@
       joinLaunchTimer = null;
     }
     document.documentElement?.classList?.toggle('jwp-invite-launching', !!visible);
+    document.documentElement?.classList?.toggle('jwp-join-chat', !!visible);
+    document.documentElement?.classList?.remove('jwp-invite-booting');
+    if (visible) document.getElementById(JWP.constants.PANEL_ID)?.classList.remove('hide');
     if (visible) {
       joinLaunchTimer = setTimeout(() => {
         joinLaunchTimer = null;
-        document.documentElement?.classList?.toggle('jwp-invite-launching', false);
+        if (!JWP.guestLockdown?.isRestricted?.()) {
+          document.documentElement?.classList?.toggle('jwp-invite-launching', false);
+          document.documentElement?.classList?.toggle('jwp-join-chat', false);
+        }
         // Keep playback held even after the cover's time limit. The native
         // player can show its own loading UI, but must not run from 0:00 while
         // room state is still being reconciled.
@@ -49,15 +56,22 @@
     return /^#\/(?:video|playback)(?:[/?]|$)/i.test(window.location.hash || '');
   };
 
-  const beginInviteJoin = () => {
-    const roomId = getInviteRoomId();
+  const beginInviteJoin = (restoredRoomId = '', restoredMediaId = '') => {
+    const roomId = getInviteRoomId() || restoredRoomId || state.guestRoomId;
+    if (state.guestClosedMessage) {
+      setJoinLaunchScreen(false);
+      ui.render(true);
+      return;
+    }
     if (!roomId) return;
-    const inviteMediaId = getInviteMediaId();
+    const inviteMediaId = getInviteMediaId() || utils.normalizeItemId?.(restoredMediaId) || '';
     state.pendingJoinRoomId = roomId;
     state.inviteJoinActive = true;
     state.roomJoinActive = true;
     playback?.holdJoinPlayback?.();
     setJoinLaunchScreen(true);
+    ui.render(true);
+    if (state.ws?.readyState === 1 && JWP.actions?.joinRoom?.(roomId)) state.pendingJoinRoomId = '';
 
     // The signed invite already contains the validated episode id. Launch it
     // immediately so Jellyfin can create a native playback session even if the
@@ -74,6 +88,14 @@
     let attempts = 0;
     const timer = setInterval(() => {
       attempts += 1;
+      if (state.inRoom && state.roomId === roomId) {
+        clearInterval(timer);
+        return;
+      }
+      if (!state.inviteJoinActive && !state.pendingJoinRoomId) {
+        clearInterval(timer);
+        return;
+      }
       const room = state.rooms.find(candidate => candidate.id === roomId);
       if (room?.media_id && playback?.ensurePlayback) {
         clearInterval(timer);
@@ -139,6 +161,16 @@
       if (document.visibilityState !== 'visible') return;
       const video = utils.getVideo();
       const activeVideo = hasActiveVideo(video);
+      if (state.inRoom && state.isHost && !state.guestMode && ui.prepareInviteLink
+          && Date.now() >= inviteRefreshAt) {
+        // Refresh the existing invite's permissions when the host starts a title
+        // (or changes series), including when nobody presses Copy link again.
+        inviteRefreshAt = Date.now() + 3000;
+        if (activeVideo) state.roomMediaId = utils.getCurrentItemId() || state.roomMediaId;
+        ui.prepareInviteLink().catch(err => {
+          console.warn('[JellyWatchParty] Invite refresh failed:', err);
+        });
+      }
       if (state.pendingJoinRoomId && state.ws?.readyState === 1 && JWP.actions?.joinRoom) {
         const roomId = state.pendingJoinRoomId;
         console.log('[JellyWatchParty] Auto-joining room:', roomId);
@@ -149,7 +181,7 @@
         onVideoPlayerExit();
         return;
       }
-      if (activeVideo) {
+      if (activeVideo && !state.waitingForTitle) {
         hadVideoElement = true;
         if (state.roomJoinActive) playback?.holdJoinPlayback?.();
         else setJoinLaunchScreen(false);
@@ -170,7 +202,7 @@
       }
     }, HOME_REFRESH_MS);
     state.intervals.sync = setInterval(() => {
-      if (state.inRoom && !state.isHost) {
+      if (state.inRoom && !state.isHost && !state.waitingForTitle) {
         playback.syncLoop();
       }
     }, SYNC_LOOP_MS);
@@ -187,6 +219,7 @@
     ui.injectStyles();
     if (JWP.app?.disablePauseSplash) JWP.app.disablePauseSplash();
     createPanel();
+    beginInviteJoin();
     if (JWP.cursor && JWP.cursor.bind) JWP.cursor.bind();
     if (JWP.actions && JWP.actions.connect) {
       console.log('[JellyWatchParty] Initiating WebSocket connection...');
@@ -195,7 +228,6 @@
       console.error('[JellyWatchParty] JWP.actions.connect not available!');
     }
     if (JWP.guestLockdown?.init) JWP.guestLockdown.init();
-    beginInviteJoin();
     startIntervals();
   };
 
@@ -213,5 +245,5 @@
   };
 
   JWP.app = JWP.app || {};
-  Object.assign(JWP.app, { init, setJoinLaunchScreen });
+  Object.assign(JWP.app, { init, setJoinLaunchScreen, beginInviteJoin });
 })();

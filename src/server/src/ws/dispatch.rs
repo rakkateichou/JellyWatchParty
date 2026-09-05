@@ -90,8 +90,22 @@ pub(super) async fn client_msg(
 
     debug!("Message from {}: {:?}", client_id, parsed.msg_type);
 
+    if !matches!(
+        parsed.msg_type,
+        ClientMessageType::Auth | ClientMessageType::Ping
+    ) && !is_authenticated(client_id, clients).await
+    {
+        send_error(client_id, clients, "Authentication required").await;
+        return;
+    }
+
     match parsed.msg_type {
-        ClientMessageType::Auth => handle_auth(client_id, &parsed, clients, jwt_config).await,
+        ClientMessageType::Auth => {
+            handle_auth(client_id, &parsed, clients, jwt_config).await;
+            if is_authenticated(client_id, clients).await {
+                send_room_list(client_id, clients, rooms).await;
+            }
+        }
         ClientMessageType::ListRooms => send_room_list(client_id, clients, rooms).await,
         ClientMessageType::CreateRoom => {
             handle_create_room(client_id, &parsed, clients, rooms).await

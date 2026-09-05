@@ -1,0 +1,39 @@
+<!-- JellyWatchParty invite bootstrap -->
+<style id="jwp-invite-bootstrap">
+html.jwp-invite-launching{background:#000!important;color-scheme:dark}
+html.jwp-party-guest body,html.jwp-party-guest body *{visibility:hidden!important}
+html.jwp-invite-launching body{visibility:hidden!important;background:#000!important}
+html.jwp-invite-launching::before{content:'Joining watch party…';position:fixed;inset:0;z-index:19999;display:grid;place-items:center;visibility:visible;background:#000;color:rgba(255,255,255,.78);font:600 1rem/1.4 system-ui,sans-serif;letter-spacing:.01em}
+html.jwp-join-chat::before{right:min(360px,35vw)!important}
+html.jwp-invite-booting::after{content:'Watch party chat\A\A Connecting to room…';white-space:pre-line;position:fixed;top:0;right:0;bottom:0;width:min(360px,35vw);padding:24px;box-sizing:border-box;border-left:1px solid #333;z-index:20000;background:#101011;color:#eee;font:500 1rem/1.5 system-ui,sans-serif}
+@media(max-width:799px){html.jwp-join-chat::before{right:0!important;bottom:60dvh!important}html.jwp-invite-booting::after{top:40dvh;left:0;width:100%;border-left:0;border-top:1px solid #333}}
+</style>
+<script id="jwp-invite-bootstrap-script">
+(function(){
+  var invite=/[?&]jwpRoom=[0-9a-f-]{36}(?:&|$)/i.test(location.hash||'');
+  try {
+    var credentials=JSON.parse(localStorage.getItem('jellyfin_credentials')||'{}');
+    var serverId=(location.hash.match(/[?&]serverId=([^&]+)/i)||[])[1];
+    var basePath=location.pathname.replace(/\/web(?:\/.*)?$/i,'').replace(/\/$/,'');
+    var server=(credentials.Servers||[]).find(function(candidate){
+      if(!candidate.JwpRoomId||!candidate.AccessToken||!candidate.UserId)return false;
+      var address=new URL(candidate.ManualAddress,location.href);
+      return address.origin===location.origin&&address.pathname.replace(/\/$/,'')===basePath&&(!serverId||candidate.Id===serverId);
+    });
+    if(server&&/^[0-9a-f-]{36}$/i.test(server.JwpRoomId)){
+      window.__jwpGuestRoom=server.JwpRoomId;
+      window.__jwpGuestClosed=sessionStorage.getItem('jwp_guest_closed')===server.JwpRoomId;
+      document.documentElement.classList.add('jwp-party-guest');
+    }
+  } catch(_) {}
+  if(!invite&&!window.__jwpGuestRoom)return;
+  var root=document.documentElement;
+  root.classList.add('jwp-invite-launching','jwp-join-chat','jwp-invite-booting');
+  document.addEventListener('play',function(event){
+    var video=event.target;
+    if(root.classList.contains('jwp-invite-launching')&&video&&video.tagName==='VIDEO'&&!video.paused){try{video.pause()}catch(_){}}
+  },true);
+})();
+</script>
+<script id="jwp-client-script" src="../JellyWatchParty/ClientScript?v=1.10.2" defer></script>
+<!-- /JellyWatchParty invite bootstrap -->

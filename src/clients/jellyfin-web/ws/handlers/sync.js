@@ -26,7 +26,7 @@
     state.roomName = msg.payload.name;
     state.roomHostId = msg.payload.host_id || '';
     state.isRoomOwner = msg.payload.is_owner === true;
-    state.roomMediaId = msg.payload.media_id || state.roomMediaId || '';
+    state.roomMediaId = msg.payload.media_id || '';
     if (msg.payload.invite_url) {
       state.inviteRoomId = msg.room;
       state.inviteBaseUrl = msg.payload.invite_url;
@@ -37,6 +37,7 @@
       state.clientId = msg.client;
     }
     state.isHost = (msg.payload.host_id === state.clientId);
+    state.waitingForTitle = !state.roomMediaId && (!state.isHost || state.guestMode);
     const joiningAsFollower = !state.isHost
       && !!msg.payload.media_id
       && (state.roomJoinPending || state.roomJoinActive || state.inviteJoinActive);
@@ -45,7 +46,11 @@
       state.roomJoinActive = true;
       JWP.playback?.holdJoinPlayback?.();
       JWP.app?.setJoinLaunchScreen?.(true);
-    } else if (state.isHost) {
+    } else if (state.isHost || state.waitingForTitle) {
+      if (state.waitingForTitle) {
+        state.roomJoinActive = true;
+        JWP.playback?.holdJoinPlayback?.();
+      }
       state.roomJoinActive = false;
       JWP.playback?.releaseJoinPlayback?.();
       JWP.app?.setJoinLaunchScreen?.(false);
@@ -70,7 +75,7 @@
 
     // Accountless invitations and signed-in follower joins both reveal the
     // right-side chat. A room creator/host retains their existing panel view.
-    if (state.inviteJoinActive || state.guestMode || state.roomJoinActive) {
+    if (state.inviteJoinActive || state.guestMode || state.roomJoinActive || state.waitingForTitle) {
       const panel = document.getElementById(JWP.constants.PANEL_ID);
       if (panel) panel.classList.remove('hide');
       if (state.inviteJoinActive) state.inviteJoinActive = false;
@@ -109,6 +114,10 @@
     // consuming the beginning of the episode while the seek is loading, and
     // makes a paused host land on the same still frame immediately.
     if (joining && !video.paused) video.pause();
+    // Seeking outside the buffered range synchronously drops readyState to 1.
+    // Open the prepared native route first, or a paused room stays on details
+    // and the navigation guard incorrectly launches the title again.
+    JWP.playback?.openReadyPlayer?.(video);
     if (Math.abs(video.currentTime - targetPos) > 0.35) video.currentTime = targetPos;
 
     // Release the bootstrap pause gate only after both the seek and the host's
@@ -133,6 +142,13 @@
     if (state.roomMediaId === mediaId && localId === mediaId && isActiveVideo) return false;
 
     state.roomMediaId = mediaId;
+    if (state.waitingForTitle) {
+      state.waitingForTitle = false;
+      state.roomJoinActive = true;
+      JWP.playback?.holdJoinPlayback?.();
+      JWP.app?.setJoinLaunchScreen?.(true);
+      ui.updateWaitingRoom?.();
+    }
     state.readyRoomId = '';
     state.isInitialSync = true;
     state.initialSyncUntil = utils.nowMs() + JWP.constants.INITIAL_SYNC_MAX_MS;
@@ -149,7 +165,7 @@
       attempts += 1;
       const video = utils.getVideo();
       if (utils.getCurrentItemId() !== mediaId || !video || video.readyState < 2) {
-        if (attempts < 100) setTimeout(settle, 150);
+        if (attempts < 800) setTimeout(settle, 150);
         else ui.showToast('Open the next episode to continue the watch party.');
         return;
       }
@@ -176,6 +192,7 @@
   };
 
   const syncToRoom = (msg, video) => {
+    if (state.waitingForTitle) return;
     if (!video || state.isHost || !msg.payload?.state) return;
     const basePos = msg.payload.state.position || 0;
     const hostPlaying = msg.payload.state.play_state === 'playing';
@@ -211,9 +228,11 @@
   };
 
   h.handleRoomState = (msg, video) => {
+    if (state.guestClosedMessage) return;
+    state.reconnecting = false;
     applyRoomState(msg);
     ui.render();
-    if (state.isHost && ui.prepareInviteLink) {
+    if (state.isHost && !state.guestMode && ui.prepareInviteLink) {
       ui.prepareInviteLink().catch(err => {
         console.warn('[JellyWatchParty] Invite pre-generation failed:', err);
       });
@@ -233,6 +252,7 @@
   h.handleStateUpdate = (msg, video) => {
     if (state.isHost) return;
     if (msg.payload?.media_id && switchToMedia(msg)) return;
+    if (state.waitingForTitle) return;
     if (msg.payload?.media_id) {
       applyInitialTracks(msg.payload, msg.payload.media_id);
     }

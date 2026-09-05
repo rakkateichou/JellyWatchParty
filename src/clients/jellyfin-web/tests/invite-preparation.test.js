@@ -20,6 +20,7 @@ describe('invite pre-generation', () => {
     sentMessages = [];
     JWP.state.inRoom = true;
     JWP.state.isHost = true;
+    JWP.state.guestMode = false;
     JWP.state.roomId = 'room-1';
     JWP.state.roomMediaId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     JWP.ui.resetPreparedInvite();
@@ -78,6 +79,46 @@ describe('invite pre-generation', () => {
     await JWP.ui.prepareInviteLink();
 
     assert.equal(fetchCalls, 2);
+  });
+
+  it('prepares and reuses an invite before a title has been chosen', async () => {
+    JWP.state.roomMediaId = '';
+    // A details page retained by the SPA is not the room's selected title.
+    const invite = await JWP.ui.prepareInviteLink();
+    assert.equal(await JWP.ui.prepareInviteLink(), invite);
+    assert.equal(fetchCalls, 1);
+    assert.equal(getItemCalls, 0);
+    assert.deepEqual(JSON.parse(fetchOptions.body), {
+      itemId: null, expiryHours: 6, oneUse: false, partyId: 'room-1', mediaId: null
+    });
+  });
+
+  it('updates the existing room invite when the first title is selected', async () => {
+    JWP.state.roomMediaId = '';
+    const invite = await JWP.ui.prepareInviteLink();
+    JWP.state.roomMediaId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    assert.equal(await JWP.ui.prepareInviteLink(), invite);
+    assert.equal(fetchCalls, 2);
+    assert.equal(JSON.parse(fetchOptions.body).itemId, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+  });
+
+  it('lets guests copy an empty room invite without Jellyfin admin access', async () => {
+    JWP.state.roomMediaId = '';
+    JWP.state.isHost = false;
+    JWP.state.inviteRoomId = 'room-1';
+    JWP.state.inviteBaseUrl = 'https://jellyfin.example/j/waiting-room';
+    globalThis.window.ApiClient = null;
+    assert.equal(await JWP.ui.prepareInviteLink(), JWP.state.inviteBaseUrl);
+    assert.equal(fetchCalls, 0);
+  });
+
+  it('keeps copying available when a temporary guest inherits the host role', async () => {
+    JWP.state.roomMediaId = '';
+    JWP.state.guestMode = true;
+    JWP.state.inviteRoomId = 'room-1';
+    JWP.state.inviteBaseUrl = 'https://jellyfin.example/j/waiting-room';
+    assert.equal(await JWP.ui.prepareInviteLink(), JWP.state.inviteBaseUrl);
+    assert.equal(fetchCalls, 0);
   });
 
   it('lets a guest reuse the invite prepared by the host', async () => {

@@ -25,10 +25,6 @@ server_dir  := "src/server"
 jellyfin_ctr := "jellyfin-dev"
 session_ctr  := "jwp-session-server"
 
-# -- Client JS files (order matters for plugin loading) ----------------------
-
-client_js_files := "state.js utils/time.js utils/video.js utils/misc.js utils/validation.js utils/media.js utils/log.js ui/styles.js ui/indicators.js ui/toasts.js ui/modal.js ui/cards.js ui/bridge.js ui/home.js ui/render.js playback/play.js playback/bind.js playback/sync.js playback/tracks.js chat/emotes.js chat/messages.js chat/input.js ws/send.js transport/p2p.js presence/cursor.js ws/auth.js ws/handlers/room.js ws/handlers/sync.js ws/handlers/playback.js ws/handlers/clock.js ws/connection.js app/pause-splash.js app/guest-lockdown.js app/lifecycle.js app/cleanup.js"
-
 # -- Colors ------------------------------------------------------------------
 
 GREEN  := '\033[0;32m'

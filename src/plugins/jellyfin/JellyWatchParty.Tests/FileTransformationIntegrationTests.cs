@@ -7,7 +7,7 @@ namespace JellyWatchParty.Plugin.Tests;
 [Collection(InjectionStateCollection.Name)]
 public class FileTransformationIntegrationTests
 {
-    private const string ScriptTag = "<script src=\"../JellyWatchParty/ClientScript\" defer></script>";
+    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.10.2\" defer></script>";
     private const string BootstrapId = "id=\"jwp-invite-bootstrap\"";
 
     private class FakePayload
@@ -42,7 +42,7 @@ public class FileTransformationIntegrationTests
         Assert.Contains("Joining watch party…", result);
         Assert.Contains("jwpRoom", result);
         Assert.Contains("document.addEventListener('play'", result);
-        Assert.Contains("v.pause()", result);
+        Assert.Contains("video.pause()", result);
     }
 
     [Fact]

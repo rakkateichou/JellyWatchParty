@@ -13,6 +13,7 @@
   h.handleClientHello = (msg) => {
     if (msg.payload && msg.payload.client_id) {
       state.clientId = msg.payload.client_id;
+      try { window.sessionStorage?.setItem('jwp_tab_client_id', state.clientId); } catch (_) {}
       ui.render();
     }
   };
@@ -57,6 +58,7 @@
   };
 
   h.handleRoomClosed = (msg) => {
+    JWP.guestLockdown?.endGuestSession?.(msg.payload?.reason || 'This room is closed. Ask the owner for a new invitation.');
     if (ui.resetPreparedInvite) ui.resetPreparedInvite();
     state.inRoom = false;
     state.roomId = '';
@@ -64,6 +66,9 @@
     state.isHost = false;
     state.isRoomOwner = false;
     state.roomMediaId = '';
+    state.waitingForTitle = false;
+    state.pendingJoinRoomId = '';
+    state.inviteJoinActive = false;
     state.roomJoinPending = false;
     state.roomJoinActive = false;
     JWP.playback?.releaseJoinPlayback?.();
@@ -102,7 +107,7 @@
     }
     if (state.isHost && !wasHost) {
       ui.showToast('You are now the host');
-      if (ui.prepareInviteLink) {
+      if (!state.guestMode && ui.prepareInviteLink) {
         ui.prepareInviteLink().catch(err => {
           console.warn('[JellyWatchParty] Invite pre-generation failed after host change:', err);
         });
@@ -119,10 +124,18 @@
   h.handleError = (msg) => {
     const message = msg.payload?.message || 'Unknown error';
     console.error('[JellyWatchParty] Server error:', message);
+    if (state.inRoom && !state.reconnecting && !state.roomJoinPending && !state.pendingJoinRoomId && !state.inviteJoinActive) {
+      ui.showToast(message);
+      return;
+    }
+    JWP.guestLockdown?.endGuestSession?.(message);
     state.roomJoinPending = false;
+    state.pendingJoinRoomId = '';
+    state.inviteJoinActive = false;
     state.roomJoinActive = false;
     JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
     ui.showToast(message);
+    ui.render(true);
   };
 })();

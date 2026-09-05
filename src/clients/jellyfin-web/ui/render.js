@@ -13,6 +13,17 @@
     { id: 'ember', label: 'Ember' }
   ];
 
+  // Entry chat is available before Jellyfin's icon font has loaded.
+  const icon = (name) => {
+    const paths = {
+      link: '<path d="m10 13 4-4m-6 7-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m4 0 2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"/>',
+      settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/><circle cx="12" cy="12" r="7"/>',
+      chevron: '<path d="m9 5 7 7-7 7"/>',
+      smile: '<circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 8v2m8-2v2"/>'
+    };
+    return `<svg class="jwp-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
+  };
+
   const storePreference = (key, value) => {
     try { window.localStorage?.setItem(key, value); } catch (err) {}
   };
@@ -72,7 +83,7 @@
     <div id="jwp-chat-section">
       <div id="jwp-chat-messages"></div>
       <div id="jwp-chat-input-container">
-        <button type="button" id="jwp-emote-toggle" title="Emotes" aria-label="Emotes" aria-expanded="false"><span class="material-icons" aria-hidden="true">sentiment_very_satisfied</span></button>
+        <button type="button" id="jwp-emote-toggle" title="Emotes" aria-label="Emotes" aria-expanded="false">${icon('smile')}</button>
         <div id="jwp-emote-picker" role="dialog" aria-label="Emotes" hidden>
           <div class="jwp-emote-picker-title">Emotes</div>
           <div class="jwp-emote-grid">
@@ -106,6 +117,29 @@
     root.classList.toggle(PLAYER_DOCK_CLASS, shouldDock);
   };
 
+  const updateWaitingRoom = () => {
+    const waiting = !!(state.inRoom && state.waitingForTitle);
+    document.documentElement?.classList?.toggle('jwp-room-waiting', waiting);
+    let screen = document.getElementById('jwp-waiting-player');
+    if (!waiting) {
+      screen?.remove();
+      return;
+    }
+    if (!screen) {
+      screen = document.createElement('section');
+      screen.id = 'jwp-waiting-player';
+      screen.setAttribute('aria-label', 'Watch party player');
+      screen.innerHTML = `<div class="jwp-waiting-message" role="status">
+        <span class="material-icons" aria-hidden="true">movie</span>
+        <h1>Waiting for a title</h1>
+        <p>Wait until the owner of the room picks a title.</p>
+        <p class="jwp-waiting-hint">You can chat while you wait. Playback will open automatically.</p>
+      </div>`;
+      document.body.appendChild(screen);
+    }
+    document.getElementById(PANEL_ID)?.classList.remove('hide');
+  };
+
   const copyText = async (value) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       try {
@@ -132,6 +166,7 @@
     state.inviteRoomId = '';
     state.inviteBaseUrl = '';
     state.inviteShareItemId = '';
+    state.inviteMediaId = null;
     state.invitePromise = null;
   };
 
@@ -147,19 +182,20 @@
   };
 
   const prepareInviteLink = () => {
-    const itemId = state.roomMediaId || utils.getCurrentItemId();
+    const itemId = state.roomMediaId || '';
     const roomId = state.roomId;
-    if (!itemId || !roomId) {
-      return Promise.reject(new Error('Could not identify this room or title.'));
+    const canPrepareInvite = state.isHost && !state.guestMode;
+    if (!roomId) {
+      return Promise.reject(new Error('Could not identify this room.'));
     }
     if (state.inviteRoomId === roomId && state.inviteBaseUrl
-        && (!state.isHost || isCompactInviteUrl(state.inviteBaseUrl))) {
+        && (!canPrepareInvite || (isCompactInviteUrl(state.inviteBaseUrl) && state.inviteMediaId === itemId))) {
       return Promise.resolve(state.inviteBaseUrl);
     }
     if (state.inviteRoomId === roomId && state.invitePromise) {
       return state.invitePromise;
     }
-    if (!state.isHost) {
+    if (!canPrepareInvite) {
       return Promise.reject(new Error('The host is still preparing this invitation.'));
     }
 
@@ -181,7 +217,7 @@
         ? apiClient.getCurrentUserId()
         : apiClient._currentUserId;
       let shareItemId = itemId;
-      if (userId && typeof apiClient.getItem === 'function') {
+      if (itemId && userId && typeof apiClient.getItem === 'function') {
         const item = await apiClient.getItem(userId, itemId);
         if (item?.Type === 'Series') {
           shareItemId = item.Id;
@@ -199,11 +235,11 @@
           'X-Emby-Token': accessToken
         },
         body: JSON.stringify({
-          itemId: shareItemId,
+          itemId: shareItemId || null,
           expiryHours: 6,
           oneUse: false,
           partyId: roomId,
-          mediaId: itemId
+          mediaId: itemId || null
         })
       });
       if (!response.ok) {
@@ -213,11 +249,12 @@
       const data = await response.json();
       const rawUrl = data.ShareUrl || data.shareUrl;
       if (!rawUrl) throw new Error('The server did not return an invite URL.');
-      if (state.roomId !== roomId || !state.isHost) {
+      if (state.roomId !== roomId || !state.isHost || state.guestMode) {
         throw new Error('The room changed while preparing its invitation.');
       }
       state.inviteBaseUrl = rawUrl;
       state.inviteShareItemId = shareItemId;
+      state.inviteMediaId = itemId;
       // Share the reusable base URL with current and future room members.
       // They can then copy the same invitation without admin permissions.
       JWP.actions?.send?.('invite_update', { invite_url: rawUrl });
@@ -241,10 +278,9 @@
     // Creation starts as soon as the room_state arrives. The ShareLinks server
     // stores the room and media routing behind its short code, so a click only
     // copies the already-prepared URL.
-    const itemId = state.roomMediaId || utils.getCurrentItemId();
     const roomId = state.roomId;
-    if (!itemId || !roomId) {
-      ui.showToast('Could not identify this room or title.');
+    if (!roomId) {
+      ui.showToast('Could not identify this room.');
       return;
     }
 
@@ -260,7 +296,7 @@
         : `Invite ready: ${invite}`);
     } catch (err) {
       console.error('[JellyWatchParty] Could not create guest invite:', err);
-      ui.showToast(state.isHost
+      ui.showToast(state.isHost && !state.guestMode
         ? 'Could not create the invite link. Check that ShareLinks is enabled.'
         : 'The invite link is still being prepared by the host.');
     } finally {
@@ -349,9 +385,9 @@
       <div class="jwp-room-toolbar">
         <div id="jwp-participants-list" class="jwp-participants-list">${participantCount} online</div>
         <div class="jwp-room-actions">
-          <button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite"><span class="material-icons" aria-hidden="true">link</span> Copy link</button>
-          <button type="button" class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-expanded="${state.chatSettingsOpen}"><span class="material-icons" aria-hidden="true">settings</span></button>
-          <button class="jwp-icon-btn" id="jwp-btn-hide" title="Hide panel" aria-label="Hide panel"><span class="material-icons" aria-hidden="true">chevron_right</span></button>
+          <button class="jwp-btn secondary jwp-invite-btn" id="jwp-btn-invite">${icon('link')} Copy link</button>
+          <button type="button" class="jwp-icon-btn" id="jwp-btn-settings" title="Chat settings" aria-label="Chat settings" aria-expanded="${state.chatSettingsOpen}">${icon('settings')}</button>
+          <button class="jwp-icon-btn" id="jwp-btn-hide" title="Hide panel" aria-label="Hide panel">${icon('chevron')}</button>
         </div>
       </div>
       ${roomContent}
@@ -484,10 +520,14 @@
   };
 
   const render = (forceFullRender = false) => {
+    updateWaitingRoom();
+    JWP.guestLockdown?.updateGuestView?.();
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return;
     setPanelTheme(state.panelTheme);
-    if (!forceFullRender && panel.dataset.inRoom === String(state.inRoom) && panel.children.length > 0) {
+    const view = state.guestClosedMessage ? 'closed' : state.inRoom ? 'room'
+      : (state.inviteJoinActive || state.pendingJoinRoomId || state.roomJoinPending || state.guestRoomId ? 'joining' : 'lobby');
+    if (!forceFullRender && panel.dataset.view === view && panel.children.length > 0) {
       ui.updateStatusIndicator();
       ui.updateServerFooter();
       ui.updateSyncIndicator();
@@ -498,7 +538,19 @@
       return;
     }
     panel.dataset.inRoom = String(state.inRoom);
-    if (!state.inRoom) {
+    panel.dataset.view = view;
+    if (view === 'closed') {
+      panel.innerHTML = `<div class="jwp-header">Watch party chat</div><p role="status">${utils.escapeHtml(state.guestClosedMessage)}</p>`;
+    } else if (view === 'joining') {
+      panel.innerHTML = `<div class="jwp-header">Watch party chat</div>
+        <p class="jwp-connecting-note" role="status">Connecting to room…</p>
+        ${state.chatNickname ? renderChatArea() : renderNicknameGate()}`;
+      setupChatInput(panel);
+      const input = panel.querySelector('#jwp-chat-input');
+      const send = panel.querySelector('#jwp-chat-send');
+      if (input) { input.disabled = true; input.placeholder = 'Connecting to room…'; }
+      if (send) send.disabled = true;
+    } else if (view === 'lobby') {
       renderLobby(panel);
     } else {
       renderRoom(panel);
@@ -550,6 +602,7 @@
     injectGlobalButton,
     applyNativeSyncButtonVisibility,
     updateDockedPlayerLayout,
+    updateWaitingRoom,
     prepareInviteLink,
     resetPreparedInvite
   });

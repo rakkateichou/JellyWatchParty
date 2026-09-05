@@ -92,8 +92,8 @@ pub fn handle_leave(
 pub async fn handle_disconnect(client_id: &str, clients: &Clients, rooms: &Rooms) {
     info!("Disconnecting client {}", client_id);
     {
-        let mut locked_clients = clients.write().await;
         let mut locked_rooms = rooms.write().await;
+        let mut locked_clients = clients.write().await;
         handle_leave(client_id, &mut locked_clients, &mut locked_rooms);
         locked_clients.remove(client_id);
     }

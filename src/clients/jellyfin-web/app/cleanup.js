@@ -43,10 +43,15 @@
     }
     if (lc) lc.hadVideoElement = false;
     state.roomJoinPending = false;
+    state.waitingForTitle = false;
+    state.pendingJoinRoomId = '';
+    state.inviteJoinActive = false;
+    JWP.ui?.updateWaitingRoom?.();
     state.roomJoinActive = false;
     JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
-    if (state.ws) {
+    if (JWP.actions?.disconnect) JWP.actions.disconnect();
+    else if (state.ws) {
       state.ws.close();
       state.ws = null;
     }

@@ -21,6 +21,7 @@ This is the **Rakkate edition**, a feature-focused fork of
 [mhbxyz/OpenWatchParty](https://github.com/mhbxyz/OpenWatchParty). It adds:
 
 - account-free guest invitations that open directly into the active player;
+- invitations before selecting a title, with an empty player and chat while guests wait for the owner;
 - persistent whole-series rooms with synchronized episode changes, play, pause and seeking;
 - docked chat with saved nicknames, themes, per-user colours and bundled custom emotes;
 - shared cursors and fading drawing trails while holding <kbd>X</kbd>;
@@ -30,6 +31,9 @@ This is the **Rakkate edition**, a feature-focused fork of
 Account-free invitations use the companion
 [ShareLinks fork](https://github.com/rakkateichou/jellyfin-plugin-sharelinks). The watch-party
 plugin and session server still work without it, but cannot create temporary guest access.
+Waiting-room invitations require the updated ShareLinks companion: the same room URL
+and temporary guest account gain access when the owner starts a title. Update both
+plugins together; the session server does not need a change for this feature.
 
 ## Quick Start with the File transformation Plugin
 
@@ -99,3 +103,18 @@ See the [Development Setup Guide](https://rakkateichou.github.io/JellyWatchParty
 ## License
 
 MIT
+
+## Invitation flow (1.10)
+
+Create a room and copy its invitation before picking a title. Guests immediately get
+an empty player and chat, then follow the owner's title selection automatically.
+JellyWatchParty 1.10.2 and the companion ShareLinks 1.0.8 keep guest navigation inside
+that player/chat view through reloads, failed joins and room closure.
+
+The web client loads as one ordered bundle before Jellyfin's deferred application
+scripts. Native playback preparation runs alongside chat connection. Reconnecting
+clients fetch fresh authentication, restore membership and resynchronize with the
+host; separate tabs have separate participant identities.
+
+[Reusable Jellyfin scripts](extras/jellyfin/README.md) include Random Pick exclusions,
+deployment helpers and disposable integration checks.
