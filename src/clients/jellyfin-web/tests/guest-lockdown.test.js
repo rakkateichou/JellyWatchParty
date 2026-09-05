@@ -27,6 +27,7 @@ describe('ShareLinks watch-party guest lockdown', () => {
     toggledClasses.clear();
     requestedMedia = '';
     JWP.state.guestMode = true;
+    JWP.state.panelCollapsed = false;
     JWP.state.guestRoomId = '';
     JWP.state.guestClosedMessage = '';
     JWP.state.inRoom = true;
@@ -77,6 +78,32 @@ describe('ShareLinks watch-party guest lockdown', () => {
     };
 
     assert.equal(JWP.guestLockdown.isAllowedControl(target), false);
+  });
+
+  it('allows the standalone chat reopen button while keeping library navigation blocked', () => {
+    const reopen = { closest: selector => selector.includes('#jwp-chat-reopen') ? {} : null };
+    const library = { closest: selector => selector.includes('[data-itemid]') ? {} : null };
+    assert.equal(JWP.guestLockdown.isAllowedControl(reopen), true);
+    assert.equal(JWP.guestLockdown.isAllowedControl(library), false);
+  });
+
+  it('does not force collapsed guest chat open during repeated view updates', () => {
+    const originalGet = document.getElementById;
+    let reveals = 0;
+    document.getElementById = id => id === JWP.constants.PANEL_ID
+      ? { classList: { remove() { reveals += 1; } } } : null;
+    JWP.playback.isVideoPage = () => true;
+    JWP.state.panelCollapsed = true;
+    try {
+      JWP.guestLockdown.updateGuestView();
+      JWP.guestLockdown.updateGuestView();
+      assert.equal(reveals, 0);
+      JWP.state.guestClosedMessage = 'This room is closed.';
+      JWP.guestLockdown.updateGuestView();
+      assert.equal(reveals, 1);
+    } finally {
+      document.getElementById = originalGet;
+    }
   });
 
   it('waits for the owner to grant access to the exact live title', async () => {

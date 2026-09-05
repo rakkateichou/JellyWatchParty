@@ -7,6 +7,7 @@
     html.jwp-party-guest { background: #000 !important; overflow: hidden !important; }
     html.jwp-party-guest body, html.jwp-party-guest body * { visibility: hidden !important; }
     html.jwp-party-guest #${PANEL_ID}, html.jwp-party-guest #${PANEL_ID} *,
+    html.jwp-party-guest #jwp-chat-reopen, html.jwp-party-guest #jwp-chat-reopen *,
     html.jwp-party-guest #jwp-guest-screen, html.jwp-party-guest #jwp-waiting-player,
     html.jwp-party-guest .jwp-toast-system,
     html.jwp-party-guest #jwp-waiting-player *,
@@ -14,7 +15,6 @@
     html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet, .jwp-shared-cursor, .jwp-shared-cursor-trail) * { visibility: visible !important; }
     html.jwp-party-guest :is(.mainDrawer, .mainDrawerButton, .headerBackButton, .headerHomeButton, .headerSearchButton, .headerUserButton) { display: none !important; }
     html.jwp-party-guest #${PANEL_ID} { top: 0; right: 0; bottom: 0; width: min(360px, 35vw); max-height: none; border-radius: 0; display: flex; }
-    html.jwp-party-guest #jwp-btn-hide { display: none; }
     html.jwp-party-guest #jwp-chat-section { flex: 1; min-height: 0; height: auto; }
     #jwp-guest-screen { position: fixed; inset: 0 min(360px, 35vw) 0 0; z-index: 20000; display: grid; place-items: center; background: #000; color: #eee; padding: 2rem; text-align: center; font: 500 1rem/1.5 system-ui, sans-serif; }
     @media (max-width: 799px) {
@@ -50,7 +50,6 @@
       display: flex;
       visibility: visible !important;
     }
-    html.jwp-room-waiting #jwp-btn-hide, html.jwp-join-chat #jwp-btn-hide { display: none; }
     html.jwp-room-waiting #jwp-chat-section, html.jwp-join-chat #jwp-chat-section { flex: 1; min-height: 0; height: auto; }
     html.jwp-join-chat::before { right: min(360px, 35vw) !important; }
     .jwp-connecting-note { color: var(--jwp-muted); font-size: .9rem; }
@@ -205,7 +204,31 @@
       --jwp-danger-bg: rgba(185, 68, 64, .18);
       --jwp-danger-hover: rgba(205, 78, 72, .28);
     }
-    #${PANEL_ID}.hide { display: none; }
+    #${PANEL_ID}.hide { display: none !important; }
+    html.jwp-chat-collapsed #jwp-waiting-player,
+    html.jwp-chat-collapsed #jwp-guest-screen { inset: 0 !important; }
+    html.jwp-chat-collapsed.jwp-join-chat::before { right: 0 !important; bottom: 0 !important; }
+    #jwp-chat-reopen {
+      position: fixed;
+      top: max(16px, env(safe-area-inset-top));
+      right: max(16px, env(safe-area-inset-right));
+      z-index: 20001;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .65rem .8rem;
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: .8rem;
+      background: rgba(0, 0, 0, .8);
+      color: #f5f5f5;
+      font: 600 .85rem/1.2 system-ui, sans-serif;
+      cursor: pointer;
+      visibility: visible !important;
+    }
+    #jwp-chat-reopen .jwp-icon { transform: rotate(180deg); }
+    #jwp-chat-reopen:hover { background: #252525; }
+    #jwp-chat-reopen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    #jwp-chat-reopen[hidden] { display: none !important; }
     #${PANEL_ID} * { box-sizing: border-box; }
     /* ShareLinks already confines temporary users on the server. These rules
        make its guest web UI watch-only; JellyWatchParty's class additionally

@@ -34,7 +34,7 @@
     document.documentElement?.classList?.toggle('jwp-invite-launching', !!visible);
     document.documentElement?.classList?.toggle('jwp-join-chat', !!visible);
     document.documentElement?.classList?.remove('jwp-invite-booting');
-    if (visible) document.getElementById(JWP.constants.PANEL_ID)?.classList.remove('hide');
+    if (visible && !state.panelCollapsed) document.getElementById(JWP.constants.PANEL_ID)?.classList.remove('hide');
     if (visible) {
       joinLaunchTimer = setTimeout(() => {
         joinLaunchTimer = null;

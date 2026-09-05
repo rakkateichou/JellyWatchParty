@@ -5,6 +5,7 @@
   const utils = JWP.utils;
   const { PANEL_ID, BTN_ID, SYNC_HIDE_STYLE_ID } = JWP.constants;
   const GLOBAL_BTN_ID = 'jwp-global-btn';
+  const CHAT_REOPEN_ID = 'jwp-chat-reopen';
   const PLAYER_DOCK_CLASS = 'jwp-player-docked';
   const CHAT_THEMES = [
     { id: 'monochrome', label: 'Monochrome' },
@@ -131,6 +132,25 @@
       && !panel.classList.contains('hide')
     );
     root.classList.toggle(PLAYER_DOCK_CLASS, shouldDock);
+
+    const hidden = !!panel?.classList.contains('hide');
+    const fullScreenChat = !!(JWP.guestLockdown?.isRestricted?.() || state.waitingForTitle || state.inviteJoinActive || state.roomJoinActive);
+    const canReopen = hidden && fullScreenChat && !state.guestClosedMessage;
+    root.classList.toggle('jwp-chat-collapsed', canReopen);
+    let reopen = document.getElementById(CHAT_REOPEN_ID);
+    if (canReopen && !reopen) {
+      reopen = document.createElement('button');
+      reopen.id = CHAT_REOPEN_ID;
+      reopen.type = 'button';
+      reopen.title = 'Show chat';
+      reopen.setAttribute('aria-label', 'Show chat');
+      reopen.setAttribute('aria-controls', PANEL_ID);
+      reopen.innerHTML = `${icon('chevron')}<span>Chat</span>`;
+      reopen.onclick = togglePanel;
+      ui.stopPlayerCapture(reopen);
+      document.body.appendChild(reopen);
+    }
+    if (reopen) reopen.hidden = !canReopen;
   };
 
   const updateWaitingRoom = () => {
@@ -153,7 +173,7 @@
       </div>`;
       document.body.appendChild(screen);
     }
-    document.getElementById(PANEL_ID)?.classList.remove('hide');
+    if (!state.panelCollapsed) document.getElementById(PANEL_ID)?.classList.remove('hide');
   };
 
   const copyText = async (value) => {
@@ -348,9 +368,14 @@
     }
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return;
+    const chatInput = panel.querySelector('#jwp-chat-input');
+    if (chatInput && JWP.chat) JWP.chat.draftText = chatInput.value;
     panel.classList.toggle('hide');
-    if (!panel.classList.contains('hide')) render(true);
+    state.panelCollapsed = panel.classList.contains('hide');
+    if (!state.panelCollapsed) render(true);
     updateDockedPlayerLayout();
+    if (state.panelCollapsed) document.getElementById(CHAT_REOPEN_ID)?.focus();
+    else (panel.querySelector('#jwp-chat-input') || panel.querySelector('#jwp-btn-settings'))?.focus();
   };
 
   const renderLobby = (panel) => {
@@ -546,7 +571,7 @@
       }
     });
     if (JWP.chat) {
-      JWP.chat.markRead();
+      if (!panel.classList.contains('hide')) JWP.chat.markRead();
       JWP.chat.renderAllMessages();
     }
   };

@@ -18,6 +18,7 @@
 
   const applyRoomState = (msg) => {
     const previousRoomId = state.roomId;
+    if (previousRoomId !== msg.room) state.panelCollapsed = false;
     if (previousRoomId !== msg.room && ui.resetPreparedInvite) {
       ui.resetPreparedInvite();
     }
@@ -77,7 +78,7 @@
     // right-side chat. A room creator/host retains their existing panel view.
     if (state.inviteJoinActive || state.guestMode || state.roomJoinActive || state.waitingForTitle) {
       const panel = document.getElementById(JWP.constants.PANEL_ID);
-      if (panel) panel.classList.remove('hide');
+      if (panel && !state.panelCollapsed) panel.classList.remove('hide');
       if (state.inviteJoinActive) state.inviteJoinActive = false;
     }
     if (JWP.guestLockdown?.enforceSoon) JWP.guestLockdown.enforceSoon(100);

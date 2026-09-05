@@ -90,6 +90,7 @@
     JWP.playback?.releaseJoinPlayback?.();
     JWP.app?.setJoinLaunchScreen?.(false);
     state.chatSettingsOpen = false;
+    state.panelCollapsed = false;
     state.mediaChangeToken += 1;
     state.readyRoomId = '';
     state.isInitialSync = false;

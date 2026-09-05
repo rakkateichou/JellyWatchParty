@@ -192,6 +192,7 @@
     panelTheme: PANEL_THEMES.includes(savedTheme) ? savedTheme : 'monochrome',
     panelOpacity: normalizePanelOpacity(savedOpacity),
     chatSettingsOpen: false,
+    panelCollapsed: false,
     tokenExpiresAt: 0,           // Timestamp when token expires
     tokenRefreshTimer: null,     // Timer for token refresh
     // Interval tracking (P4 - memory leak prevention)

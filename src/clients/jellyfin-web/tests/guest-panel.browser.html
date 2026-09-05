@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Guest chat collapse regression</title>
+  <style>
+    body { margin: 0; background: #152029; color: white; font: 16px system-ui; }
+    .videoPlayerContainer { position: fixed; inset: 0; width: 100vw; background: linear-gradient(130deg,#344854,#263843); }
+    .videoPlayerContainer p { padding: 100px 24px; }
+    #checks { position: fixed; top: 12px; left: 12px; z-index: 30000; max-width: 230px; }
+    html body #checks, html body #checks * { visibility: visible !important; }
+    #checks button { margin: 3px; padding: 5px; }
+  </style>
+</head>
+<body>
+  <div id="checks">
+    <button id="waiting">Waiting</button><button id="playing">Playing</button>
+    <button id="refresh-room">Room refresh</button><button id="close-room">Close room</button>
+    <output id="result"></output>
+  </div>
+  <nav class="mainDrawer"><a href="#/home">Library navigation must stay hidden</a></nav>
+  <div class="home-library">Library content must stay hidden</div>
+  <div class="videoPlayerContainer"><p>Local player preview — no media or server connection</p></div>
+  <div id="jwp-panel" class="hide"></div>
+  <script src="../state.js"></script>
+  <script src="../utils/misc.js"></script>
+  <script src="../utils/time.js"></script>
+  <script src="../utils/media.js"></script>
+  <script src="../ui/styles.js"></script>
+  <script src="../ui/indicators.js"></script>
+  <script src="../ui/render.js"></script>
+  <script src="../app/guest-lockdown.js"></script>
+  <script src="../app/lifecycle.js"></script>
+  <script src="../ws/handlers/sync.js"></script>
+  <script>
+    const JWP = window.JellyWatchParty;
+    const mediaId = 'a'.repeat(32);
+    let playing = false;
+    let reads = 0;
+    Object.assign(JWP.state, { guestMode: true, guestRoomId: 'test-room', roomId: 'test-room', inRoom: true, waitingForTitle: true, chatNickname: 'Guest', participantCount: 2, clientId: 'guest' });
+    JWP.playback = { isVideoPage: () => playing, ensurePlayback() {}, holdJoinPlayback() {}, releaseJoinPlayback() {} };
+    JWP.utils.getVideo = () => null;
+    JWP.utils.getCurrentItemId = () => playing ? mediaId : '';
+    for (const name of ['updateRoomListUI', 'updateBridgeListUI', 'updateStatusIndicator', 'updateServerFooter', 'updateSyncIndicator', 'renderHomeWatchParties']) JWP.ui[name] = () => {};
+    JWP.chat = { draftText: '', emotes: [], markRead() { reads++; }, renderAllMessages() {}, hydrate() {} };
+    window.ApiClient = { serverAddress: () => 'https://jellyfin.test', accessToken: () => 'test-token' };
+    window.fetch = async () => ({ ok: true, json: async () => ({ IsGuest: true, WatchPartyRoomId: 'test-room' }) });
+    // Intercept only fixture controls before the real guest click filter.
+    document.addEventListener('click', event => {
+      if (!event.target.closest('#checks')) return;
+      event.stopImmediatePropagation();
+      const id = event.target.id;
+      if (id === 'playing' || id === 'waiting') {
+        playing = id === 'playing';
+        location.hash = playing ? '#/video' : '#/home';
+        JWP.state.roomMediaId = playing ? mediaId : '';
+        JWP.state.waitingForTitle = !playing;
+        JWP.state.guestClosedMessage = '';
+        JWP.ui.render(true);
+      } else if (id === 'refresh-room') {
+        JWP._wsHandlers.handleRoomState({ room: 'test-room', client: 'guest', payload: { name: 'Test room', host_id: 'owner', participant_count: 2, media_id: playing ? mediaId : '' } }, null);
+      } else if (id === 'close-room') {
+        JWP.guestLockdown.endGuestSession('This room is closed.');
+        JWP.ui.render(true);
+      }
+    }, true);
+    JWP.ui.injectStyles();
+    JWP.guestLockdown.setGuestState({ IsGuest: true, WatchPartyRoomId: 'test-room' });
+    JWP.guestLockdown.init();
+    JWP.ui.render(true);
+    const inspect = () => {
+      JWP.guestLockdown.updateGuestView();
+      JWP.ui.render();
+      const panel = document.getElementById('jwp-panel');
+      const reopen = document.getElementById('jwp-chat-reopen');
+      const closed = !!JWP.state.guestClosedMessage;
+      const hidden = getComputedStyle(panel).display === 'none';
+      const surface = document.getElementById('jwp-waiting-player') || document.querySelector('.videoPlayerContainer');
+      const checks = {
+        collapsed: JWP.state.panelCollapsed,
+        panelHidden: hidden,
+        hideButtonVisible: !closed && !hidden && getComputedStyle(document.getElementById('jwp-btn-hide')).display !== 'none',
+        reopenVisible: !!reopen && getComputedStyle(reopen).display !== 'none' && getComputedStyle(reopen).visibility === 'visible',
+        reopenAllowed: !!reopen && JWP.guestLockdown.isAllowedControl(reopen),
+        surfaceWidth: Math.round(surface.getBoundingClientRect().width),
+        surfaceHeight: Math.round(surface.getBoundingClientRect().height),
+        viewportWidth: innerWidth,
+        viewportHeight: innerHeight,
+        libraryHidden: getComputedStyle(document.querySelector('.home-library')).visibility === 'hidden',
+        navigationHidden: getComputedStyle(document.querySelector('.mainDrawer')).display === 'none',
+        inRoom: JWP.state.inRoom,
+        reads,
+        draft: JWP.chat.draftText,
+        closed
+      };
+      document.documentElement.dataset.checks = JSON.stringify(checks);
+      document.getElementById('result').textContent = hidden ? 'Chat hidden' : 'Chat open';
+    };
+    inspect();
+    setInterval(inspect, 200);
+  </script>
+</body>
+</html>

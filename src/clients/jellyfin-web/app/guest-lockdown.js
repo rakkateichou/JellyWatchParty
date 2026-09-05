@@ -158,6 +158,7 @@
     if (!state.guestMode) return;
     state.guestRoomId ||= state.roomId || state.pendingJoinRoomId || '';
     state.guestClosedMessage = message || 'This room is closed. Ask the owner for a new invitation.';
+    state.panelCollapsed = false;
     state.mediaChangeToken += 1;
     try { window.sessionStorage?.setItem('jwp_guest_closed', state.guestRoomId); } catch (_) {}
     const video = utils.getVideo?.();
@@ -169,7 +170,9 @@
     if (!isRestricted()) return;
     const playing = !state.guestClosedMessage && !!JWP.playback?.isVideoPage?.();
     document.documentElement?.classList?.toggle('jwp-guest-playing', playing);
-    document.getElementById(JWP.constants.PANEL_ID)?.classList.remove('hide');
+    if (!state.panelCollapsed || state.guestClosedMessage) {
+      document.getElementById(JWP.constants.PANEL_ID)?.classList.remove('hide');
+    }
     let screen = document.getElementById('jwp-guest-screen');
     if (playing || (state.inRoom && state.waitingForTitle && !state.guestClosedMessage)) {
       screen?.remove();
@@ -194,7 +197,7 @@
 
   const isAllowedControl = (target) => {
     if (!target?.closest) return true;
-    if (target.closest(`#${JWP.constants.PANEL_ID}, #${JWP.constants.BTN_ID}, #jwp-global-btn`)) return true;
+    if (target.closest(`#${JWP.constants.PANEL_ID}, #${JWP.constants.BTN_ID}, #jwp-global-btn, #jwp-chat-reopen`)) return true;
     if (target.closest(BLOCKED_CONTROL_SELECTOR)) return false;
     if (isVideoRoute() && target.closest('.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .actionSheet, .dialog')) return true;
     if (target.closest('.mainDetailButtons .btnPlay, .mainDetailButtons [data-action="play"], .mainDetailButtons [data-action="resume"]')) return true;
