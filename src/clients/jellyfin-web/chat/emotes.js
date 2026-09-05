@@ -56,7 +56,8 @@
     { token: ':feelsokayman:', label: 'FeelsOkayMan', src: image('feelsokayman') },
     { token: ':feelsstrongman:', label: 'FeelsStrongMan', src: image('feelsstrongman') },
     { token: ':7cinema:', label: '7Cinema', src: image('7cinema') },
-    { token: ':xdx:', label: 'xdx', src: image('xdx') }
+    { token: ':xdx:', label: 'xdx', src: image('xdx') },
+    { token: ':aloo:', label: 'Aloo', src: image('aloo') }
   ]);
 
   // Retired picker entries remain supported in existing chat history.

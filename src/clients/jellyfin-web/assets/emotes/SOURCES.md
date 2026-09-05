@@ -78,3 +78,5 @@ Matched to the requested 7TV creators. Retired images are retained for existing 
 PartyParrot was replaced in the picker by **Prayge** by **Neowav** on 2026-09-05. Bundled file: `prayge.webp`; source: https://7tv.app/emotes/01F6NACCD80006SZ7ZW5FMWKWK (7TV CDN `2x.webp`). The retired PartyParrot image remains available for existing messages.
 
 WAYTOODANK was replaced in the picker by **RAGEY** by **KAETNN** on 2026-09-05. Bundled file: `ragey.webp`; source: https://7tv.app/emotes/01GBFAYKGR000FWWN7MDZZ8XQN (7TV CDN `2x.webp`). The retired WAYTOODANK image remains available for existing messages.
+
+Added **Aloo** by **benASTRO** on 2026-09-05, matching the requested screenshot. Bundled file: `aloo.webp`; source: https://7tv.app/emotes/01F6PRA3N80003BH8AEY9DWKDQ (7TV CDN `2x.webp`).

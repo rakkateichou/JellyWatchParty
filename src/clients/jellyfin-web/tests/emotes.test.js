@@ -50,9 +50,9 @@ describe('Twitch-style chat emotes', () => {
   });
 
   it('includes the current catalogue with unique tokens and bundled images', () => {
-    assert.equal(JWP.chat.emotes.length, 47);
-    assert.equal(new Set(JWP.chat.emotes.map(emote => emote.token)).size, 47);
-    assert.equal(JWP.chat.renderEmotes(':partyparrot: :waytoodank: :winetime:').match(/jwp-chat-emote/g)?.length, 3);
+    assert.equal(JWP.chat.emotes.length, 48);
+    assert.equal(new Set(JWP.chat.emotes.map(emote => emote.token)).size, 48);
+    assert.equal(JWP.chat.renderEmotes(':partyparrot: :waytoodank: :winetime: :aloo:').match(/jwp-chat-emote/g)?.length, 4);
 
     for (const emote of JWP.chat.emotes) {
       const filename = path.basename(new URL(emote.src, 'https://jellyfin.test').pathname);
