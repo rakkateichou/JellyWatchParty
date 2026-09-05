@@ -72,6 +72,22 @@ describe('host pause and resume events', () => {
     assert.equal(JWP.state.lastSyncPlayState, 'playing');
   });
 
+  it('cancels a guest countdown immediately when Pause arrives', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 100000 });
+    video.paused = true;
+    JWP._wsHandlers.handlePlayerEvent({ server_ts: 101000, payload: {
+      action: 'play', position: 20, target_server_ts: 101000, coordinated: true
+    } }, video);
+    assert.equal(JWP.state.pendingPlayUntil, 101000);
+    JWP._wsHandlers.handlePlayerEvent({ server_ts: 100100, payload: {
+      action: 'pause', position: 20, play_state: 'paused'
+    } }, video);
+    t.mock.timers.tick(2000);
+    assert.equal(video.playCalls, 0);
+    assert.equal(JWP.state.pendingPlayUntil, 0);
+    assert.equal(JWP.state.syncStatus, 'synced');
+  });
+
   it('uses the position paired with a scheduled resume timestamp', () => {
     video.paused = true;
     JWP._wsHandlers.handlePlayerEvent({

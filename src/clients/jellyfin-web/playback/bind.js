@@ -4,10 +4,41 @@
   const state = JWP.state;
   const utils = JWP.utils;
   const { STATE_UPDATE_MS, SEEK_THRESHOLD } = JWP.constants;
+  let syntheticPauses = 0;
+  let playRequestNumber = 0;
+  let scheduledStartPlayed = false;
+
+  const holdHost = (video) => {
+    if (!video.paused) {
+      syntheticPauses += 1;
+      video.pause();
+    }
+  };
+
+  const cancelCoordinatedPlay = (video = utils.getVideo()) => {
+    if (!state.inRoom || !state.isHost || !state.coordinatedPlayPending || !video) return false;
+    state.coordinatedPlayPending = false;
+    state.coordinatedPlayStarting = false;
+    scheduledStartPlayed = false;
+    state.coordinatedPlayRequestId = '';
+    state.wantsToPlay = false;
+    state.pendingPlayUntil = 0;
+    state.syncStatus = 'synced';
+    if (state.pendingActionTimer) clearTimeout(state.pendingActionTimer);
+    state.pendingActionTimer = null;
+    holdHost(video);
+    JWP.actions?.send?.('player_event', {
+      action: 'pause', position: video.currentTime, play_state: 'paused',
+      media_id: utils.getCurrentItemId(), sample_server_ts: utils.getServerNow(),
+      coordinated_cancel: true
+    });
+    JWP.ui?.updateSyncIndicator?.();
+    return true;
+  };
 
   const sendStateUpdate = (video) => {
     const actions = JWP.actions;
-    if (!state.isHost || !actions || !actions.send) return;
+    if (!state.inRoom || !state.isHost || !actions || !actions.send) return;
     if (state.coordinatedPlayPending) return;
     if (state.isSyncing) return;
     if (utils.isSeeking()) return;
@@ -31,13 +62,16 @@
 
   const onHostEvent = (action, video) => {
     const actions = JWP.actions;
+    if (action === 'pause' && syntheticPauses > 0) { syntheticPauses -= 1; return; }
+    if (!state.inRoom || !state.isHost) return;
     if (action === 'play' && state.coordinatedPlayStarting) {
+      syntheticPauses = 0;
+      scheduledStartPlayed = true;
       state.coordinatedPlayStarting = false;
       return;
     }
-    if (action === 'pause' && state.coordinatedPlayPending) return;
-    if (action === 'play' && state.coordinatedPlayPending) {
-      if (!video.paused) video.pause();
+    if ((action === 'play' || action === 'pause') && state.coordinatedPlayPending) {
+      cancelCoordinatedPlay(video);
       return;
     }
     if (!state.isHost || !actions || !actions.send || !utils.shouldSend()) return;
@@ -47,6 +81,8 @@
       if (state.isBuffering) return;
       if (utils.isSeeking()) return;
       state.wantsToPlay = false;
+      scheduledStartPlayed = false;
+      state.coordinatedPlayRequestId = '';
     }
     if (action === 'play') {
       if (utils.isSeeking()) return;
@@ -54,9 +90,13 @@
       // Jellyfin starts the host immediately. Hold it on the exact frame that
       // was requested until the server gives every participant one common
       // future start time. The resulting synthetic Pause event is ignored by
-      // the coordinatedPlayPending guard above.
+      // the synthetic-pause counter above, so a real second click can cancel.
       state.coordinatedPlayPending = true;
-      if (!video.paused) video.pause();
+      state.coordinatedPlayRequestId = `${state.clientId || 'host'}-${utils.nowMs()}-${++playRequestNumber}`;
+      state.pendingPlayUntil = 0;
+      state.syncStatus = 'pending_play';
+      holdHost(video);
+      JWP.ui?.updateSyncIndicator?.();
     }
     if (action === 'seek') {
       const now = utils.nowMs();
@@ -78,11 +118,15 @@
       sample_server_ts: sampleServerTs
     };
     playback.addTrackSnapshot?.(payload);
+    if (action === 'play') payload.request_id = state.coordinatedPlayRequestId;
     const eventSent = actions.send('player_event', payload);
     if (action === 'play' && eventSent === false) {
       // Do not strand the host on a paused frame if the room connection drops
       // at the exact moment they resume.
       state.coordinatedPlayPending = false;
+      state.coordinatedPlayRequestId = '';
+      state.syncStatus = 'synced';
+      JWP.ui?.updateSyncIndicator?.();
       state.coordinatedPlayStarting = true;
       video.play().catch(() => {
         state.coordinatedPlayStarting = false;
@@ -120,14 +164,17 @@
         if (wasBuffering) utils.log('VIDEO', { event: 'ready', pos: video.currentTime, readyState: video.readyState });
       },
       playing: () => {
+        syntheticPauses = 0;
+        const wasScheduled = scheduledStartPlayed || state.coordinatedPlayPending;
+        scheduledStartPlayed = false;
         state.coordinatedPlayStarting = false;
         const wasBuffering = state.isBuffering;
         state.isBuffering = false;
         if (wasBuffering) {
           utils.log('VIDEO', { event: 'playing', pos: video.currentTime });
-          if (state.isHost && JWP.actions && JWP.actions.send) {
-            JWP.actions.send('player_event', { action: 'play', position: video.currentTime });
-          }
+          // Buffer recovery needs a shared resume only when it was not already
+          // the result of one; otherwise each start can schedule another one.
+          if (state.isHost && !wasScheduled) onHostEvent('play', video);
         }
       },
       play: () => onHostEvent('play', video),
@@ -166,6 +213,16 @@
   };
 
   const cleanupVideoListeners = () => {
+    syntheticPauses = 0;
+    scheduledStartPlayed = false;
+    state.coordinatedPlayPending = false;
+    state.coordinatedPlayStarting = false;
+    state.coordinatedPlayRequestId = '';
+    state.pendingPlayUntil = 0;
+    if (state.pendingActionTimer) clearTimeout(state.pendingActionTimer);
+    state.pendingActionTimer = null;
+    if (state.syncStatus === 'pending_play') state.syncStatus = 'synced';
+    JWP.ui?.updateSyncIndicator?.();
     if (state.currentVideoElement && state.videoListeners) {
       const video = state.currentVideoElement;
       const listeners = state.videoListeners;
@@ -184,5 +241,5 @@
     state.currentVideoElement = null;
   };
 
-  Object.assign(playback, { bindVideo, cleanupVideoListeners, onHostEvent });
+  Object.assign(playback, { bindVideo, cleanupVideoListeners, onHostEvent, cancelCoordinatedPlay });
 })();

@@ -2,6 +2,37 @@
   const JWP = window.JellyWatchParty = window.JellyWatchParty || {};
   const ui = JWP.ui = JWP.ui || {};
   const state = JWP.state;
+  let playbackStatusTimer = null;
+
+  const cleanupPlaybackStatus = () => {
+    if (playbackStatusTimer) clearInterval(playbackStatusTimer);
+    playbackStatusTimer = null;
+    document.getElementById('jwp-playback-status')?.remove();
+  };
+
+  const updatePlaybackStatus = () => {
+    const active = state.inRoom && !state.waitingForTitle && !state.guestClosedMessage
+      && (state.coordinatedPlayPending || state.syncStatus === 'pending_play')
+      && JWP.playback?.isVideoPage?.();
+    if (!active) { cleanupPlaybackStatus(); return; }
+    let status = document.getElementById('jwp-playback-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.id = 'jwp-playback-status';
+      status.innerHTML = '<div class="jwp-sync-spinner" aria-hidden="true"></div><span id="jwp-playback-label" role="status"></span><span id="jwp-playback-countdown" aria-hidden="true"></span><button type="button" id="jwp-playback-cancel" aria-label="Cancel synced playback">Cancel</button>';
+      ui.stopPlayerCapture(status);
+      status.querySelector('button').onclick = () => JWP.playback?.cancelCoordinatedPlay?.();
+      document.body.appendChild(status);
+    }
+    const label = status.querySelector('#jwp-playback-label');
+    const scheduled = state.pendingPlayUntil > 0;
+    const text = scheduled ? 'Starting together…' : 'Syncing playback…';
+    if (label.textContent !== text) label.textContent = text;
+    status.querySelector('#jwp-playback-countdown').textContent = scheduled
+      ? `${Math.max(0, (state.pendingPlayUntil - JWP.utils.getServerNow()) / 1000).toFixed(1)}s` : '';
+    status.querySelector('#jwp-playback-cancel').hidden = !state.isHost;
+    if (!playbackStatusTimer) playbackStatusTimer = setInterval(updatePlaybackStatus, 100);
+  };
 
   const updateStatusIndicator = () => {
     const el = document.getElementById('jwp-ws-indicator');
@@ -33,6 +64,7 @@
   };
 
   const updateSyncIndicator = () => {
+    updatePlaybackStatus();
     const el = document.getElementById('jwp-sync-indicator');
     if (!el || state.isHost) return;
     const { dotClass, label, showSpinner } = describeSyncStatus(state.syncStatus);
@@ -61,5 +93,5 @@
     input.addEventListener('mousedown', stopPropagation);
   };
 
-  Object.assign(ui, { updateStatusIndicator, updateServerFooter, updateSyncIndicator, buildSyncStatusIndicator, stopPlayerCapture });
+  Object.assign(ui, { updateStatusIndicator, updateServerFooter, updateSyncIndicator, buildSyncStatusIndicator, stopPlayerCapture, cleanupPlaybackStatus });
 })();

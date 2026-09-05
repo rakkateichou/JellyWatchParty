@@ -78,6 +78,9 @@
     if (state.pendingActionTimer) clearTimeout(state.pendingActionTimer);
     state.pendingActionTimer = null;
     state.coordinatedPlayPending = false;
+    state.coordinatedPlayRequestId = '';
+    state.pendingPlayUntil = 0;
+    state.syncStatus = 'unknown';
     state.coordinatedPlayStarting = false;
     if (state.inRoom && state.roomId && !state.guestClosedMessage) {
       state.reconnecting = true;

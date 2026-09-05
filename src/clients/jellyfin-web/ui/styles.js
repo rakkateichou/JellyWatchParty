@@ -8,6 +8,7 @@
     html.jwp-party-guest body, html.jwp-party-guest body * { visibility: hidden !important; }
     html.jwp-party-guest #${PANEL_ID}, html.jwp-party-guest #${PANEL_ID} *,
     html.jwp-party-guest #jwp-chat-reopen, html.jwp-party-guest #jwp-chat-reopen *,
+    html.jwp-party-guest #jwp-playback-status, html.jwp-party-guest #jwp-playback-status *,
     html.jwp-party-guest #jwp-guest-screen, html.jwp-party-guest #jwp-waiting-player,
     html.jwp-party-guest .jwp-toast-system,
     html.jwp-party-guest #jwp-waiting-player *,
@@ -248,6 +249,21 @@
     #jwp-chat-reopen:hover { background: rgba(37, 37, 37, .8); }
     #jwp-chat-reopen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
     #jwp-chat-reopen[hidden] { display: none !important; }
+    #jwp-playback-status {
+      position: fixed; top: 50%; left: calc((100vw - var(--jwp-dock-width, 0px)) / 2);
+      transform: translate(-50%, -50%); z-index: 20002;
+      display: flex; align-items: center; gap: .65rem; box-sizing: border-box;
+      max-width: calc(100vw - var(--jwp-dock-width, 0px) - 2rem);
+      padding: .75rem 1rem; border: 1px solid rgba(255,255,255,.18); border-radius: .75rem;
+      background: rgba(12,16,22,.88); color: #fff; font: 500 .9rem/1.4 system-ui,sans-serif;
+    }
+    #jwp-playback-status[hidden] { display: none !important; }
+    #jwp-playback-status .jwp-sync-spinner { flex: 0 0 auto; border: 2px solid rgba(255,255,255,.25); border-top-color: #e3a75f; }
+    #jwp-playback-countdown { font-variant-numeric: tabular-nums; }
+    #jwp-playback-cancel { padding: .3rem .55rem; border: 1px solid rgba(255,255,255,.3); border-radius: .4rem; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+    @media (max-width: 799px) {
+      html.jwp-party-guest:not(.jwp-chat-collapsed) #jwp-playback-status { top: 20dvh; }
+    }
     #${PANEL_ID} * { box-sizing: border-box; }
     /* ShareLinks already confines temporary users on the server. These rules
        make its guest web UI watch-only; JellyWatchParty's class additionally
@@ -865,6 +881,35 @@
       html.jwp-player-docked .videoOsdBottom {
         right: var(--jwp-dock-width) !important;
         width: auto !important;
+      }
+      /* Native breakpoints use the whole window, which is too wide once chat
+         takes a side of it. Size the controls to the remaining player space. */
+      html.jwp-player-docked .videoOsdBottom { container: jwp-controls / inline-size; }
+      html.jwp-player-docked .videoOsdBottom .buttons {
+        flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin;
+      }
+      html.jwp-player-docked .videoOsdBottom .buttons > div[dir="ltr"] {
+        display: flex; align-items: center; flex: 0 0 auto; white-space: nowrap;
+      }
+      html.jwp-player-docked .videoOsdBottom .buttons > button { flex-shrink: 0; }
+      html.jwp-player-docked .videoOsdBottom .osdTimeText { min-width: 0; }
+      @container jwp-controls (max-width: 75em) {
+        .videoOsdBottom .endsAtText { display: none !important; }
+      }
+      @container jwp-controls (max-width: 62.5em) {
+        .videoOsdBottom .paper-icon-button-light { margin: 0; padding: .4em; }
+        .videoOsdBottom .osdVolumeSliderContainer { width: 5em; }
+        .videoOsdBottom .volumeButtons { margin-inline: .25em; }
+      }
+      @container jwp-controls (max-width: 50em) {
+        .videoOsdBottom .btnRewind, .videoOsdBottom .btnFastForward { display: none !important; }
+      }
+      @container jwp-controls (max-width: 43em) {
+        .videoOsdBottom .osdVolumeSliderContainer, .videoOsdBottom .osdTimeText,
+        .videoOsdBottom .btnUserRating { display: none !important; }
+      }
+      @container jwp-controls (max-width: 30em) {
+        .videoOsdBottom .paper-icon-button-light { padding: .25em; }
       }
       /* Jellyfin appends every media-segment prompt (intro, recap, outro,
          commercial, etc.) directly to <body>, outside the resized player.

@@ -595,6 +595,7 @@
   };
 
   const render = (forceFullRender = false) => {
+    ui.updateSyncIndicator();
     updateWaitingRoom();
     JWP.guestLockdown?.updateGuestView?.();
     const panel = document.getElementById(PANEL_ID);

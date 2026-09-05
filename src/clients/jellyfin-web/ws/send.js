@@ -7,7 +7,9 @@
   const p2pEligible = (type, payload) => {
     if (type === 'chat_message') return !payload?.reply_to_id;
     if (type === 'cursor_update') return true;
-    return type === 'player_event' && payload?.action !== 'play';
+    // Keep cancellation ordered after the scheduled Play on every guest's
+    // WebSocket; a faster peer copy could otherwise overtake that Play.
+    return type === 'player_event' && payload?.action !== 'play' && !payload?.coordinated_cancel;
   };
 
   const messageId = () => {
@@ -100,6 +102,7 @@
     state.syncStatus = 'synced';
     state.pendingPlayUntil = 0;
     state.coordinatedPlayPending = false;
+    state.coordinatedPlayRequestId = '';
     state.coordinatedPlayStarting = false;
     state.currentDrift = 0;
     JWP.playback?.resetInitialTrackSync?.();

@@ -258,6 +258,14 @@
       applyInitialTracks(msg.payload, msg.payload.media_id);
     }
     if (!video) return;
+    if (msg.payload?.play_state === 'paused' && state.pendingPlayUntil) {
+      if (state.pendingActionTimer) clearTimeout(state.pendingActionTimer);
+      state.pendingActionTimer = null;
+      state.pendingPlayUntil = 0;
+      state.syncStatus = 'synced';
+      ui.updateSyncIndicator?.();
+    }
+    if (msg.payload?.play_state === 'playing' && state.pendingPlayUntil > utils.getServerNow()) return;
     if (msg.payload) {
       state.lastSyncPlayState = msg.payload.play_state || state.lastSyncPlayState;
     }

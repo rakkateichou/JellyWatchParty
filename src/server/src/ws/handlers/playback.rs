@@ -37,15 +37,22 @@ fn apply_track_selection(room: &mut Room, payload: &serde_json::Value) {
     }
 }
 
-fn handle_play_not_ready(room: &mut Room, position: f64, current_ts: u64) -> Option<(String, u64)> {
+fn handle_play_not_ready(
+    room: &mut Room,
+    position: f64,
+    current_ts: u64,
+    request_id: Option<String>,
+) -> Option<(String, u64)> {
     room.state.position = position;
     if let Some(pending) = room.pending_play.as_mut() {
         pending.position = position;
+        pending.request_id = request_id;
         None
     } else {
         room.pending_play = Some(PendingPlay {
             position,
             created_at: current_ts,
+            request_id,
         });
         room.last_state_ts = current_ts;
         Some((room.room_id.clone(), current_ts))
@@ -262,7 +269,14 @@ pub(in crate::ws) async fn handle_playback(
                 .filter(|pos| is_valid_position(*pos))
                 .unwrap_or(room.state.position);
             let everyone_ready = all_ready(room);
-            if let Some(schedule) = handle_play_not_ready(room, position, current_ts) {
+            let request_id = parsed
+                .payload
+                .as_ref()
+                .and_then(|p| p.get("request_id"))
+                .and_then(|v| v.as_str())
+                .filter(|id| !id.is_empty() && id.len() <= 128)
+                .map(str::to_owned);
+            if let Some(schedule) = handle_play_not_ready(room, position, current_ts, request_id) {
                 if everyone_ready {
                     immediate_schedule = Some(schedule);
                 } else {
@@ -432,6 +446,7 @@ mod tests {
         room.pending_play = Some(PendingPlay {
             position: 5.0,
             created_at: now_ms(),
+            request_id: None,
         });
         let parsed = IncomingMessage {
             msg_type: ClientMessageType::StateUpdate,
@@ -450,6 +465,7 @@ mod tests {
         room.pending_play = Some(PendingPlay {
             position: 5.0,
             created_at: now_ms(),
+            request_id: None,
         });
         let parsed = IncomingMessage {
             msg_type: ClientMessageType::PlayerEvent,
@@ -485,9 +501,13 @@ mod tests {
     fn handle_play_not_ready_creates_pending() {
         let mut room = test_helpers::create_room("r1", "host");
         assert!(room.pending_play.is_none());
-        let result = handle_play_not_ready(&mut room, 10.0, now_ms());
+        let result = handle_play_not_ready(&mut room, 10.0, now_ms(), Some("first".to_owned()));
         assert!(result.is_some());
         assert!(room.pending_play.is_some());
+        assert_eq!(
+            room.pending_play.as_ref().unwrap().request_id.as_deref(),
+            Some("first")
+        );
         assert!((room.pending_play.as_ref().unwrap().position - 10.0).abs() < f64::EPSILON);
     }
 
@@ -497,9 +517,14 @@ mod tests {
         room.pending_play = Some(PendingPlay {
             position: 5.0,
             created_at: now_ms(),
+            request_id: None,
         });
-        let result = handle_play_not_ready(&mut room, 15.0, now_ms());
+        let result = handle_play_not_ready(&mut room, 15.0, now_ms(), Some("newer".to_owned()));
         assert!(result.is_none()); // Returns None when pending already exists
+        assert_eq!(
+            room.pending_play.as_ref().unwrap().request_id.as_deref(),
+            Some("newer")
+        );
         assert!((room.pending_play.as_ref().unwrap().position - 15.0).abs() < f64::EPSILON);
     }
 

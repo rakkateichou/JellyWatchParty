@@ -64,8 +64,19 @@ pub(in crate::ws) async fn handle_ready(
                     .as_ref()
                     .map(|p| p.position)
                     .unwrap_or(room.state.position);
+                let request_id = room
+                    .pending_play
+                    .as_ref()
+                    .and_then(|p| p.request_id.clone());
                 room.pending_play = None;
-                broadcast_scheduled_play(room, clients, position, target_server_ts).await;
+                broadcast_scheduled_play(
+                    room,
+                    clients,
+                    position,
+                    target_server_ts,
+                    request_id.as_deref(),
+                )
+                .await;
             }
         }
     }
@@ -165,6 +176,7 @@ mod tests {
             room.pending_play = Some(crate::types::PendingPlay {
                 position: 10.0,
                 created_at: crate::utils::now_ms(),
+                request_id: None,
             });
             lr.insert("room-1".to_string(), room);
         }

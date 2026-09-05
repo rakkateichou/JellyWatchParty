@@ -85,6 +85,8 @@ pub struct PlaybackState {
 pub struct PendingPlay {
     pub position: f64,
     pub created_at: u64,
+    #[serde(default)]
+    pub request_id: Option<String>,
 }
 
 /// Incoming message types from clients (type-safe enum for dispatch)

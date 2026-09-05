@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Player controls and coordinated resume regression</title>
+<style>
+  body { margin:0; background:#20323e; color:#fff; font:16px system-ui; }
+  .videoPlayerContainer { position:fixed; inset:0; }
+  .videoPlayerContainer p { padding:80px 24px; }
+  .videoOsdBottom { position:fixed; inset:auto 0 0; background:#000a; }
+  .osdControls { padding:0 .8em; }
+  .buttons { padding:.25em 0 0; display:flex; flex-wrap:wrap; align-items:center; }
+  .paper-icon-button-light { color:inherit; background:transparent; border:0; padding:.75em; margin:2px; font:inherit; cursor:pointer; }
+  .paper-icon-button-light span { display:block; width:24px; height:24px; line-height:24px; }
+  .osdTimeText { margin-left:1em; margin-right:auto; white-space:nowrap; }
+  .endsAtText { margin-left:1em; }
+  .volumeButtons { display:flex; align-items:center; margin:0 1em 0 .29em; }
+  .osdVolumeSliderContainer { width:9em; }
+  input[type=range] { width:100%; }
+  .timeline { display:flex; gap:.5em; padding:14px 0; }
+  .timeline input { min-width:0; flex:1; }
+  #fixture-controls { position:fixed; top:12px; left:12px; z-index:30000; }
+  #fixture-controls button { padding:.5em; }
+  html body #fixture-controls, html body #fixture-controls * { visibility:visible!important; }
+  @media(max-width:1200px) { .endsAtText { display:none; } }
+  @media(max-width:800px) { .btnRewind,.btnFastForward { display:none; } }
+</style></head><body>
+<div id="fixture-controls"><button id="remote-resume">Simulate room resume</button><button id="exit-room">Leave room</button></div>
+<div class="videoPlayerContainer"><p>Local controls preview — no media or Jellyfin connection</p></div>
+<div class="videoOsdBottom videoOsdBottom-maincontrols"><div class="osdControls">
+<div class="buttons"><div dir="ltr" id="transport"></div>
+<div class="osdTimeText"><span>★ 7.7</span><span class="endsAtText">Ends at 1:38 am</span></div>
+<button class="paper-icon-button-light btnUserRating" aria-label="Favorite"><span>♥</span></button>
+<button class="paper-icon-button-light btnSubtitles" aria-label="Subtitles"><span>CC</span></button>
+<div class="volumeButtons"><button class="paper-icon-button-light buttonMute" aria-label="Mute"><span>◖</span></button><div class="osdVolumeSliderContainer"><input type="range" aria-label="Volume"></div></div>
+<button class="paper-icon-button-light btnAudio" aria-label="Audio"><span>♫</span></button>
+<button class="paper-icon-button-light btnVideoOsdSettings" aria-label="Player settings"><span>⚙</span></button>
+<button class="paper-icon-button-light btnAirPlay" aria-label="AirPlay"><span>▣</span></button>
+<button class="paper-icon-button-light btnPip" aria-label="Picture in picture"><span>▰</span></button>
+<button class="paper-icon-button-light btnFullscreen" aria-label="Fullscreen"><span>⛶</span></button></div>
+<div class="timeline"><span>10:44</span><input type="range" aria-label="Position"><span>-11:20</span></div>
+</div></div><div id="jwp-panel"></div>
+<script src="../state.js"></script><script src="../utils/time.js"></script><script src="../utils/misc.js"></script><script src="../utils/media.js"></script>
+<script src="../ui/styles.js"></script><script src="../ui/indicators.js"></script><script src="../ui/render.js"></script><script src="../playback/bind.js"></script><script src="../ws/handlers/playback.js"></script><script src="../app/guest-lockdown.js"></script>
+<script>
+const JWP=window.JellyWatchParty, guest=new URLSearchParams(location.search).has('guest');
+location.hash='#/video';
+const transport=document.getElementById('transport');
+for (const [cls,label,glyph] of [['btnPreviousTrack','Previous track','|◀'],['btnPreviousChapter','Previous chapter','↶'],['btnRewind','Rewind','≪'],['btnPause','Play','▶'],['btnFastForward','Fast forward','≫'],['btnNextChapter','Next chapter','↷'],['btnNextTrack','Next track','▶|']]) {
+  const button=document.createElement('button'); button.className=`paper-icon-button-light ${cls}`; button.setAttribute('aria-label',label); button.innerHTML=`<span>${glyph}</span>`; transport.appendChild(button);
+}
+Object.assign(JWP.state,{inRoom:true,isHost:!guest,guestMode:guest,guestRoomId:guest?'test-room':'',roomId:'test-room',roomHostId:'host',clientId:guest?'guest':'host',roomMediaId:'a'.repeat(32),chatNickname:guest?'Guest':'Owner',participantCount:2});
+const nativePlay=document.querySelector('.btnPause');
+const video={currentTime:644,paused:true,readyState:4,seeking:false,playCalls:0,
+  play(){this.paused=false;this.playCalls++;nativePlay.setAttribute('aria-label','Pause');nativePlay.firstChild.textContent='Ⅱ';queueMicrotask(()=>JWP.playback.onHostEvent('play',this));return Promise.resolve();},
+  pause(){if(this.paused)return;this.paused=true;nativePlay.setAttribute('aria-label','Play');nativePlay.firstChild.textContent='▶';queueMicrotask(()=>JWP.playback.onHostEvent('pause',this));}
+};
+JWP.utils.getVideo=()=>video;JWP.utils.getCurrentItemId=()=>JWP.state.roomMediaId;JWP.utils.isSeeking=()=>false;JWP.utils.isVideoReady=()=>true;JWP.utils.log=()=>{};
+JWP.playback.isVideoPage=()=>true;
+for(const name of ['updateRoomListUI','updateBridgeListUI','updateStatusIndicator','updateServerFooter','renderHomeWatchParties','showToast'])JWP.ui[name]=()=>{};
+JWP.chat={draftText:'',emotes:[],markRead(){},renderAllMessages(){},hydrate(){}};
+window.ApiClient={serverAddress:()=> 'https://jellyfin.test',accessToken:()=> 'test-token'};
+window.fetch=async()=>({ok:true,json:async()=>({IsGuest:guest,WatchPartyRoomId:'test-room'})});
+JWP.actions={send(type,payload){if(type==='player_event'&&payload.action==='play')setTimeout(()=>{
+  const target=JWP.utils.getServerNow()+1000;
+  JWP._wsHandlers.handlePlayerEvent({server_ts:target,payload:{action:'play',position:payload.position,target_server_ts:target,coordinated:true,request_id:payload.request_id}},video);
+},250);return true;}};
+document.addEventListener('click',event=>{if(!event.target.closest('#fixture-controls'))return;event.stopImmediatePropagation();
+  if(event.target.id==='exit-room'){JWP.state.inRoom=false;JWP.playback.cleanupVideoListeners();JWP.ui.render(true);}
+  else{const target=JWP.utils.getServerNow()+1000;JWP._wsHandlers.handlePlayerEvent({server_ts:target,payload:{action:'play',position:644,target_server_ts:target,coordinated:true}},video);}
+},true);
+nativePlay.onclick=()=>video.paused?video.play():video.pause();
+JWP.ui.injectStyles();JWP.guestLockdown.setGuestState({IsGuest:guest,WatchPartyRoomId:'test-room'});if(guest)JWP.guestLockdown.init();JWP.ui.render(true);
+setInterval(()=>{
+  const row=document.querySelector('.buttons'),buttons=[...row.querySelectorAll('button')].filter(b=>getComputedStyle(b).display!=='none');
+  const ys=buttons.map(b=>Math.round(b.getBoundingClientRect().y));
+  const fullscreen=document.querySelector('.btnFullscreen').getBoundingClientRect();
+  const indicator=document.getElementById('jwp-playback-status');
+  document.documentElement.dataset.checks=JSON.stringify({viewportWidth:innerWidth,playerWidth:Math.round(row.getBoundingClientRect().width),singleRow:Math.max(...ys)-Math.min(...ys)<2,noOverflow:row.scrollWidth<=row.clientWidth+1,fullscreenFits:fullscreen.right<=row.getBoundingClientRect().right+1,paused:video.paused,playCalls:video.playCalls,pending:JWP.state.coordinatedPlayPending,status:indicator?.textContent||'',statusVisible:!!indicator&&getComputedStyle(indicator).visibility==='visible',cancelVisible:!!indicator&&!indicator.querySelector('button').hidden});
+},50);
+</script></body></html>

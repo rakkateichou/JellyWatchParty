@@ -178,6 +178,7 @@
     currentDrift: 0,       // Current playback drift in seconds (positive = behind host)
     pendingPlayUntil: 0,   // Timestamp when pending play ends (for spinner) (UX-P3)
     coordinatedPlayPending: false, // Host is held on the paused frame until the shared start time
+    coordinatedPlayRequestId: '', // Reject delayed starts from an earlier cancelled resume
     coordinatedPlayStarting: false, // Suppress the synthetic Play event fired by the shared start
     // Admin plugin config (delivered via /JellyWatchParty/Token)
     hideNativeSyncButton: false, // Hide Jellyfin's built-in SyncPlay button

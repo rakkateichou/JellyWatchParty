@@ -82,6 +82,7 @@
     state.initialSyncUntil = 0;
     state.pendingPlayUntil = 0;
     state.coordinatedPlayPending = false;
+    state.coordinatedPlayRequestId = '';
     state.coordinatedPlayStarting = false;
     if (state.pendingActionTimer) {
       clearTimeout(state.pendingActionTimer);

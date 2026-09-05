@@ -14,6 +14,7 @@ pub(super) async fn broadcast_scheduled_play(
     clients: &Clients,
     position: f64,
     target_server_ts: u64,
+    request_id: Option<&str>,
 ) {
     let broadcasted_at = now_ms();
     // Everyone, including the host, is held at `position` while this message
@@ -32,7 +33,8 @@ pub(super) async fn broadcast_scheduled_play(
             "position": position,
             "target_server_ts": target_server_ts,
             "sample_server_ts": target_server_ts,
-            "coordinated": true
+            "coordinated": true,
+            "request_id": request_id
         })),
         ts: broadcasted_at,
         server_ts: Some(target_server_ts),
@@ -57,7 +59,14 @@ pub(super) async fn release_pending_play(
     };
     room.pending_play = None;
     let target_server_ts = now_ms() + PLAY_SCHEDULE_MS;
-    broadcast_scheduled_play(room, clients, pending.position, target_server_ts).await;
+    broadcast_scheduled_play(
+        room,
+        clients,
+        pending.position,
+        target_server_ts,
+        pending.request_id.as_deref(),
+    )
+    .await;
     true
 }
 
@@ -113,13 +122,14 @@ mod tests {
         room.clients = vec!["guest".to_string()];
         room.last_state_ts = now_ms().saturating_sub(250);
         let target_ts = now_ms() + PLAY_SCHEDULE_MS;
-        broadcast_scheduled_play(&mut room, &clients, 10.0, target_ts).await;
+        broadcast_scheduled_play(&mut room, &clients, 10.0, target_ts, Some("resume-123")).await;
 
         let message = test_helpers::recv_msg(&mut rx).expect("scheduled play message");
         let payload = message.payload.expect("scheduled play payload");
         let target_position = payload["position"].as_f64().unwrap();
         assert!((target_position - 10.0).abs() < f64::EPSILON);
         assert_eq!(payload["coordinated"], true);
+        assert_eq!(payload["request_id"], "resume-123");
         assert_eq!(payload["sample_server_ts"], target_ts);
         assert_eq!(message.server_ts, Some(target_ts));
         assert!((room.state.position - 10.0).abs() < f64::EPSILON);

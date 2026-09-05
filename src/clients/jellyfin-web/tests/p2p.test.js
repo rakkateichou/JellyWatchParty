@@ -78,6 +78,13 @@ describe('WebRTC fast path with WebSocket fallback', () => {
     assert.equal(JWP.state.ws.sent.at(-1).type, 'state_update');
   });
 
+  it('keeps cancellation ordered behind Play on the server connection', () => {
+    const pc = FakePeerConnection.instances[0];
+    JWP.actions.send('player_event', { action: 'pause', position: 12, coordinated_cancel: true });
+    assert.equal(pc.channel.sent.length, 0);
+    assert.equal(JWP.state.ws.sent.at(-1).payload.coordinated_cancel, true);
+  });
+
   it('routes replies through the server to resolve the quote before display', () => {
     const pc = FakePeerConnection.instances[0];
     JWP.actions.send('chat_message', { text: 'Agreed', reply_to_id: 'parent' });

@@ -97,6 +97,10 @@
   h.handlePlayerEvent = (msg, video) => {
     const coordinated = msg.payload?.coordinated === true;
     if (!video || (state.isHost && !coordinated)) return;
+    // A late reply to a cancelled Play must not restart the owner or replace
+    // the deadline of a more recent Play request.
+    if (state.isHost && msg.payload?.request_id
+        && msg.payload.request_id !== state.coordinatedPlayRequestId) return;
     if (!state.isHost) utils.startSyncing();
     if (msg.payload && typeof msg.payload.position === 'number') {
       const action = msg.payload.action;

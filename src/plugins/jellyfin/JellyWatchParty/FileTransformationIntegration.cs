@@ -14,7 +14,7 @@ namespace JellyWatchParty.Plugin;
 /// </summary>
 public class FileTransformationIntegration : IScheduledTask
 {
-    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.12.7\" defer></script>";
+    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.12.8\" defer></script>";
     private static readonly string BootstrapMarkup = LoadBootstrap();
 
     private static string LoadBootstrap()
