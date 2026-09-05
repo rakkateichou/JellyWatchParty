@@ -35,7 +35,7 @@
     { token: ':peepohappy:', label: 'peepoHappy', src: image('peepohappy') },
     { token: ':peeposad:', label: 'peepoSad', src: image('peeposad') },
     { token: ':peeporun:', label: 'peepoRun', src: image('peeporun') },
-    { token: ':waytoodank:', label: 'WAYTOODANK', src: image('waytoodank') },
+    { token: ':ragey:', label: 'RAGEY', src: image('ragey') },
     { token: ':hi:', label: 'hi', src: image('hi') },
     { token: ':noooo:', label: 'NOOOO', src: image('noooo') },
     { token: ':caught:', label: 'CAUGHT', src: image('caught') },
@@ -61,6 +61,7 @@
 
   // Retired picker entries remain supported in existing chat history.
   const LEGACY_EMOTES = [
+    { token: ':waytoodank:', label: 'WAYTOODANK', src: image('waytoodank') },
     { token: ':partyparrot:', label: 'PartyParrot', src: image('partyparrot') },
     { token: ':feelsdankman:', label: 'FeelsDankMan', src: image('feelsdankman') },
     { token: ':billyapprove:', label: 'BillyApprove', src: image('billyapprove') },
