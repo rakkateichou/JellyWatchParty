@@ -117,6 +117,8 @@
   const updateDockedPlayerLayout = () => {
     const root = document.documentElement;
     if (!root?.classList) return;
+    // Room members reopen chat with the arrow; the group icon launches the lobby.
+    root.classList.toggle('jwp-in-room', !!state.inRoom);
     // Remove the former launcher if Jellyfin retained its OSD across a refresh.
     document.getElementById(BTN_ID)?.remove();
     const panel = document.getElementById(PANEL_ID);
@@ -136,8 +138,7 @@
     root.classList.toggle(PLAYER_DOCK_CLASS, shouldDock);
 
     const hidden = !!panel?.classList.contains('hide');
-    const fullScreenChat = !!(JWP.guestLockdown?.isRestricted?.() || state.waitingForTitle || state.inviteJoinActive || state.roomJoinActive);
-    const canReopen = state.inRoom && hidden && (fullScreenChat || isVideoPage) && !state.guestClosedMessage;
+    const canReopen = state.inRoom && hidden && !state.guestClosedMessage;
     root.classList.toggle('jwp-chat-collapsed', canReopen);
     let reopen = document.getElementById(CHAT_REOPEN_ID);
     if (canReopen && !reopen) {
@@ -152,11 +153,11 @@
       ui.stopPlayerCapture(reopen);
     }
     if (reopen) {
-      // Give the arrow its own place after the native player buttons. Waiting
+      // Give the arrow its own place after the native header buttons. Waiting
       // and joining screens need it outside the hidden Jellyfin header.
-      const playerHeader = isVideoPage && !state.waitingForTitle && !state.inviteJoinActive && !state.roomJoinActive
-        ? document.querySelector('.skinHeader.osdHeader .headerRight') : null;
-      const target = playerHeader || document.body;
+      const header = !state.waitingForTitle && !state.inviteJoinActive && !state.roomJoinActive
+        ? document.querySelector(isVideoPage ? '.skinHeader.osdHeader .headerRight' : '.skinHeader .headerRight') : null;
+      const target = header || document.body;
       if (canReopen && reopen.parentElement !== target) target.appendChild(reopen);
       reopen.hidden = !canReopen;
     }

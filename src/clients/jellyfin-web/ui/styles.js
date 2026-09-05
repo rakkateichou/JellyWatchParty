@@ -4,6 +4,7 @@
   const { PANEL_ID, STYLE_ID } = JWP.constants;
 
   const CSS_STYLES = `
+    html.jwp-in-room #jwp-global-btn { display: none !important; }
     html.jwp-party-guest { background: #000 !important; overflow: hidden !important; }
     html.jwp-party-guest body, html.jwp-party-guest body * { visibility: hidden !important; }
     html.jwp-party-guest #${PANEL_ID}, html.jwp-party-guest #${PANEL_ID} *,
@@ -231,7 +232,7 @@
       opacity: 1;
       transition: opacity .3s ease-out;
     }
-    .skinHeader.osdHeader .headerRight #jwp-chat-reopen {
+    .skinHeader .headerRight #jwp-chat-reopen {
       position: static;
       flex: 0 0 2.25rem;
       order: 99;
