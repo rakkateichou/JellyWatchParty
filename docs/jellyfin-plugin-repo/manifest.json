@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.7.0",
+        "changelog": "The chat reopen arrow now occupies its own space at the far right of Jellyfin's player header, after the native controls, with a small gap and its existing translucent circular style. It no longer covers another player button and still fades with the native controls.\n\nThe arrow appears only while the user is in a room and chat is collapsed. Leaving the room hides it. Waiting and joining screens retain a separate accessible arrow outside the hidden Jellyfin header.\n\nValidation: 180 client/helper tests and 128 plugin tests passed. Local browser checks covered host controls, room exit, playback outside a room, the waiting-to-player transition, and reopening chat in a 390px guest layout. No media was played and no watch history was changed.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.7.0/JellyWatchParty-v1.12.7.0.zip",
+        "checksum": "6cf7cc294e2ec9f06c60c44ce212207d",
+        "timestamp": "2026-09-05T17:19:57Z"
+      },
+      {
         "version": "1.12.6.0",
         "changelog": "The translucent chat reopen arrow now fades with Jellyfin's player controls and returns when the player controls return, for both hosts and guests. It follows Jellyfin's native idle timing and fade animation, stays accessible through keyboard focus, and remains visible while waiting for the owner to pick a title.\n\nValidation: 177 client/helper tests and 128 plugin tests passed. Browser checks covered host and guest control visibility, the 390px guest layout, keyboard reopening, and the waiting room without playing media or changing watch history.\n",
         "targetAbi": "10.11.11.0",
