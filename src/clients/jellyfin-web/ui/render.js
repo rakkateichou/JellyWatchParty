@@ -16,7 +16,7 @@
   // Entry chat is available before Jellyfin's icon font has loaded.
   const icon = (name) => {
     const paths = {
-      link: '<path d="m10 13 4-4m-6 7-2 2a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m4 0 2-2a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0"/>',
+      link: '<path d="M10 14l4-4M8 10l-3 3a4.25 4.25 0 0 0 6 6l3-3M10 8l3-3a4.25 4.25 0 0 1 6 6l-3 3"/>',
       settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/><circle cx="12" cy="12" r="7"/>',
       chevron: '<path d="m9 5 7 7-7 7"/>',
       smile: '<circle cx="12" cy="12" r="9"/><path d="M8 14s1 3 4 3 4-3 4-3M8 8v2m8-2v2"/>'
