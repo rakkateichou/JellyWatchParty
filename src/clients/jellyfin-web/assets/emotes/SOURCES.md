@@ -80,3 +80,15 @@ PartyParrot was replaced in the picker by **Prayge** by **Neowav** on 2026-09-05
 WAYTOODANK was replaced in the picker by **RAGEY** by **KAETNN** on 2026-09-05. Bundled file: `ragey.webp`; source: https://7tv.app/emotes/01GBFAYKGR000FWWN7MDZZ8XQN (7TV CDN `2x.webp`). The retired WAYTOODANK image remains available for existing messages.
 
 Added **Aloo** by **benASTRO** on 2026-09-05, matching the requested screenshot. Bundled file: `aloo.webp`; source: https://7tv.app/emotes/01F6PRA3N80003BH8AEY9DWKDQ (7TV CDN `2x.webp`).
+
+## Picker replacements — 2026-09-06
+
+Replaced Bonk, RainTime, FeelsStrongMan, nanaAYAYA and Fire in both JellyWatchParty and Gowo.io+. Retired assets remain available for chat history. The requested `uhh` label/token uses **uuh** by **d_uc**; the requested Nerd creator is listed on 7TV as **shahriil**.
+
+| File | 7TV emote | Creator | 7TV source |
+| --- | --- | --- | --- |
+| `booba.webp` | BOOBA | evilmessy | https://7tv.app/emotes/01F6N31ETR0004P7N4A9PKS5X9 |
+| `uhh.webp` | uuh | d_uc | https://7tv.app/emotes/01H0405680000AJFXTYVX2PNJ7 |
+| `nerd.webp` | Nerd | shahriil | https://7tv.app/emotes/01FEV00990000FCZBKX8KY8JRF |
+| `peepocomfy.webp` | peepoComfy | Zjawa | https://7tv.app/emotes/01FAJRZBRR0002R979W3KES4A1 |
+| `aintnoway.webp` | AINTNOWAY | eazylemnsqeezy | https://7tv.app/emotes/01GDDQVMH000038Q48APH8VE3Q |
