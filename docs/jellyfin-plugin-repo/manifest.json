@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.6.0",
+        "changelog": "The translucent chat reopen arrow now fades with Jellyfin's player controls and returns when the player controls return, for both hosts and guests. It follows Jellyfin's native idle timing and fade animation, stays accessible through keyboard focus, and remains visible while waiting for the owner to pick a title.\n\nValidation: 177 client/helper tests and 128 plugin tests passed. Browser checks covered host and guest control visibility, the 390px guest layout, keyboard reopening, and the waiting room without playing media or changing watch history.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.6.0/JellyWatchParty-v1.12.6.0.zip",
+        "checksum": "419c02114ea2588b3e29e049de4b0eda",
+        "timestamp": "2026-09-05T15:30:57Z"
+      },
+      {
         "version": "1.12.5.0",
         "changelog": "Removes the watch-party button from the video controls. Hosts and guests now reopen chat with a compact left arrow whose background is 50% transparent. Hiding the panel places this arrow where its hide button was, with no text label.\n\nThe arrow also provides access to the watch-party panel before joining a room. Draft preservation, waiting-room support, and guest player confinement remain intact.\n\nValidation: 177 client/helper tests and 128 plugin tests passed. Browser checks verified the old button is removed, the arrow aligns with the hide button on desktop and phone layouts, the background has 50% opacity, and host/guest drafts survive reopening. No media playback was used. Compatible with the existing session server.\n",
         "targetAbi": "10.11.11.0",
