@@ -62,11 +62,11 @@ describe('Twitch-style chat emotes', () => {
   });
 
   it('offers the replacement emotes once and still renders retired chat tokens', () => {
-    for (const name of ['hi', 'noooo', 'catjam', 'caught', 'peeporun', 'trolldespair', 'prayge', 'ragey', 'booba', 'uhh', 'nerd', 'peepocomfy', 'aintnoway', 'vibe']) {
+    for (const name of ['hi', 'noooo', 'catjam', 'caught', 'peeporun', 'peepolove', 'troll', 'aware', 'prayge', 'ragey', 'booba', 'uhh', 'nerd', 'peepocomfy', 'aintnoway', 'vibe']) {
       assert.equal(JWP.chat.emotes.filter(emote => emote.token === `:${name}:`).length, 1);
       assert.match(JWP.chat.renderEmotes(`:${name}:`), /<img /);
     }
-    for (const name of ['billyapprove', 'forsenpls', 'basedgod', 'aliendance', 'nymncorn', 'feelsdankman', 'acestare', 'partyparrot', 'waytoodank', 'bonk', 'raintime', 'feelsstrongman', 'nanaayaya', 'fire', 'rareparrot']) {
+    for (const name of ['billyapprove', 'forsenpls', 'basedgod', 'aliendance', 'nymncorn', 'feelsdankman', 'acestare', 'partyparrot', 'waytoodank', 'bonk', 'raintime', 'feelsstrongman', 'nanaayaya', 'fire', 'rareparrot', 'heart', 'trolldespair', 'pepepls']) {
       assert.equal(JWP.chat.emotes.some(emote => emote.token === `:${name}:`), false);
       assert.match(JWP.chat.renderEmotes(`:${name}:`), /<img /);
     }

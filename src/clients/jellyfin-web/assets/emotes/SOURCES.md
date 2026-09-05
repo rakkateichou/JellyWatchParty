@@ -94,3 +94,9 @@ Replaced Bonk, RainTime, FeelsStrongMan, nanaAYAYA and Fire in both JellyWatchPa
 | `aintnoway.webp` | AINTNOWAY | eazylemnsqeezy | https://7tv.app/emotes/01GDDQVMH000038Q48APH8VE3Q |
 
 RareParrot was replaced in both pickers by **VIBE** by **mathvaib** on 2026-09-06. Bundled file: `vibe.webp`; source: https://7tv.app/emotes/01FYQZVG280006SX8JX4TD7SJA (7TV CDN `2x.webp`). The retired RareParrot image remains available for existing messages.
+
+Heart was renamed to **peepoLove** in both pickers on 2026-09-06, retaining `heart.webp` and its original 7TV image. New messages use `:peepolove:`; the old `:heart:` token remains supported.
+
+TrollDespair was replaced in both pickers by **TROLL** by **zNIXp** on 2026-09-06. Bundled file: `troll.webp`; source: https://7tv.app/emotes/01F6P1E7QR0002RDNAW6FFQ1E0 (7TV CDN `2x.webp`). The retired TrollDespair image remains available for existing messages.
+
+PepePls was replaced in both pickers by **Aware** by **MegaKill3** on 2026-09-06. Bundled file: `aware.webp`; source: https://7tv.app/emotes/01FFWH9WV80000JT8GHDKHJNZC (7TV CDN `2x.webp`). The retired PepePls image remains available for existing messages.

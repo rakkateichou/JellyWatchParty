@@ -26,12 +26,12 @@
     { token: ':chef:', label: 'Chef', src: image('chef') },
     { token: ':party:', label: 'Party', src: image('party') },
     { token: ':prayge:', label: 'Prayge', src: image('prayge') },
-    { token: ':heart:', label: 'Heart', src: image('heart') },
+    { token: ':peepolove:', label: 'peepoLove', src: image('heart') },
     { token: ':uhh:', label: 'uhh', src: image('uhh') },
     { token: ':petpet:', label: 'PETPET', src: image('petpet') },
     { token: ':ppl:', label: 'ppL', src: image('ppl') },
     { token: ':clap:', label: 'Clap', src: image('clap') },
-    { token: ':pepepls:', label: 'PepePls', src: image('pepepls') },
+    { token: ':aware:', label: 'Aware', src: image('aware') },
     { token: ':peepohappy:', label: 'peepoHappy', src: image('peepohappy') },
     { token: ':peeposad:', label: 'peepoSad', src: image('peeposad') },
     { token: ':peeporun:', label: 'peepoRun', src: image('peeporun') },
@@ -48,7 +48,7 @@
     { token: ':biblethump:', label: 'BibleThump', src: image('biblethump') },
     { token: ':glorp:', label: 'glorp', src: image('glorp') },
     { token: ':stare:', label: 'Stare', src: image('stare') },
-    { token: ':trolldespair:', label: 'TrollDespair', src: image('trolldespair') },
+    { token: ':troll:', label: 'TROLL', src: image('troll') },
     { token: ':ayaya:', label: 'AYAYA', src: image('ayaya') },
     { token: ':vibe:', label: 'VIBE', src: image('vibe') },
     { token: ':feelsweirdman:', label: 'FeelsWeirdMan', src: image('feelsweirdman') },
@@ -62,6 +62,9 @@
 
   // Retired picker entries remain supported in existing chat history.
   const LEGACY_EMOTES = [
+    { token: ':pepepls:', label: 'PepePls', src: image('pepepls') },
+    { token: ':heart:', label: 'peepoLove', src: image('heart') },
+    { token: ':trolldespair:', label: 'TrollDespair', src: image('trolldespair') },
     { token: ':rareparrot:', label: 'RareParrot', src: image('rareparrot') },
     { token: ':bonk:', label: 'Bonk', src: image('bonk') },
     { token: ':raintime:', label: 'RainTime', src: image('raintime') },
