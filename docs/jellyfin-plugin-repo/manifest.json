@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.11.1.0",
+        "changelog": "Fix the clipped chain icon on the Copy link button by keeping the SVG artwork inside its 24-unit frame. Verified in a local browser preview; all 128 plugin tests passed. No session-server changes.\r\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.11.1.0/JellyWatchParty-v1.11.1.0.zip",
+        "checksum": "85251d795c77f85bc0e14b5bcce5c034",
+        "timestamp": "2026-09-05T13:32:52Z"
+      },
+      {
         "version": "1.11.0.0",
         "changelog": "Adds replies to watch-party chat. Choose Reply beside a message to quote it, cancel with the preview button or Escape, and send your response to everyone in the room.\r\n\r\nReplies use server-assigned message IDs and server-resolved quotes, survive reconnects, and retain quoted text when older messages leave the bounded chat history. Direct and WebSocket copies merge without duplicate messages; failed sends keep the draft and reply selection.\r\n\r\nUpdate both the Jellyfin plugin and the session server for replies. ShareLinks 1.0.8.0 remains compatible.\r\n\r\nValidation: 172 JavaScript tests, 118 Rust tests, 128 plugin tests and Rust Clippy passed. Live guest/browser verification is recorded in the repository deployment notes.\r\n",
         "targetAbi": "10.11.11.0",
