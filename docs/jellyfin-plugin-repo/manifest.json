@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.1.0",
+        "changelog": "Replaces PartyParrot in the chat picker with Prayge by Neowav. Existing PartyParrot messages remain readable. Refresh Jellyfin to load the updated picker.\n\nValidation: 9 emote/bootstrap tests and 128 plugin tests passed. Compatible with the existing session server; no server update is required.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.1.0/JellyWatchParty-v1.12.1.0.zip",
+        "checksum": "4fc7837907d3c5a1fc0340ee23579d0e",
+        "timestamp": "2026-09-05T14:29:39Z"
+      },
+      {
         "version": "1.12.0.0",
         "changelog": "Chat panels now start with an 80% background opacity and include a slider in Chat settings. Changes preview immediately and persist on the device, while text and controls stay readable.\n\nThe emote picker now includes hi, NOOOO, catJAM, CAUGHT, peepoRun and TrollDespair from the requested 7TV creators. peepoRun appears once; retired tokens still render in existing chat history.\n\nValidation: 175 client/helper tests and 128 plugin tests passed. Browser checks confirmed live opacity changes, persistence after reload, and theme support. This UI update works with the existing 1.11.0 session server.\n",
         "targetAbi": "10.11.11.0",
