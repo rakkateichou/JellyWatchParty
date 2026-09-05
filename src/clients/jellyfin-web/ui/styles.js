@@ -210,23 +210,26 @@
     html.jwp-chat-collapsed.jwp-join-chat::before { right: 0 !important; bottom: 0 !important; }
     #jwp-chat-reopen {
       position: fixed;
-      top: max(16px, env(safe-area-inset-top));
-      right: max(16px, env(safe-area-inset-right));
+      top: clamp(max(8px, env(safe-area-inset-top)), var(--jwp-chat-reopen-top, 22px), calc(100dvh - 2.25rem - 8px));
+      right: clamp(max(8px, env(safe-area-inset-right)), var(--jwp-chat-reopen-right, 19px), calc(100vw - 2.25rem - 8px));
       z-index: 20001;
       display: inline-flex;
       align-items: center;
-      gap: .4rem;
-      padding: .65rem .8rem;
+      justify-content: center;
+      box-sizing: border-box;
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
       border: 1px solid rgba(255, 255, 255, .25);
-      border-radius: .8rem;
-      background: rgba(0, 0, 0, .8);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, .5);
       color: #f5f5f5;
       font: 600 .85rem/1.2 system-ui, sans-serif;
       cursor: pointer;
       visibility: visible !important;
     }
     #jwp-chat-reopen .jwp-icon { transform: rotate(180deg); }
-    #jwp-chat-reopen:hover { background: #252525; }
+    #jwp-chat-reopen:hover { background: rgba(37, 37, 37, .8); }
     #jwp-chat-reopen:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
     #jwp-chat-reopen[hidden] { display: none !important; }
     #${PANEL_ID} * { box-sizing: border-box; }

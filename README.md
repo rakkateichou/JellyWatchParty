@@ -39,7 +39,7 @@ Chat replies require the 1.11.0 plugin and its matching session server. Use **Re
 
 Chat backgrounds start at 80% opacity. Open **Chat settings → Panel opacity** to adjust it; the slider previews immediately and saves on this device.
 
-Guests can hide chat with the panel's arrow and reopen it using **Chat** in the player corner, including while waiting for a title. Hiding chat expands the player and keeps drafts and room membership intact.
+Hosts and guests can hide chat with the panel's arrow and reopen it with a translucent **‹** arrow in the same position, including while waiting for a title. Hiding chat expands the player and keeps drafts and room membership intact. The player controls no longer include a separate watch-party button.
 
 ## Quick Start with the File transformation Plugin
 

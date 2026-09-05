@@ -185,7 +185,6 @@
         hadVideoElement = true;
         if (state.roomJoinActive) playback?.holdJoinPlayback?.();
         else setJoinLaunchScreen(false);
-        ui.injectOsdButton();
         playback.bindVideo();
         if (playback.patchTrackSwitching) playback.patchTrackSwitching();
       }

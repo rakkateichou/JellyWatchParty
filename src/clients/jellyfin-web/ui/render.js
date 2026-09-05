@@ -117,6 +117,8 @@
   const updateDockedPlayerLayout = () => {
     const root = document.documentElement;
     if (!root?.classList) return;
+    // Remove the former launcher if Jellyfin retained its OSD across a refresh.
+    document.getElementById(BTN_ID)?.remove();
     const panel = document.getElementById(PANEL_ID);
     const isDesktop = typeof window.matchMedia === 'function'
       ? window.matchMedia('(min-width: 800px)').matches
@@ -135,7 +137,7 @@
 
     const hidden = !!panel?.classList.contains('hide');
     const fullScreenChat = !!(JWP.guestLockdown?.isRestricted?.() || state.waitingForTitle || state.inviteJoinActive || state.roomJoinActive);
-    const canReopen = hidden && fullScreenChat && !state.guestClosedMessage;
+    const canReopen = hidden && (fullScreenChat || isVideoPage) && !state.guestClosedMessage;
     root.classList.toggle('jwp-chat-collapsed', canReopen);
     let reopen = document.getElementById(CHAT_REOPEN_ID);
     if (canReopen && !reopen) {
@@ -145,7 +147,7 @@
       reopen.title = 'Show chat';
       reopen.setAttribute('aria-label', 'Show chat');
       reopen.setAttribute('aria-controls', PANEL_ID);
-      reopen.innerHTML = `${icon('chevron')}<span>Chat</span>`;
+      reopen.innerHTML = icon('chevron');
       reopen.onclick = togglePanel;
       ui.stopPlayerCapture(reopen);
       document.body.appendChild(reopen);
@@ -370,6 +372,15 @@
     if (!panel) return;
     const chatInput = panel.querySelector('#jwp-chat-input');
     if (chatInput && JWP.chat) JWP.chat.draftText = chatInput.value;
+    if (!panel.classList.contains('hide')) {
+      const bounds = panel.querySelector('#jwp-btn-hide')?.getBoundingClientRect?.();
+      if (bounds?.width && bounds.height) {
+        const root = document.documentElement;
+        const viewportWidth = root.clientWidth || window.innerWidth;
+        root.style.setProperty('--jwp-chat-reopen-top', `${bounds.top}px`);
+        root.style.setProperty('--jwp-chat-reopen-right', `${Math.max(0, viewportWidth - bounds.right)}px`);
+      }
+    }
     panel.classList.toggle('hide');
     state.panelCollapsed = panel.classList.contains('hide');
     if (!state.panelCollapsed) render(true);
@@ -619,24 +630,6 @@
     updateDockedPlayerLayout();
   };
 
-  const injectOsdButton = () => {
-    if (document.getElementById(BTN_ID)) return;
-    const videoOsd = document.querySelector('.videoOsdBottom .buttons');
-    if (!videoOsd) return;
-    const btn = document.createElement('button');
-    btn.id = BTN_ID;
-    btn.className = 'paper-icon-button-light btnWatchParty autoSize';
-    btn.title = 'Watch Party';
-    btn.innerHTML = '<span class="material-icons groups" aria-hidden="true"></span>';
-    btn.onclick = togglePanel;
-    const favBtn = videoOsd.querySelector('.btnUserRating, button[is="emby-ratingbutton"], [title="Add to favorites"], [title="Remove from favorites"]');
-    if (favBtn) {
-      favBtn.insertAdjacentElement('beforebegin', btn);
-    } else {
-      videoOsd.appendChild(btn);
-    }
-  };
-
   const injectGlobalButton = () => {
     if (document.getElementById(GLOBAL_BTN_ID)) return;
     const headerRight = document.querySelector('.headerRight') || document.querySelector('.skinHeader .headerRight');
@@ -656,7 +649,6 @@
 
   Object.assign(ui, {
     render,
-    injectOsdButton,
     injectGlobalButton,
     applyNativeSyncButtonVisibility,
     updateDockedPlayerLayout,
