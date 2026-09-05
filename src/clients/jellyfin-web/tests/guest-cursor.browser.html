@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Guest cursor visibility regression</title>
+  <style>
+    body { margin: 0; background: #101015; color: #eee; font: 16px system-ui; }
+    .videoPlayerContainer { position: fixed; inset: 80px 30px 50px; background: #18242e; }
+    video { width: 100%; height: 100%; }
+    #checks { position: fixed; top: 8px; left: 20px; right: 20px; z-index: 30000; }
+    html body #checks, html body #checks * { visibility: visible !important; }
+    #checks button { padding: 8px 12px; margin-right: 8px; }
+    #result { display: inline; }
+  </style>
+</head>
+<body>
+  <div id="checks">
+    <button id="playing">Player visible</button>
+    <button id="closed">Room closed</button>
+    <output id="result">Checking…</output>
+  </div>
+  <nav class="mainDrawer">Library navigation must stay hidden</nav>
+  <div class="home-library">Library content must stay hidden</div>
+  <div class="videoPlayerContainer"><video aria-label="Local test player; no media is loaded"></video></div>
+  <script src="../state.js"></script>
+  <script src="../utils/misc.js"></script>
+  <script src="../ui/styles.js"></script>
+  <script src="../app/guest-lockdown.js"></script>
+  <script src="../presence/cursor.js"></script>
+  <script>
+    // From the repo root: python -m http.server 8765 --directory src/clients/jellyfin-web
+    // Open /tests/guest-cursor.browser.html (add ?host=1 for the host control).
+    // Uses the real renderer and guest CSS;
+    // no Jellyfin requests, credentials, media playback or watch-history writes.
+    const JWP = window.JellyWatchParty;
+    const hostPreview = new URLSearchParams(location.search).has('host');
+    Object.assign(JWP.state, { clientId: 'local-viewer', inRoom: true, roomId: 'test-room', guestRoomId: 'test-room', guestMode: !hostPreview });
+    JWP.utils.getVideo = () => document.querySelector('video');
+    JWP.playback = { isVideoPage: () => true };
+    if (!hostPreview) document.documentElement.classList.add('jwp-party-guest');
+    JWP.ui.injectStyles();
+    JWP.guestLockdown.updateGuestView();
+
+    const draw = () => {
+      JWP.cursor.reset();
+      for (const [client, username, offset] of [['remote-host', 'Host', 0], ['remote-guest', 'Guest', .3]]) {
+        for (const [x, y] of [[.15,.45],[.2,.25],[.3,.55],[.4,.3],[.5,.45]]) {
+          JWP.cursor.receive({ client, room: 'test-room', payload: { visible: true, x: x + offset, y, username } });
+        }
+      }
+      const closed = !!JWP.state.guestClosedMessage;
+      const overlays = [...document.querySelectorAll('.jwp-shared-cursor, .jwp-shared-cursor *, .jwp-shared-cursor-trail, .jwp-shared-cursor-trail *')];
+      const paths = [...document.querySelectorAll('.jwp-shared-cursor-trail-line')];
+      const checks = {
+        overlaysPresent: overlays.length >= 10 && paths.length === 2,
+        visibilityCorrect: overlays.every(el => getComputedStyle(el).visibility === (closed && !hostPreview ? 'hidden' : 'visible')),
+        trailsDrawn: paths.every(el => el.getAttribute('d').includes(' C ')),
+        controlsNotBlocked: [...document.querySelectorAll('.jwp-shared-cursor, .jwp-shared-cursor-trail')].every(el => getComputedStyle(el).pointerEvents === 'none'),
+        libraryHidden: hostPreview || getComputedStyle(document.querySelector('.home-library')).visibility === 'hidden',
+        navigationHidden: hostPreview || getComputedStyle(document.querySelector('.mainDrawer')).display === 'none'
+      };
+      document.documentElement.dataset.checks = JSON.stringify(checks);
+      document.getElementById('result').textContent = Object.values(checks).every(Boolean) ? 'PASS' : 'FAIL: ' + Object.entries(checks).filter(([,value]) => !value).map(([name]) => name).join(', ');
+    };
+    document.getElementById('playing').onclick = () => { JWP.state.guestClosedMessage = ''; JWP.guestLockdown.updateGuestView(); draw(); };
+    document.getElementById('closed').onclick = () => { JWP.state.guestClosedMessage = 'Test room closed'; JWP.guestLockdown.updateGuestView(); draw(); };
+    draw();
+    setInterval(draw, 700);
+  </script>
+</body>
+</html>

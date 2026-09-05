@@ -10,8 +10,8 @@
     html.jwp-party-guest #jwp-guest-screen, html.jwp-party-guest #jwp-waiting-player,
     html.jwp-party-guest .jwp-toast-system,
     html.jwp-party-guest #jwp-waiting-player *,
-    html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet),
-    html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet) * { visibility: visible !important; }
+    html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet, .jwp-shared-cursor, .jwp-shared-cursor-trail),
+    html.jwp-party-guest.jwp-guest-playing :is(.videoPlayerContainer, .videoOsd, .videoOsdBottom, .osdHeader, .dialogContainer, .actionSheet, .jwp-shared-cursor, .jwp-shared-cursor-trail) * { visibility: visible !important; }
     html.jwp-party-guest :is(.mainDrawer, .mainDrawerButton, .headerBackButton, .headerHomeButton, .headerSearchButton, .headerUserButton) { display: none !important; }
     html.jwp-party-guest #${PANEL_ID} { top: 0; right: 0; bottom: 0; width: min(360px, 35vw); max-height: none; border-radius: 0; display: flex; }
     html.jwp-party-guest #jwp-btn-hide { display: none; }
