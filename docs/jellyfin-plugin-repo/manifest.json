@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.10.2.0",
+        "changelog": "Create a room, copy its link, and chat before choosing a title. Guest clients stay inside the player and chat through title changes, reloads, reconnects and room closure. Chat connects while Jellyfin prepares its native player; the client ships as one ordered bundle loaded early in the page.\r\n\r\nReconnects refresh authentication and restore room state. Separate tabs have separate identities, and resuming an old transport requires authentication as the same user. Paused title changes, the native player opening at a later timestamp, and room lock ordering are corrected.\r\n\r\nRandom Pick excludes movies and series already displayed in Continue Watching and Next Up. Reusable injector, deployment and disposable integration scripts are included under extras/jellyfin.\r\n\r\nValidation: 155 client JavaScript tests, 8 Random Pick tests, 128 plugin tests, 116 server tests, Rust clippy, and live API/WebSocket/browser checks. Companion ShareLinks: 1.0.8.0.\r\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.10.2.0/JellyWatchParty-v1.10.2.0.zip",
+        "checksum": "d18a9d278c0f1f224f06f88cc989a103",
+        "timestamp": "2026-09-05T12:42:50Z"
+      },
+      {
         "version": "1.9.0.0",
         "changelog": "Rakkate edition: account-free direct-to-player invites, whole-series rooms, docked themed chat, custom emotes, shared cursor trails, tighter playback sync, WebRTC fast path with WebSocket fallback, guest confinement, and owner-managed room lifecycle.",
         "targetAbi": "10.11.11.0",
