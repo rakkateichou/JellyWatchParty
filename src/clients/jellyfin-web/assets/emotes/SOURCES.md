@@ -92,3 +92,5 @@ Replaced Bonk, RainTime, FeelsStrongMan, nanaAYAYA and Fire in both JellyWatchPa
 | `nerd.webp` | Nerd | shahriil | https://7tv.app/emotes/01FEV00990000FCZBKX8KY8JRF |
 | `peepocomfy.webp` | peepoComfy | Zjawa | https://7tv.app/emotes/01FAJRZBRR0002R979W3KES4A1 |
 | `aintnoway.webp` | AINTNOWAY | eazylemnsqeezy | https://7tv.app/emotes/01GDDQVMH000038Q48APH8VE3Q |
+
+RareParrot was replaced in both pickers by **VIBE** by **mathvaib** on 2026-09-06. Bundled file: `vibe.webp`; source: https://7tv.app/emotes/01FYQZVG280006SX8JX4TD7SJA (7TV CDN `2x.webp`). The retired RareParrot image remains available for existing messages.

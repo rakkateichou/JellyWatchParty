@@ -50,7 +50,7 @@
     { token: ':stare:', label: 'Stare', src: image('stare') },
     { token: ':trolldespair:', label: 'TrollDespair', src: image('trolldespair') },
     { token: ':ayaya:', label: 'AYAYA', src: image('ayaya') },
-    { token: ':rareparrot:', label: 'RareParrot', src: image('rareparrot') },
+    { token: ':vibe:', label: 'VIBE', src: image('vibe') },
     { token: ':feelsweirdman:', label: 'FeelsWeirdMan', src: image('feelsweirdman') },
     { token: ':ez:', label: 'EZ', src: image('ez') },
     { token: ':feelsokayman:', label: 'FeelsOkayMan', src: image('feelsokayman') },
@@ -62,6 +62,7 @@
 
   // Retired picker entries remain supported in existing chat history.
   const LEGACY_EMOTES = [
+    { token: ':rareparrot:', label: 'RareParrot', src: image('rareparrot') },
     { token: ':bonk:', label: 'Bonk', src: image('bonk') },
     { token: ':raintime:', label: 'RainTime', src: image('raintime') },
     { token: ':feelsstrongman:', label: 'FeelsStrongMan', src: image('feelsstrongman') },
