@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.8.0",
+        "changelog": "The docked player's controls now adapt to the width left beside chat, keeping fullscreen and the other buttons on one row. Narrow layouts compact the controls and remove secondary text before running out of space.\n\nPlay now immediately displays a synchronization indicator over the player, followed by the shared-start countdown for both owner and guests. Owners can cancel using the indicator or another play/pause click. Pause remains immediate.\n\nResume requests carry an optional identifier through the session server so replies from a cancelled request cannot restart the owner or replace a newer request. Cancellation follows the ordered server connection to guests. Buffer recovery no longer schedules an extra resume after an already coordinated start, and playback outside a room is no longer held for synchronization.\n\nValidation: 188 client/helper tests, 128 plugin tests, and 118 Rust server tests passed. Local browser checks covered owner and guest feedback, cancellation, and docked control widths from 434px to 1077px. No media playback or watch-history changes were needed.\n\nUpdate both the Jellyfin plugin and session service. Restarting the session service clears existing rooms; create a fresh room afterward.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.8.0/JellyWatchParty-v1.12.8.0.zip",
+        "checksum": "888bbd1d43bcfb7514a549160bf72dab",
+        "timestamp": "2026-09-05T17:51:52Z"
+      },
+      {
         "version": "1.12.7.0",
         "changelog": "The chat reopen arrow now occupies its own space at the far right of Jellyfin's player header, after the native controls, with a small gap and its existing translucent circular style. It no longer covers another player button and still fades with the native controls.\n\nThe arrow appears only while the user is in a room and chat is collapsed. Leaving the room hides it. Waiting and joining screens retain a separate accessible arrow outside the hidden Jellyfin header.\n\nValidation: 180 client/helper tests and 128 plugin tests passed. Local browser checks covered host controls, room exit, playback outside a room, the waiting-to-player transition, and reopening chat in a 390px guest layout. No media was played and no watch history was changed.\n",
         "targetAbi": "10.11.11.0",
