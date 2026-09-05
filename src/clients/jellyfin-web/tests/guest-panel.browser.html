@@ -11,18 +11,23 @@
     #checks { position: fixed; top: 12px; left: 12px; z-index: 30000; max-width: 230px; }
     html body #checks, html body #checks * { visibility: visible !important; }
     #checks button { margin: 3px; padding: 5px; }
+    .osdHeader, .videoOsdBottom { transition: opacity .3s ease-out; }
+    .osdHeader-hidden, .videoOsdBottom-hidden { opacity: 0; pointer-events: none; }
+    .videoOsdBottom { position: fixed; bottom: 10px; left: 20px; }
   </style>
 </head>
 <body>
   <div id="checks">
     <button id="waiting">Waiting</button><button id="playing">Playing</button>
     <button id="refresh-room">Room refresh</button><button id="close-room">Close room</button>
+    <button id="idle">Hide player controls</button><button id="activity">Show player controls</button>
     <output id="result"></output>
   </div>
   <nav class="mainDrawer"><a href="#/home">Library navigation must stay hidden</a></nav>
   <div class="home-library">Library content must stay hidden</div>
   <div class="videoPlayerContainer"><p>Local player preview — no media or server connection</p></div>
-  <div class="videoOsdBottom"><div class="buttons"><button id="jwp-osd-btn">Old watch-party button</button></div></div>
+  <header class="skinHeader"></header>
+  <div class="videoOsdBottom videoOsdBottom-maincontrols"><div class="buttons">Native player controls <button id="jwp-osd-btn">Old watch-party button</button></div></div>
   <div id="jwp-panel" class="hide"></div>
   <script src="../state.js"></script>
   <script src="../utils/misc.js"></script>
@@ -41,6 +46,9 @@
     let playing = hostPreview;
     let reads = 0;
     let lastHideBounds = null;
+    const header = document.querySelector('.skinHeader');
+    const controls = document.querySelector('.videoOsdBottom');
+    header.classList.toggle('osdHeader', playing);
     location.hash = playing ? '#/video' : '#/home';
     Object.assign(JWP.state, { guestMode: !hostPreview, guestRoomId: hostPreview ? '' : 'test-room', roomId: 'test-room', inRoom: true, isHost: hostPreview, waitingForTitle: !playing, chatNickname: hostPreview ? 'Owner' : 'Guest', participantCount: 2, clientId: hostPreview ? 'owner' : 'guest' });
     JWP.playback = { isVideoPage: () => playing, ensurePlayback() {}, holdJoinPlayback() {}, releaseJoinPlayback() {} };
@@ -57,6 +65,7 @@
       const id = event.target.id;
       if (id === 'playing' || id === 'waiting') {
         playing = id === 'playing';
+        header.classList.toggle('osdHeader', playing);
         location.hash = playing ? '#/video' : '#/home';
         JWP.state.roomMediaId = playing ? mediaId : '';
         JWP.state.waitingForTitle = !playing;
@@ -67,6 +76,10 @@
       } else if (id === 'close-room') {
         JWP.guestLockdown.endGuestSession('This room is closed.');
         JWP.ui.render(true);
+      } else if (id === 'idle' || id === 'activity') {
+        // Jellyfin 10.11 toggles these classes on idle and pointer/touch activity.
+        header.classList.toggle('osdHeader-hidden', id === 'idle');
+        controls.classList.toggle('videoOsdBottom-hidden', id === 'idle');
       }
     }, true);
     JWP.ui.injectStyles();
@@ -89,7 +102,11 @@
         collapsed: JWP.state.panelCollapsed,
         panelHidden: hidden,
         hideButtonVisible: !closed && !hidden && getComputedStyle(document.getElementById('jwp-btn-hide')).display !== 'none',
-        reopenVisible: !!reopen && getComputedStyle(reopen).display !== 'none' && getComputedStyle(reopen).visibility === 'visible',
+        reopenVisible: !!reopen && getComputedStyle(reopen).display !== 'none' && getComputedStyle(reopen).visibility === 'visible' && Number(getComputedStyle(reopen).opacity) > 0,
+        reopenOpacity: reopen ? getComputedStyle(reopen).opacity : '',
+        reopenPointerEvents: reopen ? getComputedStyle(reopen).pointerEvents : '',
+        reopenKeyboardFocused: !!reopen?.matches(':focus-visible'),
+        controlsOpacity: getComputedStyle(controls).opacity,
         reopenAllowed: !!reopen && JWP.guestLockdown.isAllowedControl(reopen),
         oldPlayerButtonRemoved: !document.getElementById('jwp-osd-btn'),
         arrowHasNoText: !!reopen && reopen.textContent.trim() === '',

@@ -227,6 +227,14 @@
       font: 600 .85rem/1.2 system-ui, sans-serif;
       cursor: pointer;
       visibility: visible !important;
+      opacity: 1;
+      transition: opacity .3s ease-out;
+    }
+    /* Follow the native player's idle/touch/keyboard state, including its fade
+       timing. Waiting rooms keep their only way back to chat visible. */
+    html:not(.jwp-room-waiting):not(.jwp-join-chat):not(.pause-screen-active):has(.skinHeader.osdHeader.osdHeader-hidden) #jwp-chat-reopen:not(:focus-visible) {
+      opacity: 0;
+      pointer-events: none;
     }
     #jwp-chat-reopen .jwp-icon { transform: rotate(180deg); }
     #jwp-chat-reopen:hover { background: rgba(37, 37, 37, .8); }
