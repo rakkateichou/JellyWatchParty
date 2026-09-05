@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.11.0",
+        "changelog": "Replaces RareParrot with VIBE by mathvaib in the chat picker, matching the Gowo.io+ update. The image is bundled for room owners and guests, while RareParrot remains supported in existing chat messages.\n\nValidation: 188 client/helper tests, 128 plugin tests and 15 Gowo loader tests passed. No session server changes are required.",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.11.0/JellyWatchParty-v1.12.11.0.zip",
+        "checksum": "723bd2b5a216164148b6b41b19925e25",
+        "timestamp": "2026-09-05T18:49:27Z"
+      },
+      {
         "version": "1.12.10.0",
         "changelog": "Hides the duplicate group launcher while joined to a watch party room. The arrow is now the single chat reopen control, including when the owner returns to the library. Leaving the room restores the normal lobby launcher.\n\nVerified host and guest chat controls in the local browser, including player, waiting-room and library views. All 188 client/helper and 128 plugin tests passed. No session server changes are required.",
         "targetAbi": "10.11.11.0",
