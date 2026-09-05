@@ -23,7 +23,7 @@ This is the **Rakkate edition**, a feature-focused fork of
 - account-free guest invitations that open directly into the active player;
 - invitations before selecting a title, with an empty player and chat while guests wait for the owner;
 - persistent whole-series rooms with synchronized episode changes, play, pause and seeking;
-- docked chat with saved nicknames, themes, adjustable background opacity, per-user colours, bundled custom emotes and message replies;
+- docked chat with saved nicknames, themes, adjustable panel brightness, per-user colours, bundled custom emotes and message replies;
 - shared cursors and fading drawing trails while holding <kbd>X</kbd>;
 - a WebRTC fast path with automatic WebSocket fallback and tighter clock correction;
 - guest playback confinement, room revival/deletion rules and a simplified Jellyfin-native UI.
@@ -37,7 +37,7 @@ plugins together; the session server does not need a change for this feature.
 
 Chat replies require the 1.11.0 plugin and its matching session server. Use **Reply** beside a message, type your response and send. The quoted preview can be cancelled with the × button or Escape; replies remain in room history across reconnects.
 
-Chat backgrounds start at 80% opacity. Open **Chat settings → Panel opacity** to adjust it; the slider previews immediately and saves on this device.
+Chat panels start at 80% brightness. Open **Chat settings → Panel brightness** to dim the whole panel, including text, controls and emotes, for OLED viewing. 100% is normal brightness; 0% is near-black. The slider previews immediately and saves on this device. Earlier opacity percentages carry over to the brightness control.
 
 Hosts and guests can hide chat with the panel's arrow and reopen it with a translucent **‹** arrow in the same position, including while waiting for a title. Hiding chat expands the player and keeps drafts and room membership intact. The player controls no longer include a separate watch-party button.
 

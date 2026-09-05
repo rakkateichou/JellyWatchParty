@@ -6,7 +6,7 @@
   const host = window.location.hostname;
   const CHAT_NICKNAME_STORAGE_KEY = 'jwp_chat_nickname';
   const PANEL_THEME_STORAGE_KEY = 'jwp_panel_theme';
-  const PANEL_OPACITY_STORAGE_KEY = 'jwp_panel_opacity';
+  const PANEL_BRIGHTNESS_STORAGE_KEY = 'jwp_panel_brightness';
   const PANEL_THEMES = ['monochrome', 'frost', 'violet', 'ember'];
 
   const readPreference = (key) => {
@@ -20,8 +20,9 @@
 
   const savedNickname = cleanNickname(readPreference(CHAT_NICKNAME_STORAGE_KEY));
   const savedTheme = readPreference(PANEL_THEME_STORAGE_KEY);
-  const savedOpacity = readPreference(PANEL_OPACITY_STORAGE_KEY).trim();
-  const normalizePanelOpacity = (value) => {
+  // Preserve the percentage chosen before the control was renamed to brightness.
+  const savedBrightness = (readPreference(PANEL_BRIGHTNESS_STORAGE_KEY) || readPreference('jwp_panel_opacity')).trim();
+  const normalizePanelBrightness = (value) => {
     const number = value === '' || value == null ? NaN : Number(value);
     return Number.isFinite(number) && number >= 0 && number <= 100 ? Math.round(number) : 80;
   };
@@ -70,8 +71,8 @@
     HOME_SECTION_ID: 'jwp-home-section',
     CHAT_NICKNAME_STORAGE_KEY,
     PANEL_THEME_STORAGE_KEY,
-    PANEL_OPACITY_STORAGE_KEY,
-    normalizePanelOpacity,
+    PANEL_BRIGHTNESS_STORAGE_KEY,
+    normalizePanelBrightness,
     PANEL_THEMES,
     protocol,
     host,
@@ -191,7 +192,7 @@
     userName: '',
     chatNickname: savedNickname,
     panelTheme: PANEL_THEMES.includes(savedTheme) ? savedTheme : 'monochrome',
-    panelOpacity: normalizePanelOpacity(savedOpacity),
+    panelBrightness: normalizePanelBrightness(savedBrightness),
     chatSettingsOpen: false,
     panelCollapsed: false,
     tokenExpiresAt: 0,           // Timestamp when token expires

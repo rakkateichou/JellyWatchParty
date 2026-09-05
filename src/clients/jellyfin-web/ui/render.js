@@ -38,14 +38,15 @@
     if (persist) storePreference(JWP.constants.PANEL_THEME_STORAGE_KEY, normalized);
   };
 
-  const setPanelOpacity = (value, persist = false) => {
-    const opacity = JWP.constants.normalizePanelOpacity(value);
-    state.panelOpacity = opacity;
+  const setPanelBrightness = (value, persist = false) => {
+    const brightness = JWP.constants.normalizePanelBrightness(value);
+    state.panelBrightness = brightness;
     const panel = document.getElementById(PANEL_ID);
-    panel?.style?.setProperty('--jwp-panel-opacity', String(opacity / 100));
-    const output = panel?.querySelector('#jwp-panel-opacity-value');
-    if (output) output.textContent = `${opacity}%`;
-    if (persist) storePreference(JWP.constants.PANEL_OPACITY_STORAGE_KEY, String(opacity));
+    // Keep the minimum faintly visible so the slider can still be found on OLED.
+    panel?.style?.setProperty('--jwp-panel-brightness', String(Math.max(0.02, brightness / 100)));
+    const output = panel?.querySelector('#jwp-panel-brightness-value');
+    if (output) output.textContent = `${brightness}%`;
+    if (persist) storePreference(JWP.constants.PANEL_BRIGHTNESS_STORAGE_KEY, String(brightness));
   };
 
   const saveNickname = (value) => {
@@ -82,8 +83,9 @@
       <input type="text" id="jwp-settings-nickname" class="jwp-input" maxlength="100" autocomplete="nickname" value="${utils.escapeHtml(state.chatNickname)}" placeholder="Nickname">
       <div class="jwp-settings-label">Theme</div>
       <div class="jwp-theme-options">${renderThemeOptions()}</div>
-      <label class="jwp-settings-label jwp-opacity-label" for="jwp-panel-opacity">Panel opacity <output id="jwp-panel-opacity-value" for="jwp-panel-opacity">${state.panelOpacity}%</output></label>
-      <input type="range" id="jwp-panel-opacity" min="0" max="100" step="1" value="${state.panelOpacity}" aria-label="Panel opacity">
+      <label class="jwp-settings-label jwp-brightness-label" for="jwp-panel-brightness">Panel brightness <output id="jwp-panel-brightness-value" for="jwp-panel-brightness">${state.panelBrightness}%</output></label>
+      <input type="range" id="jwp-panel-brightness" min="0" max="100" step="1" value="${state.panelBrightness}" aria-label="Panel brightness" aria-describedby="jwp-panel-brightness-hint">
+      <div class="jwp-settings-copy" id="jwp-panel-brightness-hint">Dims the whole panel. 0% is near-black; 100% is normal.</div>
       <button class="jwp-btn jwp-settings-save" id="jwp-settings-save">Save settings</button>
       <div class="jwp-settings-room-actions">
         <button class="jwp-btn danger" id="jwp-settings-leave">Leave room</button>
@@ -495,10 +497,10 @@
     bindNicknameSave('#jwp-nickname-input', '#jwp-nickname-save', false);
     bindNicknameSave('#jwp-settings-nickname', '#jwp-settings-save', true);
 
-    const opacityInput = panel.querySelector('#jwp-panel-opacity');
-    if (opacityInput) {
-      ui.stopPlayerCapture(opacityInput);
-      opacityInput.addEventListener('input', () => setPanelOpacity(opacityInput.value, true));
+    const brightnessInput = panel.querySelector('#jwp-panel-brightness');
+    if (brightnessInput) {
+      ui.stopPlayerCapture(brightnessInput);
+      brightnessInput.addEventListener('input', () => setPanelBrightness(brightnessInput.value, true));
     }
 
     const leaveButton = panel.querySelector('#jwp-settings-leave');
@@ -602,7 +604,7 @@
     const panel = document.getElementById(PANEL_ID);
     if (!panel) return;
     setPanelTheme(state.panelTheme);
-    setPanelOpacity(state.panelOpacity);
+    setPanelBrightness(state.panelBrightness);
     const view = state.guestClosedMessage ? 'closed' : state.inRoom ? 'room'
       : (state.inviteJoinActive || state.pendingJoinRoomId || state.roomJoinPending || state.guestRoomId ? 'joining' : 'lobby');
     if (!forceFullRender && panel.dataset.view === view && panel.children.length > 0) {
