@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.9.0",
+        "changelog": "Replaces Bonk with BOOBA, RainTime with uhh (the uuh upload by d_uc), FeelsStrongMan with Nerd by shahriil, nanaAYAYA with peepoComfy, and Fire with AINTNOWAY. The same catalog is published in Gowo.io+.\n\nAll five images are bundled for hosts and accountless guests. Retired emotes still render in existing chat messages.\n\nValidation: 188 client/helper tests, 128 plugin tests, and 15 Gowo loader tests passed. No session server changes are required.",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.9.0/JellyWatchParty-v1.12.9.0.zip",
+        "checksum": "4a0b8e4b091fe44cc1c046d05965ea1d",
+        "timestamp": "2026-09-05T18:05:15Z"
+      },
+      {
         "version": "1.12.8.0",
         "changelog": "The docked player's controls now adapt to the width left beside chat, keeping fullscreen and the other buttons on one row. Narrow layouts compact the controls and remove secondary text before running out of space.\n\nPlay now immediately displays a synchronization indicator over the player, followed by the shared-start countdown for both owner and guests. Owners can cancel using the indicator or another play/pause click. Pause remains immediate.\n\nResume requests carry an optional identifier through the session server so replies from a cancelled request cannot restart the owner or replace a newer request. Cancellation follows the ordered server connection to guests. Buffer recovery no longer schedules an extra resume after an already coordinated start, and playback outside a room is no longer held for synchronization.\n\nValidation: 188 client/helper tests, 128 plugin tests, and 118 Rust server tests passed. Local browser checks covered owner and guest feedback, cancellation, and docked control widths from 434px to 1077px. No media playback or watch-history changes were needed.\n\nUpdate both the Jellyfin plugin and session service. Restarting the session service clears existing rooms; create a fresh room afterward.\n",
         "targetAbi": "10.11.11.0",
