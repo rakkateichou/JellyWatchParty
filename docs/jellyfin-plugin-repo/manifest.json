@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.0.0",
+        "changelog": "Chat panels now start with an 80% background opacity and include a slider in Chat settings. Changes preview immediately and persist on the device, while text and controls stay readable.\n\nThe emote picker now includes hi, NOOOO, catJAM, CAUGHT, peepoRun and TrollDespair from the requested 7TV creators. peepoRun appears once; retired tokens still render in existing chat history.\n\nValidation: 175 client/helper tests and 128 plugin tests passed. Browser checks confirmed live opacity changes, persistence after reload, and theme support. This UI update works with the existing 1.11.0 session server.\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.0.0/JellyWatchParty-v1.12.0.0.zip",
+        "checksum": "a3902eed5431bef51cef8a6f68a1d9e4",
+        "timestamp": "2026-09-05T14:16:06Z"
+      },
+      {
         "version": "1.11.2.0",
         "changelog": "Fix shared cursors and drawing trails being invisible to watch-party guests. The guest player visibility rules now include the body-mounted cursor, nickname and SVG trail overlays while playback is open. They remain hidden when the room closes, and library navigation stays restricted.\r\n\r\nValidation: reproduced the missing drawings in a local browser fixture before the fix and verified visible host/guest trails afterward; closed-room and library-isolation checks passed. All 16 focused client tests and 128 plugin tests passed. Live cursor delivery and release events passed between three clients in an empty disposable room, with no media playback or watch-history changes.\r\n\r\nNo session-server changes are required. Refresh host and guest tabs after updating the plugin.\r\n",
         "targetAbi": "10.11.11.0",
