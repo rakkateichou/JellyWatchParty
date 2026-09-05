@@ -13,7 +13,7 @@ namespace JellyWatchParty.Plugin.Tests;
 [Collection(InjectionStateCollection.Name)]
 public class ScriptInjectionMiddlewareTests : IDisposable
 {
-    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.12.12\" defer></script>";
+    private const string ScriptTag = "<script id=\"jwp-client-script\" src=\"../JellyWatchParty/ClientScript?v=1.12.13\" defer></script>";
     private const string IndexHtml = "<html><head></head><body><h1>Jellyfin</h1></body></html>";
 
     private readonly string _tempDir;

@@ -67,6 +67,53 @@ describe('coordinated host resume', () => {
     assert.equal(sent[0].payload.action, 'play');
   });
 
+  it('keeps a buffered native Play pending when its queued playing event precedes the hold Pause', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 100000 });
+    const listeners = {};
+    const mediaTasks = [];
+    video.paused = true;
+    video.addEventListener = (name, listener) => { listeners[name] = listener; };
+    video.removeEventListener = () => {};
+    video.play = () => {
+      if (!video.paused) return Promise.resolve();
+      video.paused = false;
+      // HTML queues both events before our Play listener can call pause().
+      mediaTasks.push(() => listeners.play(), () => listeners.playing());
+      return Promise.resolve();
+    };
+    video.pause = () => {
+      if (video.paused) return;
+      video.paused = true;
+      video.pauseCalls += 1;
+      mediaTasks.push(() => listeners.pause());
+    };
+    const flushMediaTasks = () => { while (mediaTasks.length) mediaTasks.shift()(); };
+    JWP.utils.getVideo = () => video;
+    JWP.state.bound = false;
+    JWP.playback.bindVideo();
+
+    video.play();
+    flushMediaTasks();
+    assert.equal(video.paused, true);
+    assert.equal(JWP.state.coordinatedPlayPending, true);
+    assert.deepEqual(sent.map(message => message.payload.action), ['play']);
+
+    JWP._wsHandlers.handlePlayerEvent({ server_ts: 101000, payload: {
+      action: 'play', position: 42, target_server_ts: 101000, coordinated: true,
+      request_id: JWP.state.coordinatedPlayRequestId
+    } }, video);
+    t.mock.timers.tick(1000);
+    flushMediaTasks();
+    assert.equal(video.paused, false);
+    assert.equal(JWP.state.coordinatedPlayPending, false);
+    assert.equal(sent.filter(message => message.payload.action === 'play').length, 1);
+
+    // Genuine Pause after the shared start must still stop everyone.
+    video.pause();
+    flushMediaTasks();
+    assert.equal(sent.find(message => message.payload.action === 'pause').payload.coordinated_cancel, undefined);
+  });
+
   it('cancels the shared start on a second play/pause click', () => {
     JWP.playback.onHostEvent('play', video);
     video.play();
@@ -76,6 +123,30 @@ describe('coordinated host resume', () => {
     assert.equal(JWP.state.syncStatus, 'synced');
     assert.equal(sent.at(-1).payload.action, 'pause');
     assert.equal(sent.at(-1).payload.coordinated_cancel, true);
+  });
+
+  it('ignores Waiting queued before the host is held, but reports actual playback buffering', () => {
+    const listeners = {};
+    video.addEventListener = (name, listener) => { listeners[name] = listener; };
+    video.removeEventListener = () => {};
+    JWP.utils.getVideo = () => video;
+    JWP.state.bound = false;
+    JWP.playback.bindVideo();
+    JWP.playback.onHostEvent('play', video);
+
+    listeners.waiting();
+    assert.equal(JWP.state.isBuffering, false);
+    assert.equal(JWP.state.coordinatedPlayPending, true);
+    assert.deepEqual(sent.map(message => message.payload.action), ['play']);
+
+    JWP._wsHandlers.handlePlayerEvent({ server_ts: JWP.utils.getServerNow(), payload: {
+      action: 'play', position: 42, coordinated: true,
+      request_id: JWP.state.coordinatedPlayRequestId
+    } }, video);
+    listeners.playing();
+    listeners.waiting();
+    assert.equal(JWP.state.isBuffering, true);
+    assert.equal(sent.at(-1).payload.action, 'buffering');
   });
 
   it('ignores a stale scheduled reply after cancel then resume', (t) => {

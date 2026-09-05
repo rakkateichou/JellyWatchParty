@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Native media pause/resume regression</title>
+  <style>
+    body { margin: 24px; background: #15191f; color: #eee; font: 16px system-ui; }
+    video { display: block; width: 480px; max-width: 100%; margin: 20px 0; }
+    button { padding: 10px 20px; margin-right: 8px; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1 id="role"></h1>
+  <p>Local generated video only. Open this page with ?guest in a second tab to check synchronization. No Jellyfin connection or watch history.</p>
+  <video id="native-video" muted preload="auto" loop src="assets/native-resume.mp4"></video>
+  <button id="toggle">Play / Pause</button><button id="cancel">Cancel scheduled start</button>
+  <button id="leave">Leave room</button>
+  <pre id="status" role="status"></pre><pre id="events"></pre>
+  <script src="../state.js"></script>
+  <script src="../utils/time.js"></script>
+  <script src="../utils/misc.js"></script>
+  <script src="../utils/media.js"></script>
+  <script src="../ui/styles.js"></script>
+  <script src="../ui/indicators.js"></script>
+  <script src="../playback/bind.js"></script>
+  <script src="../ws/handlers/playback.js"></script>
+  <script src="../ws/handlers/sync.js"></script>
+  <script>
+    const JWP = window.JellyWatchParty;
+    const guest = new URLSearchParams(location.search).has('guest');
+    const video = document.getElementById('native-video');
+    const events = [];
+    const sent = [];
+    const channel = new BroadcastChannel('jwp-native-resume-regression');
+    const mediaId = 'a'.repeat(32);
+    location.hash = '#/video';
+    document.getElementById('role').textContent = guest ? 'Guest' : 'Owner';
+    Object.assign(JWP.state, { inRoom: true, isHost: !guest, roomId: 'local-test',
+      clientId: guest ? 'guest' : 'host', roomMediaId: mediaId });
+    JWP.utils.getVideo = () => video;
+    JWP.utils.getCurrentItemId = () => mediaId;
+    JWP.utils.isSeeking = () => video.seeking;
+    JWP.utils.isVideoReady = () => video.readyState >= 2;
+    JWP.utils.log = () => {};
+    JWP.playback.isVideoPage = () => true;
+    JWP.ui.showToast = () => {};
+    const receive = message => {
+      if (message.type === 'player_event') JWP._wsHandlers.handlePlayerEvent(message, video);
+      if (message.type === 'state_update') JWP._wsHandlers.handleStateUpdate(message, video);
+    };
+    channel.onmessage = event => { if (guest) receive(event.data); };
+    JWP.actions = { send(type, payload) {
+      sent.push({ type, ...payload });
+      if (guest) return true;
+      const play = type === 'player_event' && payload.action === 'play';
+      const serverTs = JWP.utils.getServerNow() + (play ? 1000 : 0);
+      const message = { type, server_ts: serverTs, payload: { ...payload,
+        ...(play ? { target_server_ts: serverTs, sample_server_ts: serverTs, coordinated: true } : {}) } };
+      channel.postMessage(message);
+      if (play) receive(message);
+      return true;
+    } };
+    for (const name of ['play', 'playing', 'pause', 'waiting', 'canplay']) {
+      video.addEventListener(name, () => {
+        events.push({ event: name, paused: video.paused, readyState: video.readyState,
+          pending: JWP.state.coordinatedPlayPending });
+      });
+    }
+    document.getElementById('toggle').disabled = guest;
+    document.getElementById('cancel').disabled = guest;
+    document.getElementById('toggle').onclick = () => video.paused ? video.play().catch(() => {}) : video.pause();
+    document.getElementById('cancel').onclick = () => JWP.playback.cancelCoordinatedPlay(video);
+    document.getElementById('leave').onclick = () => { JWP.state.inRoom = false; JWP.ui.updateSyncIndicator(); };
+    JWP.ui.injectStyles();
+    JWP.playback.bindVideo();
+    setInterval(() => {
+      const checks = { paused: video.paused, position: video.currentTime, readyState: video.readyState,
+        pending: JWP.state.coordinatedPlayPending, startAt: JWP.state.pendingPlayUntil,
+        commands: sent.filter(message => message.type === 'player_event').map(message => message.action),
+        cancellations: sent.filter(message => message.coordinated_cancel).length };
+      document.getElementById('status').textContent = JSON.stringify(checks, null, 2);
+      document.getElementById('events').textContent = JSON.stringify(events.slice(-16), null, 2);
+    }, 100);
+  </script>
+</body>
+</html>

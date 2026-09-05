@@ -65,7 +65,6 @@
     if (action === 'pause' && syntheticPauses > 0) { syntheticPauses -= 1; return; }
     if (!state.inRoom || !state.isHost) return;
     if (action === 'play' && state.coordinatedPlayStarting) {
-      syntheticPauses = 0;
       scheduledStartPlayed = true;
       state.coordinatedPlayStarting = false;
       return;
@@ -152,6 +151,9 @@
   const createVideoListeners = (video) => {
     return {
       waiting: () => {
+        // A Play can queue Waiting before our listener holds the video. That
+        // stale event must not tell the room to pause an upcoming shared start.
+        if (video.paused) return;
         state.isBuffering = true;
         utils.log('VIDEO', { event: 'buffering', pos: video.currentTime, readyState: video.readyState });
         if (state.isHost && JWP.actions && JWP.actions.send) {
@@ -164,7 +166,11 @@
         if (wasBuffering) utils.log('VIDEO', { event: 'ready', pos: video.currentTime, readyState: video.readyState });
       },
       playing: () => {
-        syntheticPauses = 0;
+        // HTML queues Play and Playing together for buffered media. Holding
+        // the host inside Play queues Pause *after* that Playing event. Keep
+        // the synthetic-pause count until Pause consumes it, and ignore a
+        // Playing notification whose video has already been paused.
+        if (video.paused) return;
         const wasScheduled = scheduledStartPlayed || state.coordinatedPlayPending;
         scheduledStartPlayed = false;
         state.coordinatedPlayStarting = false;
