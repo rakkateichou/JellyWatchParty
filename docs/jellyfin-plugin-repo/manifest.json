@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.16.0",
+        "changelog": "Added emote autocomplete to owner and guest chat, matching Gowo.io+. Type a partial token such as :pe to see up to eight previews. Arrow keys select, Enter or Tab inserts, Escape dismisses, and clicking a preview inserts it. Enter completes before sending. Caret edits, punctuation, drafts, length limits, IME composition and panel rebuilds are handled.\r\n\r\nValidation: 214 client/helper tests and 128 plugin tests passed, including production owner/guest DOM interaction tests.\r\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.16.0/JellyWatchParty-v1.12.16.0.zip",
+        "checksum": "02771a680af588893650f46ebad88337",
+        "timestamp": "2026-09-06T14:43:05Z"
+      },
+      {
         "version": "1.12.15.0",
         "changelog": "Hold Ctrl instead of X to draw shared cursors and trails. Both Ctrl keys are supported, and the owner and guest chat hints now show the new shortcut. The matching Gowo.io+ update changes both the room page and embedded player.\r\n",
         "targetAbi": "10.11.11.0",
