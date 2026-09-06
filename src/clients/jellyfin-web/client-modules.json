@@ -19,6 +19,7 @@
   "playback/sync.js",
   "playback/tracks.js",
   "chat/emotes.js",
+  "chat/autocomplete.js",
   "chat/messages.js",
   "chat/input.js",
   "ws/send.js",

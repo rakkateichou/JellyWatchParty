@@ -103,20 +103,42 @@
     return emote ? `[${emote.label}]` : match;
   });
 
-  const insertEmote = (input, token) => {
+  const getEmoteCompletion = (input) => {
+    const caret = input.selectionStart;
+    if (!Number.isInteger(caret) || caret !== input.selectionEnd) return null;
+    const value = input.value;
+    // Do not treat URLs, times, or an already completed token as a query.
+    const match = value.slice(0, caret).match(/(?:^|[\s([{]):([a-z0-9]+)$/i);
+    if (!match) return null;
+    const query = match[1].toLowerCase();
+    const start = caret - query.length - 1;
+    const end = caret + value.slice(caret).match(/^[a-z0-9]*:?/i)[0].length;
+    const matches = EMOTES.filter(emote =>
+      emote.token.includes(query) || emote.label.toLowerCase().includes(query)
+    ).sort((a, b) => Number(b.token.slice(1).startsWith(query)) -
+      Number(a.token.slice(1).startsWith(query))).slice(0, 8);
+    return matches.length ? { start, end, matches, key: JSON.stringify([value, caret]) } : null;
+  };
+
+  const insertEmote = (input, token, replacement = null) => {
     if (!input || !emoteByToken[String(token || '').toLowerCase()]) return false;
     const value = String(input.value || '');
-    const start = Number.isInteger(input.selectionStart) ? input.selectionStart : value.length;
-    const end = Number.isInteger(input.selectionEnd) ? input.selectionEnd : start;
+    const start = replacement?.start ?? (Number.isInteger(input.selectionStart) ? input.selectionStart : value.length);
+    const end = replacement?.end ?? (Number.isInteger(input.selectionEnd) ? input.selectionEnd : start);
     const before = value.slice(0, start);
     const after = value.slice(end);
-    const prefix = before && !/\s$/.test(before) ? ' ' : '';
-    const suffix = after && !/^\s/.test(after) ? ' ' : '';
+    const prefix = !replacement && before && !/\s$/.test(before) ? ' ' : '';
+    const suffix = replacement ? (!after || !/^[\s.,!?;:)\]}]/.test(after) ? ' ' : '') :
+      (after && !/^\s/.test(after) ? ' ' : '');
     const insertion = `${prefix}${token}${suffix}`;
-    input.value = `${before}${insertion}${after}`;
+    const nextValue = `${before}${insertion}${after}`;
+    if (input.maxLength >= 0 && nextValue.length > input.maxLength) return false;
+    input.value = nextValue;
+    chat.draftText = nextValue;
     const caret = start + insertion.length;
+    if (typeof input.focus === 'function') input.focus({ preventScroll: true });
     if (typeof input.setSelectionRange === 'function') input.setSelectionRange(caret, caret);
-    if (typeof input.focus === 'function') input.focus();
+    if (typeof input.dispatchEvent === 'function') input.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   };
 
@@ -125,6 +147,7 @@
     renderEmotes,
     containsOnlyEmotes,
     plainEmotes,
+    getEmoteCompletion,
     insertEmote
   });
 })();

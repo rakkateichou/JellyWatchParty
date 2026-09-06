@@ -672,6 +672,33 @@
       z-index: 4;
     }
     #jwp-emote-picker[hidden] { display: none; }
+    #jwp-emote-autocomplete {
+      position: absolute;
+      left: 0; right: 0; bottom: calc(100% + .55rem);
+      z-index: 5;
+      box-sizing: border-box;
+      max-height: min(45vh, 19rem);
+      overflow-x: hidden; overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      padding: .3rem;
+      border: 1px solid var(--jwp-border-strong);
+      border-radius: .85rem;
+      background: var(--jwp-panel-background);
+      box-shadow: 0 -.5rem 2rem rgba(0, 0, 0, .4);
+    }
+    #jwp-emote-autocomplete[hidden] { display: none; }
+    #jwp-emote-autocomplete button {
+      display: flex; align-items: center; gap: .5rem;
+      box-sizing: border-box; width: 100%; min-width: 0;
+      padding: .35rem; border: 0; border-radius: .45rem;
+      background: transparent; color: var(--jwp-muted);
+      font: inherit; font-size: .8rem; text-align: left; cursor: pointer;
+    }
+    #jwp-emote-autocomplete button[aria-selected="true"],
+    #jwp-emote-autocomplete button:hover { background: var(--jwp-surface-hover); color: var(--jwp-text); }
+    #jwp-emote-autocomplete img { width: 1.75rem; height: 1.75rem; flex: 0 0 1.75rem; object-fit: contain; }
+    #jwp-emote-autocomplete span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .jwp-emote-picker-title { margin-bottom: .55rem; color: var(--jwp-text); font-size: .78rem; font-weight: 750; }
     .jwp-emote-grid {
       display: grid;

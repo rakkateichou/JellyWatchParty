@@ -35,6 +35,7 @@
   };
 
   const cleanup = () => {
+    JWP.chat?.destroyEmoteAutocomplete?.();
     JWP.ui?.cleanupPlaybackStatus?.();
     const lc = JWP._lifecycle;
     if (lc) lc.clearAllIntervals();

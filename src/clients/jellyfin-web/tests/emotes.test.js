@@ -49,6 +49,54 @@ describe('Twitch-style chat emotes', () => {
     assert.equal(JWP.chat.plainEmotes('that ending :dead:'), 'that ending [Dead]');
   });
 
+  it('suggests up to eight current emotes with case-insensitive prefixes first', () => {
+    input.value = ':PE';
+    input.selectionStart = input.selectionEnd = 3;
+    const result = JWP.chat.getEmoteCompletion(input);
+    assert.equal(result.matches[0].token, ':peepolove:');
+    assert.ok(result.matches.length <= 8);
+    assert.ok(result.matches.some(emote => emote.token === ':peeporun:'));
+    input.value = ':run';
+    input.selectionStart = input.selectionEnd = 4;
+    assert.deepEqual(JWP.chat.getEmoteCompletion(input).matches.map(emote => emote.token), [':peeporun:']);
+  });
+
+  it('avoids suggestions inside URLs, times, completed tokens and selected text', () => {
+    for (const value of [':', 'https://pog', '12:30', 'word:pe', ':pog:', ':pog:pe', ':unknown', ':trolldespair']) {
+      input.value = value;
+      input.selectionStart = input.selectionEnd = value.length;
+      assert.equal(JWP.chat.getEmoteCompletion(input), null, value);
+    }
+    input.value = ':pe';
+    input.selectionStart = 0;
+    input.selectionEnd = 3;
+    assert.equal(JWP.chat.getEmoteCompletion(input), null);
+  });
+
+  it('completes the whole token at the caret without disturbing surrounding text', () => {
+    input.value = 'before (:peeporun:) after';
+    input.selectionStart = input.selectionEnd = 'before (:pe'.length;
+    const result = JWP.chat.getEmoteCompletion(input);
+    assert.equal(JWP.chat.insertEmote(input, ':peepolove:', result), true);
+    assert.equal(input.value, 'before (:peepolove:) after');
+    assert.equal(input.selectionStart, 'before (:peepolove:'.length);
+    assert.equal(JWP.chat.draftText, input.value);
+  });
+
+  it('adds a space after completion and refuses to exceed the chat length limit', () => {
+    input.value = ':run';
+    input.selectionStart = input.selectionEnd = 4;
+    input.maxLength = 5;
+    const result = JWP.chat.getEmoteCompletion(input);
+    assert.equal(JWP.chat.insertEmote(input, ':peeporun:', result), false);
+    assert.equal(input.value, ':run');
+    assert.equal(input.selectionStart, 4);
+    input.maxLength = 500;
+    assert.equal(JWP.chat.insertEmote(input, ':peeporun:', result), true);
+    assert.equal(input.value, ':peeporun: ');
+    assert.equal(input.selectionStart, 11);
+  });
+
   it('includes the current catalogue with unique tokens and bundled images', () => {
     assert.equal(JWP.chat.emotes.length, 48);
     assert.equal(new Set(JWP.chat.emotes.map(emote => emote.token)).size, 48);

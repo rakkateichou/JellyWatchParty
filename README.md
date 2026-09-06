@@ -37,6 +37,8 @@ plugins together; the session server does not need a change for this feature.
 
 Chat replies require the 1.11.0 plugin and its matching session server. Use **Reply** beside a message, type your response and send. The quoted preview can be cancelled with the × button or Escape; replies remain in room history across reconnects.
 
+Type part of an emote name, such as `:pe`, to see up to eight matching previews. Use **↑/↓** to choose, **Enter** or **Tab** to insert, or click a preview. **Escape** dismisses suggestions. Enter completes the emote while the list is open; press Enter again to send. Names match regardless of case, including partial names such as `:run` for `:peeporun:`.
+
 Chat panels start at 80% brightness. Open **Chat settings → Panel brightness** to dim the whole panel, including text, controls and emotes, for OLED viewing. 100% is normal brightness; 0% is near-black. The slider previews immediately and saves on this device. Earlier opacity percentages carry over to the brightness control.
 
 Hosts and guests can hide chat with the panel's arrow and reopen it with a translucent **‹** arrow in the same position, including while waiting for a title. Hiding chat expands the player and keeps drafts and room membership intact. The player controls no longer include a separate watch-party button.

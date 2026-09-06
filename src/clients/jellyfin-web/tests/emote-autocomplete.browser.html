@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JellyWatchParty emote autocomplete preview</title>
+  <style>
+    body { margin: 0; background: #101015; color: #ddd; font: 16px system-ui; }
+    #fixture-help { position: fixed; top: 1rem; left: 1rem; max-width: calc(100vw - 420px); z-index: 1; }
+    #fixture-help p { max-width: 34rem; }
+    #fixture-help a { color: #aad6ff; }
+    #fixture-sends { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <aside id="fixture-help">
+    <h1>Emote autocomplete</h1>
+    <p>This local preview uses the production chat. Messages stay on this page; no Jellyfin account, playback, or server is involved.</p>
+    <p><a href="?role=host">Owner</a> · <a href="?role=guest">Guest</a></p>
+    <p>Type :pe, choose with ↑/↓, then Enter or Tab. The first Enter inserts; the next sends. Escape dismisses suggestions.</p>
+    <p>Sent messages:</p><output id="fixture-sends">0</output>
+  </aside>
+  <div id="fixture-panel"></div>
+  <script src="../state.js"></script>
+  <script src="../utils/misc.js"></script>
+  <script src="../ui/styles.js"></script>
+  <script src="../ui/indicators.js"></script>
+  <script src="../ui/render.js"></script>
+  <script>window.JellyWatchParty.assetBase = '../assets';</script>
+  <script src="../chat/emotes.js"></script>
+  <script src="../chat/autocomplete.js"></script>
+  <script src="../chat/messages.js"></script>
+  <script src="../chat/input.js"></script>
+  <script>
+    const JWP = window.JellyWatchParty;
+    const isHost = new URLSearchParams(location.search).get('role') !== 'guest';
+    document.getElementById('fixture-panel').id = JWP.constants.PANEL_ID;
+    Object.assign(JWP.state, {
+      inRoom: true, isHost, waitingForTitle: false, roomId: 'local-preview',
+      chatNickname: isHost ? 'Owner' : 'Guest', participantCount: 2,
+      inviteRoomId: 'local-preview', inviteBaseUrl: 'https://example.test/room/local-preview',
+      panelTheme: 'monochrome', panelBrightness: 80
+    });
+    JWP.state.ws = { readyState: 1 }; // Local send stub; never opens a connection.
+    JWP.utils.getVideo = () => null;
+    for (const name of ['updateRoomListUI', 'updateBridgeListUI', 'updateStatusIndicator',
+      'updateServerFooter', 'updateSyncIndicator', 'renderHomeWatchParties']) JWP.ui[name] = () => {};
+    window.fixtureMessages = [];
+    JWP.actions = { send(type, payload) {
+      if (type !== 'chat_message') return false;
+      window.fixtureMessages.push(payload.text);
+      document.getElementById('fixture-sends').textContent = JSON.stringify(window.fixtureMessages);
+      return true;
+    } };
+    JWP.ui.injectStyles();
+    JWP.ui.render(true);
+  </script>
+</body>
+</html>

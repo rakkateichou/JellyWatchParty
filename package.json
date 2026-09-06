@@ -1,0 +1,10 @@
+{
+  "name": "jellywatchparty-client-tests",
+  "private": true,
+  "scripts": {
+    "test": "node --test src/clients/jellyfin-web/tests/*.test.js extras/jellyfin/tests/*.test.js"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.13"
+  }
+}
