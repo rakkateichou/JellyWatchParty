@@ -24,6 +24,8 @@
 
   const nickname = () => String(state.chatNickname || '').trim();
   const ownClientId = () => state.clientId || 'local';
+  const isDrawKey = (event) => event.key === 'Control'
+    || event.code === 'ControlLeft' || event.code === 'ControlRight';
 
   const isEditable = (target) => {
     if (!target) return false;
@@ -236,7 +238,7 @@
   };
 
   const onKeyDown = (event) => {
-    if (event.code !== 'KeyX' || event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!isDrawKey(event) || event.repeat || holding || event.metaKey || event.altKey) return;
     if (isEditable(event.target) || !state.inRoom || !utils.getVideo()) return;
     if (!nickname()) {
       if (JWP.ui?.showToast) JWP.ui.showToast('Choose a nickname in chat settings first');
@@ -252,7 +254,7 @@
   };
 
   const onKeyUp = (event) => {
-    if (event.code !== 'KeyX' || !holding) return;
+    if (!isDrawKey(event) || event.ctrlKey || !holding) return;
     event.preventDefault();
     holding = false;
     hideOwnCursor();

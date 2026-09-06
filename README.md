@@ -24,7 +24,7 @@ This is the **Rakkate edition**, a feature-focused fork of
 - invitations before selecting a title, with an empty player and chat while guests wait for the owner;
 - persistent whole-series rooms with synchronized episode changes, play, pause and seeking;
 - docked chat with saved nicknames, themes, adjustable panel brightness, per-user colours, bundled custom emotes and message replies;
-- shared cursors and fading drawing trails while holding <kbd>X</kbd>;
+- shared cursors and fading drawing trails while holding <kbd>Ctrl</kbd>;
 - a WebRTC fast path with automatic WebSocket fallback and tighter clock correction;
 - guest playback confinement, room revival/deletion rules and a simplified Jellyfin-native UI.
 

@@ -10,8 +10,8 @@
     const message = document.createElement('div');
     message.className = 'jwp-chat-system';
     message.textContent = JWP.state.isHost
-      ? 'Room ready — copy the link to invite someone. Hold X over the video to point.'
-      : 'You’re in — playback will follow the host. Hold X over the video to point.';
+      ? 'Room ready — copy the link to invite someone. Hold Ctrl over the video to point.'
+      : 'You’re in — playback will follow the host. Hold Ctrl over the video to point.';
     container.appendChild(message);
   };
 

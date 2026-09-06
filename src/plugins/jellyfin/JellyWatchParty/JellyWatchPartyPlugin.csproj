@@ -4,9 +4,9 @@
     <RootNamespace>JellyWatchParty.Plugin</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.12.14.0</Version>
-    <AssemblyVersion>1.12.14.0</AssemblyVersion>
-    <FileVersion>1.12.14.0</FileVersion>
+    <Version>1.12.15.0</Version>
+    <AssemblyVersion>1.12.15.0</AssemblyVersion>
+    <FileVersion>1.12.15.0</FileVersion>
     <Authors>TIGamingTV; Ruslan Veselov</Authors>
     <Description>Watch movies together in sync with friends on Jellyfin</Description>
     <RepositoryUrl>https://github.com/rakkateichou/JellyWatchParty</RepositoryUrl>
