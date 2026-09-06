@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.12.15.0",
+        "changelog": "Hold Ctrl instead of X to draw shared cursors and trails. Both Ctrl keys are supported, and the owner and guest chat hints now show the new shortcut. The matching Gowo.io+ update changes both the room page and embedded player.\r\n",
+        "targetAbi": "10.11.11.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.12.15.0/JellyWatchParty-v1.12.15.0.zip",
+        "checksum": "3f22359330cb11dc7ce4e19782208fd3",
+        "timestamp": "2026-09-06T14:05:32Z"
+      },
+      {
         "version": "1.12.14.0",
         "changelog": "Updated the matching JellyWatchParty and Gowo.io+ emote pickers: Heart is now peepoLove, TrollDespair is replaced by TROLL, and PepePls is replaced by Aware. Existing chat tokens continue to render.\r\n",
         "targetAbi": "10.11.11.0",
