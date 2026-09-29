@@ -126,7 +126,7 @@
     if (!Array.isArray(sessions)) return null;
     const userId = normalizeItemId(getUserId());
     const own = sessions.filter((s) => s && s.DeviceId === deviceId);
-    const match = own.find((s) => userId && normalizeItemId(s.UserId) === userId) || own[0];
+    const match = userId ? own.find((s) => normalizeItemId(s.UserId) === userId) : own[0];
     if (!match) return null;
     return {
       id: match.Id,

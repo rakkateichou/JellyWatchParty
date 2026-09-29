@@ -101,6 +101,16 @@ describe('utils/media server fallback (no global playbackManager)', () => {
     assert.deepEqual(session, { id: 'sess-b', nowPlayingItemId: ITEM });
   });
 
+  it('does not control another user session with the same device id', async () => {
+    mockSessions([[{ Id: 'other-user', DeviceId: 'dev-1', UserId: '22222222222222222222222222222222' }]]);
+    assert.equal(await JWP.utils.getOwnSession(), null);
+  });
+
+  it('ignores hidden retained OSD items', () => {
+    globalThis.document = { querySelectorAll: () => [{ dataset: { id: ITEM }, closest: () => ({}) }] };
+    assert.equal(JWP.utils.getCurrentItemId(), null);
+  });
+
   it('clearServerNowPlaying drops the cached id', () => {
     JWP.state.serverNowPlayingId = ITEM;
     JWP.utils.clearServerNowPlaying();

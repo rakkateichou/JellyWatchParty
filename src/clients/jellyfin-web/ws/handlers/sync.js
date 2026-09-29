@@ -156,7 +156,11 @@
     rememberRemoteState(msg);
     const changeToken = ++state.mediaChangeToken;
 
-    if (JWP.playback?.ensurePlayback) JWP.playback.ensurePlayback(mediaId);
+    if (JWP.playback?.ensurePlayback) {
+      const position = Number(msg.payload.state?.position ?? msg.payload.position) || 0;
+      const playing = (msg.payload.state?.play_state ?? msg.payload.play_state) === 'playing';
+      JWP.playback.ensurePlayback(mediaId, playing ? utils.adjustedPosition(position, positionServerTs(msg)) : position);
+    }
 
     let attempts = 0;
     let tracksSettled = false;
