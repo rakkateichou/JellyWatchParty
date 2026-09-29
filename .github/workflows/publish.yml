@@ -169,7 +169,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Build plugin
         working-directory: src/plugins/jellyfin/JellyWatchParty
@@ -328,7 +328,7 @@ jobs:
              '.[0].versions = [{
                "version": $version,
                "changelog": $changelog,
-               "targetAbi": "10.11.11.0",
+               "targetAbi": "12.1.0.0",
                "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v\($version)/JellyWatchParty-v\($version).zip",
                "checksum": $checksum,
                "timestamp": $timestamp
@@ -369,7 +369,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Build plugin
         working-directory: src/plugins/jellyfin/JellyWatchParty
@@ -439,7 +439,7 @@ jobs:
              '.[0].versions = [{
                "version": $version,
                "changelog": $changelog,
-               "targetAbi": "10.11.11.0",
+               "targetAbi": "12.1.0.0",
                "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/develop-latest/JellyWatchParty-dev.zip",
                "checksum": $checksum,
                "timestamp": $timestamp

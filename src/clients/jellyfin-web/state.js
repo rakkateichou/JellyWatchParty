@@ -140,6 +140,14 @@
     nativeLaunchUntil: 0,
     nativeButtonItemId: '',
     nativeButtonReadyAt: 0,
+    // Item id of this client's own session as reported by the Jellyfin server
+    // (GET /Sessions). Fallback for web builds without a global playbackManager
+    // (Jellyfin 12.1+), where the player route and OSD carry no item id.
+    serverNowPlayingId: '',
+    // Item id a PlayNow session command was last sent for, and until when a
+    // repeat send is suppressed (prevents duplicate Play commands on retries).
+    playCommandItemId: '',
+    playCommandUntil: 0,
     pendingJoinRoomId: '',  // Room to join after navigating to video player
     inviteJoinActive: false, // True while handling an accountless ShareLinks invitation
     roomJoinPending: false, // A signed-in user selected an existing room; await its authoritative room_state

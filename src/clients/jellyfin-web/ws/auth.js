@@ -101,10 +101,10 @@
         state.userName = getJellyfinUsername();
         return null;
       }
-      const { accessToken, serverAddress } = apiAccess;
+      const { apiClient, accessToken, serverAddress } = apiAccess;
       const tokenUrl = `${serverAddress}/JellyWatchParty/Token`;
       const response = await fetch(tokenUrl, {
-        headers: { 'X-Emby-Token': accessToken }
+        headers: { Authorization: utils.buildAuthHeader(apiClient, accessToken) }
       });
       if (!response.ok) {
         console.warn('[JellyWatchParty] Failed to fetch auth token:', response.status);

@@ -280,7 +280,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Emby-Token': accessToken
+          Authorization: JWP.utils.buildAuthHeader(window.ApiClient, accessToken)
         },
         body: JSON.stringify({
           itemId: shareItemId || null,

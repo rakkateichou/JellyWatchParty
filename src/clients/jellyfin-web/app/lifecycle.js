@@ -132,6 +132,9 @@
     if (JWP.playback && JWP.playback.cleanupVideoListeners) {
       JWP.playback.cleanupVideoListeners();
     }
+    if (utils.clearServerNowPlaying) utils.clearServerNowPlaying();
+    state.playCommandItemId = '';
+    state.playCommandUntil = 0;
     state.bound = false;
     if (JWP.guestLockdown?.isRestricted?.()) JWP.guestLockdown.enforceSoon(100);
   };

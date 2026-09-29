@@ -178,7 +178,66 @@
     return result.success;
   };
 
-  const ensurePlayback = (itemId, attempt = 0) => {
+  // How long a sent PlayNow command blocks re-sending for the same item. The
+  // player normally opens well within this window; the id check in
+  // ensurePlayback stops further attempts once it has.
+  const PLAY_COMMAND_GUARD_MS = 15000;
+  const TICKS_PER_SECOND = 10000000;
+
+  const toStartTicks = (startPos) => {
+    const seconds = Number(startPos);
+    if (!Number.isFinite(seconds) || seconds <= 0) return 0;
+    return Math.floor(seconds * TICKS_PER_SECOND);
+  };
+
+  // Jellyfin 12.1+ does not expose playbackManager globally. Instead, ask the
+  // server to send a PlayNow command to this browser's own session;
+  // jellyfin-web handles that remote-control command itself and opens the
+  // player. Resolves to true once the server accepted the command.
+  const playViaSessionCommand = async (itemId, startPos = 0) => {
+    const state = JWP.state;
+    const now = utils.nowMs();
+    if (state.playCommandItemId === itemId && now < state.playCommandUntil) return true;
+    if (!utils.getOwnSession || !utils.apiFetch) return false;
+    let session = null;
+    try {
+      session = await utils.getOwnSession();
+    } catch (e) {
+      session = null;
+    }
+    if (!session || !session.id) {
+      console.warn('[JellyWatchParty] Playback fallback failed: own session not found');
+      return false;
+    }
+    if (session.nowPlayingItemId === itemId) {
+      // Already playing it (e.g. started by hand before joining); don't
+      // restart the player.
+      state.serverNowPlayingId = itemId;
+      return true;
+    }
+    const params = new URLSearchParams({
+      playCommand: 'PlayNow',
+      itemIds: itemId,
+      startPositionTicks: String(toStartTicks(startPos))
+    });
+    const path = `/Sessions/${encodeURIComponent(session.id)}/Playing?${params.toString()}`;
+    try {
+      const res = await utils.apiFetch(path, { method: 'POST' });
+      if (!res || !res.ok) {
+        console.warn('[JellyWatchParty] PlayNow session command rejected:', res && res.status);
+        return false;
+      }
+    } catch (err) {
+      console.warn('[JellyWatchParty] PlayNow session command failed:', err && err.message);
+      return false;
+    }
+    state.playCommandItemId = itemId;
+    state.playCommandUntil = utils.nowMs() + PLAY_COMMAND_GUARD_MS;
+    console.log('[JellyWatchParty] Playback requested via PlayNow session command');
+    return true;
+  };
+
+  const ensurePlayback = (itemId, startPos = 0, attempt = 0) => {
     if (JWP.state.guestClosedMessage) return;
     const state = JWP.state;
     const normalizedItemId = utils.normalizeItemId?.(itemId) || itemId;
@@ -195,7 +254,7 @@
     if (currentItemId === normalizedItemId && isVideoPage()) return;
     if (state.joiningItemId === normalizedItemId) return;
     const retry = () => {
-      if (attempt < 80) setTimeout(() => ensurePlayback(normalizedItemId, attempt + 1), 250);
+      if (attempt < 80) setTimeout(() => ensurePlayback(normalizedItemId, startPos, attempt + 1), 250);
       else JWP.ui?.showToast?.('Tap Play to continue the watch party.');
     };
 
@@ -211,15 +270,25 @@
       return;
     }
 
-    // Jellyfin Web keeps PlaybackManager inside its module bundle on current
-    // releases, so it is often unavailable on window. Its own Play button is
-    // nevertheless ready and is the most reliable way to open the player for
-    // a redeemed ShareLinks guest. For episode changes, first move to the new
-    // item's details page, then retry until that button has rendered.
+    // Modern Jellyfin exposes playback through this browser's session. Guests
+    // retain the native details-page path if their policy rejects remote control.
     if (!utils.getPlaybackManager()) {
-      if (clickNativePlayButton(normalizedItemId)) return;
-      openItemDetails(normalizedItemId);
-      retry();
+      // Legacy clients and the invitation bootstrap can already have a native
+      // Play button ready. Keep that synchronous path when session APIs are absent.
+      if (!utils.getOwnSession || !window.ApiClient?.deviceId) {
+        if (clickNativePlayButton(normalizedItemId)) return;
+        openItemDetails(normalizedItemId);
+        retry();
+        return;
+      }
+      state.joiningItemId = normalizedItemId;
+      playViaSessionCommand(normalizedItemId, startPos).then((ok) => {
+        if (ok) return;
+        if (!clickNativePlayButton(normalizedItemId)) {
+          openItemDetails(normalizedItemId);
+          retry();
+        }
+      }).finally(() => { state.joiningItemId = ''; });
       return;
     }
 
@@ -245,6 +314,7 @@
   Object.assign(playback, {
     isVideoPage,
     playItem,
+    playViaSessionCommand,
     ensurePlayback,
     openReadyPlayer,
     holdJoinPlayback,

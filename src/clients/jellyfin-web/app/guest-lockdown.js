@@ -95,7 +95,7 @@
       }
       try {
         const response = await fetch(`${base}/ShareLinks/GuestState`, {
-          headers: { 'X-Emby-Token': token },
+          headers: { Authorization: JWP.utils.buildAuthHeader(window.ApiClient, token) },
           cache: 'no-store'
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -124,7 +124,7 @@
     if (!state.guestMode) return true;
     try {
       const response = await fetch(`${serverAddress()}/ShareLinks/GuestState`, {
-        headers: { 'X-Emby-Token': accessToken() }, cache: 'no-store'
+        headers: { Authorization: JWP.utils.buildAuthHeader(window.ApiClient, accessToken()) }, cache: 'no-store'
       });
       if (!response.ok) return false;
       const payload = await response.json();
