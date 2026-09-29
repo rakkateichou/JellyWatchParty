@@ -59,7 +59,7 @@ class WebSocketClient:
         request = (
             f"GET /ws?client_id={client_id} HTTP/1.1\r\n"
             f"Host: {host}:{port}\r\n"
-            "Origin: https://jellyfin.rkde.su\r\n"
+            f"Origin: {os.environ.get('JWP_TEST_ORIGIN', 'https://jellyfin.rkde.su')}\r\n"
             "Upgrade: websocket\r\n"
             "Connection: Upgrade\r\n"
             f"Sec-WebSocket-Key: {key}\r\n"
