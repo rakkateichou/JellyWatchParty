@@ -28,3 +28,14 @@ it('does not reuse guest metadata belonging to another origin or base path', () 
 it('remembers an explicit guest departure when reloading', () => {
   assert.equal(boot('https://example.test/jellyfin', '#/home', true).context.__jwpGuestClosed, true);
 });
+
+it('repairs an existing manual-only ShareLinks login before Jellyfin 12 starts', () => {
+  let saved;
+  const context = { location: { hash: '#/home', pathname: '/web/' },
+    localStorage: { getItem: () => JSON.stringify({ Servers: [{ ManualAddress: 'https://example.test', manualAddressOnly: true, LastConnectionMode: 1 }] }),
+      setItem: (_key, value) => { saved = JSON.parse(value); } } };
+  context.window = context;
+  vm.runInNewContext(script, context);
+  assert.equal(saved.Servers[0].LastConnectionMode, 2);
+  assert.equal(saved.Servers[0].ManualAddress, 'https://example.test');
+});

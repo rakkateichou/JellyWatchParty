@@ -13,6 +13,14 @@ html.jwp-invite-booting::after{content:'Watch party chat\A\A Connecting to roomâ
   var invite=/[?&]jwpRoom=[0-9a-f-]{36}(?:&|$)/i.test(location.hash||'');
   try {
     var credentials=JSON.parse(localStorage.getItem('jellyfin_credentials')||'{}');
+    // Repair pre-12 ShareLinks sessions before Jellyfin resolves their address.
+    var credentialsChanged=false;
+    (credentials.Servers||[]).forEach(function(candidate){
+      if(candidate.manualAddressOnly&&candidate.ManualAddress&&candidate.LastConnectionMode!==2){
+        candidate.LastConnectionMode=2;credentialsChanged=true;
+      }
+    });
+    if(credentialsChanged)localStorage.setItem('jellyfin_credentials',JSON.stringify(credentials));
     var serverId=(location.hash.match(/[?&]serverId=([^&]+)/i)||[])[1];
     var basePath=location.pathname.replace(/\/web(?:\/.*)?$/i,'').replace(/\/$/,'');
     var server=(credentials.Servers||[]).find(function(candidate){
