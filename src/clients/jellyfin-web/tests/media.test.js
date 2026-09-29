@@ -98,7 +98,7 @@ describe('utils/media server fallback (no global playbackManager)', () => {
       { Id: 'sess-b', DeviceId: 'dev-1', UserId: USER, NowPlayingItem: { Id: ITEM } }
     ]]);
     const session = await JWP.utils.getOwnSession();
-    assert.deepEqual(session, { id: 'sess-b', nowPlayingItemId: ITEM });
+    assert.deepEqual(session, { id: 'sess-b', supportsRemoteControl: true, nowPlayingItemId: ITEM });
   });
 
   it('does not control another user session with the same device id', async () => {

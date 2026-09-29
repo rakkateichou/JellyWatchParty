@@ -94,6 +94,12 @@ describe('playback/play without global playbackManager (Jellyfin 12.1)', () => {
     assert.equal(calls.length, 0);
   });
 
+  it('falls back when the own session cannot receive playback commands', async () => {
+    const calls = mockServer([{ Id: 'sess-1', DeviceId: 'dev-1', UserId: USER, SupportsRemoteControl: false }]);
+    assert.equal(await JWP.playback.playViaSessionCommand(ITEM), false);
+    assert.equal(posts(calls).length, 0);
+  });
+
   it('uses the playbackManager path when one is exposed', async () => {
     const calls = mockServer([]);
     const played = [];

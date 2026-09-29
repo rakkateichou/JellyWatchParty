@@ -130,6 +130,7 @@
     if (!match) return null;
     return {
       id: match.Id,
+      supportsRemoteControl: match.SupportsRemoteControl !== false,
       nowPlayingItemId: normalizeItemId(match.NowPlayingItem && match.NowPlayingItem.Id)
     };
   };

@@ -197,7 +197,12 @@
   const playViaSessionCommand = async (itemId, startPos = 0) => {
     const state = JWP.state;
     const now = utils.nowMs();
-    if (state.playCommandItemId === itemId && now < state.playCommandUntil) return true;
+    if (state.playCommandItemId === itemId) {
+      if (now < state.playCommandUntil) return true;
+      // A successful HTTP response only acknowledges delivery. If no player
+      // appeared during the guard window, use the native launch path.
+      return false;
+    }
     if (!utils.getOwnSession || !utils.apiFetch) return false;
     let session = null;
     try {
@@ -205,7 +210,7 @@
     } catch (e) {
       session = null;
     }
-    if (!session || !session.id) {
+    if (!session || !session.id || session.supportsRemoteControl === false) {
       console.warn('[JellyWatchParty] Playback fallback failed: own session not found');
       return false;
     }
@@ -283,7 +288,7 @@
       }
       state.joiningItemId = normalizedItemId;
       playViaSessionCommand(normalizedItemId, startPos).then((ok) => {
-        if (ok) return;
+        if (ok) { retry(); return; }
         if (!clickNativePlayButton(normalizedItemId)) {
           openItemDetails(normalizedItemId);
           retry();
