@@ -8,6 +8,14 @@
     "category": "General",
     "versions": [
       {
+        "version": "1.13.0.0",
+        "changelog": "Jellyfin 12.1 / .NET 10 support. Selective upstream toolbar, authentication, media detection and playback fixes preserve this fork's guest waiting rooms, compact ShareLinks invitations, chat replies, cursors and custom session protocol. Repairs saved ShareLinks sessions and falls back to native Play when a browser cannot receive session commands. Use ShareLinks 1.1.0.0.",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/rakkateichou/JellyWatchParty/releases/download/v1.13.0.0/JellyWatchParty-1.13.0.0.zip",
+        "checksum": "18e5e701c9198882ffab9b50ce9b4ed9",
+        "timestamp": "2026-09-29T09:07:28Z"
+      },
+      {
         "version": "1.12.16.0",
         "changelog": "Added emote autocomplete to owner and guest chat, matching Gowo.io+. Type a partial token such as :pe to see up to eight previews. Arrow keys select, Enter or Tab inserts, Escape dismisses, and clicking a preview inserts it. Enter completes before sending. Caret edits, punctuation, drafts, length limits, IME composition and panel rebuilds are handled.\r\n\r\nValidation: 214 client/helper tests and 128 plugin tests passed, including production owner/guest DOM interaction tests.\r\n",
         "targetAbi": "10.11.11.0",
@@ -217,7 +225,7 @@
       },
       {
         "version": "1.4.4.0",
-        "changelog": "## What's Changed\r\n* Develop by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/28\r\n* Allow hosts to switch audio/subtitle tracks without disrupting room sync by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/29\r\n* Fix group play console showing wrong server URL by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/31\r\n* Warn on invalid or unreachable Session Server URLs by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/32\r\n* Fix short JwtSecret crashing /JellyWatchParty/Token (issue #30 root cause) by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/33\r\n* Fix ScriptInjectionMiddleware permanently disabling itself on transie… by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/34\r\n* Fix missing client JS files in CI/release workflows by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/35\r\n* Sync develop into main by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/36\r\n\r\n\r\n**Full Changelog**: https://github.com/TIGamingTV/JellyWatchParty/compare/v1.4.3.0...v1.4.4.0\n",
+        "changelog": "## What's Changed\r\n* Develop by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/28\r\n* Allow hosts to switch audio/subtitle tracks without disrupting room sync by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/29\r\n* Fix group play console showing wrong server URL by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/31\r\n* Warn on invalid or unreachable Session Server URLs by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/32\r\n* Fix short JwtSecret crashing /JellyWatchParty/Token (issue #30 root cause) by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/33\r\n* Fix ScriptInjectionMiddleware permanently disabling itself on transie\u2026 by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/34\r\n* Fix missing client JS files in CI/release workflows by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/35\r\n* Sync develop into main by @TIGamingTV in https://github.com/TIGamingTV/JellyWatchParty/pull/36\r\n\r\n\r\n**Full Changelog**: https://github.com/TIGamingTV/JellyWatchParty/compare/v1.4.3.0...v1.4.4.0\n",
         "targetAbi": "10.11.11.0",
         "sourceUrl": "https://github.com/TIGamingTV/JellyWatchParty/releases/download/v1.4.4.0/JellyWatchParty-v1.4.4.0.zip",
         "checksum": "b6b165d595adf1f4eeb7daad3eef5299",
