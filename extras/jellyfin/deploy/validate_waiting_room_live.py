@@ -4,6 +4,7 @@ Existing credentials stay on the server and are never printed or persisted here.
 Only the verification room and its temporary ShareLinks guest are changed.
 """
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -21,13 +22,16 @@ def container_ip(name):
     return next(iter(data['NetworkSettings']['Networks'].values()))['IPAddress']
 
 
-BASE = 'http://' + container_ip('jellyfin') + ':8096'
+SERVER = os.environ.get('JWP_JELLYFIN_CONTAINER', 'jellyfin')
+SESSION = os.environ.get('JWP_SESSION_CONTAINER', 'jwp-session')
+CONFIG = os.environ.get('JWP_CONFIG', '/opt/jellyfin/config')
+BASE = 'http://' + container_ip(SERVER) + ':8096'
 
 
 def request(path, token=None, data=None, raw=False):
     headers = {'Content-Type': 'application/json'}
     if token:
-        headers['X-Emby-Token'] = token
+        headers['Authorization'] = 'MediaBrowser Token="' + token + '"'
     req = urllib.request.Request(BASE + path, headers=headers,
                                  data=None if data is None else json.dumps(data).encode())
     with urllib.request.urlopen(req, timeout=25) as response:
@@ -36,7 +40,7 @@ def request(path, token=None, data=None, raw=False):
 
 
 def admin_session():
-    with sqlite3.connect('file:/opt/jellyfin/config/data/jellyfin.db?mode=ro', uri=True) as db:
+    with sqlite3.connect('file:' + CONFIG + '/data/jellyfin.db?mode=ro', uri=True) as db:
         rows = db.execute("SELECT d.AccessToken FROM Devices d JOIN Users u ON u.Id=d.UserId "
                           "WHERE u.Username NOT LIKE 'share-%' ORDER BY d.DateLastActivity DESC LIMIT 12").fetchall()
     for (token,) in rows:
@@ -70,16 +74,16 @@ def main():
         passed.append('updated waiting-room client served')
         injected = request('/web/index.html', admin, raw=True)
         assert 'id="jwp-invite-bootstrap"' in injected
-        assert '/JellyWatchParty/ClientScript?v=1.12.16' in injected
+        assert '/JellyWatchParty/ClientScript?v=1.13.0' in injected
         assert injected.count('JellyWatchParty/ClientScript') == 1
-        assert injected.index('JellyWatchParty/ClientScript') < injected.index('runtime.bundle.js')
+        assert injected.index('JellyWatchParty/ClientScript') < injected.index('</head>')
         bundle = request('/JellyWatchParty/ClientScript', raw=True)
         assert '// Client module: app/lifecycle.js' in bundle and 'loadScript(' not in bundle
         assert 'Connecting to room…' in bundle and 'JWP_BUNDLED_MODULES' not in bundle
         passed.append('updated invitation bootstrap served')
 
         host_token = request('/JellyWatchParty/Token', admin)['token']
-        host = connect_and_auth(container_ip('jwp-session'), 3000, host_token)
+        host = connect_and_auth(container_ip(SESSION), 3000, host_token)
         host.send(message('create_room', payload={'media_id': '', 'start_pos': 0, 'user_name': 'Update verification'}))
         created = host.receive_type('room_state')
         room = created['room']
@@ -102,7 +106,7 @@ def main():
         passed.append('guest redemption opens a waiting room with no library access')
 
         guest_jwt = request('/JellyWatchParty/Token', guest_token)['token']
-        guest = connect_and_auth(container_ip('jwp-session'), 3000, guest_jwt)
+        guest = connect_and_auth(container_ip(SESSION), 3000, guest_jwt)
         guest.send(message('join_room', room, {'user_name': 'Verification guest'}))
         joined = guest.receive_type('room_state')
         assert not joined['payload']['media_id'] and joined['payload']['invite_url'] == share_url
@@ -147,7 +151,7 @@ def main():
         guest.close()
         import time
         time.sleep(.15)
-        guest = WebSocketClient(container_ip('jwp-session'), 3000, previous_id)
+        guest = WebSocketClient(container_ip(SESSION), 3000, previous_id)
         assert guest.receive_type('client_hello')['payload']['client_id'] != previous_id
         guest.send(message('auth', payload={'token': guest_jwt}))
         guest.receive_type('auth_success')
@@ -159,7 +163,7 @@ def main():
         assert replay[-1]['message_id'] == reply['message_id'] and replay[-1]['reply_to'] == reply['reply_to']
         passed.append('reply IDs and quoted text survive authenticated reconnect')
         guest.send(message('ready', room, {'media_id': media_id}))
-        second_guest = connect_and_auth(container_ip('jwp-session'), 3000, guest_jwt)
+        second_guest = connect_and_auth(container_ip(SESSION), 3000, guest_jwt)
         second_guest.send(message('join_room', room, {'user_name': 'Second verification guest'}))
         assert second_guest.receive_type('room_state')['payload']['participant_count'] == 3
         second_guest.send(message('chat_message', room, {'text': 'Second client verification'}))
@@ -172,7 +176,7 @@ def main():
         picks = items(admin, admin_id, Recursive='true', IncludeItemTypes='Movie,Series', SortBy='Random',
                       Limit=20, ExcludeItemIds=','.join(excluded))
         assert all(item['Id'] not in excluded for item in picks)
-        config = ET.parse('/opt/jellyfin/config/plugins/configurations/Jellyfin.Plugin.JavaScriptInjector.xml')
+        config = ET.parse(CONFIG + '/plugins/configurations/Jellyfin.Plugin.JavaScriptInjector.xml')
         scripts = [entry.findtext('Script') for entry in config.findall('.//CustomJavaScriptEntry')
                    if entry.findtext('Name') == 'Random pick in watching row']
         assert len(scripts) == 1 and 'watchingExclusions' in scripts[0] and 'ExcludeItemIds' in scripts[0]
