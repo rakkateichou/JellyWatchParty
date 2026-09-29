@@ -39,6 +39,7 @@
     JWP.ui?.cleanupPlaybackStatus?.();
     const lc = JWP._lifecycle;
     if (lc) lc.clearAllIntervals();
+    if (JWP.ui && JWP.ui.disconnectToolbarObserver) JWP.ui.disconnectToolbarObserver();
     if (state.pendingActionTimer) {
       clearTimeout(state.pendingActionTimer);
       state.pendingActionTimer = null;

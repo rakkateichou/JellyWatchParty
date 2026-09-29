@@ -48,6 +48,22 @@ describe('applyNativeSyncButtonVisibility', () => {
     assert.match(style.textContent, /display:\s*none/);
   });
 
+  it('also hides Jellyfin 12\'s MUI SyncPlay button', () => {
+    // display:none, not visibility:hidden. JellyWatchParty's own button is now
+    // a real in-flow sibling in the same MUI flex container, so it simply
+    // takes the freed slot. The old visibility:hidden existed only to keep the
+    // hidden button's layout box measurable for absolute-positioning math,
+    // which no longer exists — and it left a dead gap in the toolbar.
+    JWP.state.hideNativeSyncButton = true;
+    apply();
+    const style = byId.get(SYNC_HIDE_STYLE_ID);
+    assert.match(style.textContent, /\[aria-controls="app-sync-play-menu"\]/);
+    assert.doesNotMatch(style.textContent, /visibility:\s*hidden/,
+      'expected no visibility:hidden — it would reserve an empty toolbar slot');
+    assert.equal((style.textContent.match(/display:\s*none/g) || []).length, 2,
+      'expected both the legacy and the MUI SyncPlay button hidden with display:none');
+  });
+
   it('does not inject anything when the flag is off', () => {
     apply();
     assert.equal(byId.get(SYNC_HIDE_STYLE_ID), undefined);

@@ -745,6 +745,55 @@
     #jwp-chat-send:hover { background: var(--jwp-action-hover); }
     .jwp-chat-badge { display: none; margin-left: .25rem; padding: .1rem .35rem; border-radius: 999px; background: rgba(190, 57, 67, .8); color: #fff; font-size: .62rem; }
     .jwp-meta { color: var(--jwp-faint) !important; font-size: .64rem !important; }
+    .jwp-global-btn-legacy {
+      margin-right: 10px;
+      color: #fff;
+      opacity: 0.92;
+    }
+    .jwp-global-btn-legacy:hover {
+      opacity: 1;
+      color: #69f0ae;
+    }
+    /* On Jellyfin 12 the button is a real in-flow child of the MUI toolbar's
+       own actions Box and clones its neighbour's emotion classes, so it needs
+       no layout or colour rules of its own. The icon does need explicit
+       geometry though: MUI sizes its own children as 24x24 SVGs, whereas this
+       is a Material icon *font* glyph, which would otherwise contribute zero
+       width until the font finishes loading and leave the button narrower
+       than its neighbours. */
+    .jwp-global-btn .material-icons {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      font-size: 24px;
+      line-height: 24px;
+      text-align: center;
+    }
+    /* Fallback for the rare case where no sibling MUI IconButton exists to
+       clone classes from: the bare Mui* names carry no styling of their own
+       (real styling lives in emotion hash classes), so reset the browser's
+       default <button> chrome by hand. */
+    .jwp-global-btn-standalone {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 0;
+      border-radius: 50%;
+      color: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .jwp-global-btn-standalone:hover {
+      background-color: rgba(127, 127, 127, 0.2);
+    }
+    .jwp-global-btn:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
     /* Toast styles */
     .jwp-toast-container {
       position: fixed; top: 70px; right: 20px; z-index: 30000;
